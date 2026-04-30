@@ -200,7 +200,7 @@
     if (state.mode === "focus") {
       return pool
         .slice()
-        .sort(sortForStudyOrder)
+        .sort(sortForFocusOrder)
         .slice(0, 20);
     }
     const weighted = [];
@@ -254,11 +254,24 @@
       || a.id.localeCompare(b.id);
   }
 
+  function sortForFocusOrder(a, b) {
+    const aReview = (state.progress[a.id] || {}).needsReview ? 0 : 1;
+    const bReview = (state.progress[b.id] || {}).needsReview ? 0 : 1;
+    return aReview - bReview || sortForStudyOrder(a, b);
+  }
+
   function startQuiz() {
     state.quiz = pickQuiz();
     state.index = 0;
     state.answers = new Map();
     state.choiceOrders = new Map();
+    state.equationStates = new Map();
+    state.quiz.forEach((question) => {
+      if (state.progress[question.id]?.currentAttemptHadMistake) {
+        delete state.progress[question.id].currentAttemptHadMistake;
+      }
+    });
+    saveProgress();
     els.summary.classList.add("hidden");
     els.questionCard.classList.remove("hidden");
     renderTitle();
@@ -364,6 +377,10 @@
   function renderInputAnswer(question, currentAnswer) {
     els.choices.innerHTML = "";
     appendScratchPadIfNeeded(question);
+    if (isSystemInputQuestion(question)) {
+      renderSystemInputAnswer(question, currentAnswer);
+      return;
+    }
     const answered = currentAnswer !== undefined;
     const value = typeof currentAnswer === "object" ? currentAnswer.value : "";
     const correct = isStoredAnswerCorrect(question, currentAnswer);
@@ -410,6 +427,84 @@
     wrapper.append(row, feedback);
     els.choices.appendChild(wrapper);
     if (!answered) input.focus({ preventScroll: true });
+  }
+
+  function isSystemInputQuestion(question) {
+    return question.unit === "連立方程式" && questionType(question) === "input";
+  }
+
+  function renderSystemInputAnswer(question, currentAnswer) {
+    const answered = currentAnswer !== undefined;
+    const value = typeof currentAnswer === "object" ? currentAnswer.value || "" : "";
+    const correct = isStoredAnswerCorrect(question, currentAnswer);
+    const parsed = parseSystemAnswer(value);
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "input-answer system-answer";
+
+    const row = document.createElement("div");
+    row.className = "system-input-row";
+
+    const xInput = createSystemInput("x", parsed.x, answered);
+    const yInput = createSystemInput("y", parsed.y, answered);
+
+    const button = document.createElement("button");
+    button.className = "primary-button";
+    button.type = "button";
+    button.textContent = "判定";
+    button.disabled = answered;
+
+    const feedback = document.createElement("p");
+    feedback.className = "input-feedback";
+    if (answered) {
+      feedback.classList.add(correct ? "correct" : "wrong");
+      feedback.textContent = correct ? "正解です。" : `不正解です。正解例: ${answerTextLabel(question)}`;
+    } else {
+      feedback.textContent = "xとyを別々に入れます。";
+    }
+
+    const submit = () => answerInputQuestion(question, `x=${xInput.value},y=${yInput.value}`);
+    button.addEventListener("click", submit);
+    [xInput, yInput].forEach((input) => {
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") submit();
+      });
+    });
+
+    row.append(wrapSystemField("x", xInput), wrapSystemField("y", yInput), button);
+    wrapper.append(row, feedback);
+    els.choices.appendChild(wrapper);
+    if (!answered) xInput.focus({ preventScroll: true });
+  }
+
+  function createSystemInput(variable, value, disabled) {
+    const input = document.createElement("input");
+    input.className = "answer-input system-input";
+    input.type = "text";
+    input.inputMode = "text";
+    input.autocomplete = "off";
+    input.placeholder = variable;
+    input.value = value || "";
+    input.disabled = disabled;
+    return input;
+  }
+
+  function wrapSystemField(labelText, input) {
+    const label = document.createElement("label");
+    label.className = "system-field";
+    const labelSpan = document.createElement("span");
+    labelSpan.textContent = `${labelText}=`;
+    label.append(labelSpan, input);
+    return label;
+  }
+
+  function parseSystemAnswer(value) {
+    const normalized = normalizeAnswer(value);
+    const xMatch = normalized.match(/x=(-?\d+(?:\.\d+)?)/);
+    const yMatch = normalized.match(/y=(-?\d+(?:\.\d+)?)/);
+    if (xMatch || yMatch) return { x: xMatch?.[1] || "", y: yMatch?.[1] || "" };
+    const pair = normalized.match(/^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/);
+    return pair ? { x: pair[1], y: pair[2] } : { x: "", y: "" };
   }
 
   function appendScratchPadIfNeeded(question) {
@@ -608,6 +703,14 @@
     let rightTokenCount = 0;
 
     tokens.forEach((token, index) => {
+      if (token === "→") {
+        if (current.includes("=")) groups.push({ tokens: current });
+        current = [];
+        hasEquals = false;
+        rightTokenCount = 0;
+        return;
+      }
+
       if (
         current.length > 0
         && hasEquals
@@ -656,7 +759,7 @@
   }
 
   function isScratchOperator(token) {
-    return ["+", "-", "×", "÷", "(", "="].includes(token);
+    return ["+", "-", "×", "÷", "(", "=", "→"].includes(token);
   }
 
   function scratchGroupLabel(index, groupCount) {
@@ -694,10 +797,11 @@
       .trim()
       .replace(/\s+/g, "")
       .replace(/−/g, "-")
+      .replace(/->/g, "→")
       .replace(/[＊*]/g, "×")
       .replace(/[／/]/g, "÷")
       .replace(/\^2/g, "²");
-    if (!normalized || !/^[0-9xy=+\-×÷().²√±]+$/.test(normalized)) return [];
+    if (!normalized || !/^[0-9xy=+\-×÷().²√±→]+$/.test(normalized)) return [];
     const tokens = tokenizeScratchText(normalized);
     return tokens.join("") === normalized ? tokens : [];
   }
@@ -706,6 +810,7 @@
     const normalized = String(text || "")
       .normalize("NFKC")
       .replace(/−/g, "-")
+      .replace(/->/g, "→")
       .replace(/[＊*]/g, "×")
       .replace(/[／/]/g, "÷");
     return normalized.match(/±|√|→|[+-]?\d+(?:\.\d+)?[xy](?:²)?|[xy](?:²)?|[+-]?\d+(?:\.\d+)?|[=+\-×÷()]/g) || [];
@@ -785,7 +890,7 @@
     const answered = currentAnswer !== undefined;
     const equation = getEquationState(question, currentAnswer);
     const phase = determineEquationPhase(equation.left, equation.right);
-    const correct = phase === PHASE.DONE || isStoredAnswerCorrect(question, currentAnswer);
+    const correct = answered ? isStoredAnswerCorrect(question, currentAnswer) : phase === PHASE.DONE;
 
     const wrapper = document.createElement("div");
     wrapper.className = "equation-lab";
@@ -863,7 +968,8 @@
       left: cloneTerms(question.left || []),
       right: cloneTerms(question.right || []),
       history: [],
-      drag: null
+      drag: null,
+      hasMistake: false
     };
   }
 
@@ -1089,13 +1195,21 @@
 
   function isPlusMinusAnswer(rawValue, expected) {
     const normalized = normalizeAnswer(rawValue).replace(/^x=/, "");
-    return normalized === `±${expected}` || normalized === `+-${expected}`;
+    const positiveFirst = `${expected},-${expected}`;
+    const negativeFirst = `-${expected},${expected}`;
+    return normalized === `±${expected}`
+      || normalized === `+-${expected}`
+      || normalized === positiveFirst
+      || normalized === negativeFirst;
   }
 
   function recordEquationMistake(question, phase, rawValue) {
     const record = state.progress[question.id] || { correct: 0, wrong: 0 };
+    const equation = state.equationStates.get(question.id);
+    if (equation) equation.hasMistake = true;
     record.wrong = (record.wrong || 0) + 1;
     record.needsReview = true;
+    record.currentAttemptHadMistake = true;
     record.lastAnsweredAt = new Date().toISOString();
     record.mistakeType = record.mistakeType || inferEquationMistakeType(phase);
     record.lastWrongInput = String(rawValue || "").trim();
@@ -1158,8 +1272,7 @@
       document.removeEventListener("pointermove", move);
       document.removeEventListener("pointerup", end);
       ghost.remove();
-      const targetSide = document.elementFromPoint(endEvent.clientX, endEvent.clientY)?.closest(".equation-side")?.dataset.side
-        || (endEvent.clientX > window.innerWidth / 2 ? "right" : "left");
+      const targetSide = document.elementFromPoint(endEvent.clientX, endEvent.clientY)?.closest(".equation-side")?.dataset.side;
       handleEquationDrop(question, targetSide);
     };
     document.addEventListener("pointermove", move);
@@ -1208,8 +1321,9 @@
     if ((question.left || []).some((term) => term.type === "x2") && equation.right.length === 1 && equation.right[0].type === "const") {
       equation.right[0].prefix = "±";
     }
+    const hadMistake = equation.hasMistake || (state.progress[question.id] || {}).currentAttemptHadMistake;
     state.answers.set(question.id, { type: "manipulate", equation: cloneEquationState(equation), correct: true });
-    recordQuestionResult(question, true);
+    recordQuestionResult(question, true, { keepReview: hadMistake });
   }
 
   function cloneEquationState(equation) {
@@ -1217,7 +1331,8 @@
       left: cloneTerms(equation.left),
       right: cloneTerms(equation.right),
       history: equation.history.slice(),
-      drag: null
+      drag: null,
+      hasMistake: equation.hasMistake || false
     };
   }
 
@@ -1336,15 +1451,16 @@
     recordQuestionResult(question, correct);
   }
 
-  function recordQuestionResult(question, correct) {
+  function recordQuestionResult(question, correct, options = {}) {
     const record = state.progress[question.id] || { correct: 0, wrong: 0 };
     if (correct) {
       record.correct = (record.correct || 0) + 1;
-      record.needsReview = record.needsReview && state.mode !== "review";
+      record.needsReview = Boolean(options.keepReview);
     } else {
       record.wrong = (record.wrong || 0) + 1;
       record.needsReview = true;
     }
+    delete record.currentAttemptHadMistake;
     record.lastAnsweredAt = new Date().toISOString();
     state.progress[question.id] = record;
     recordDailyAnswer(correct);
@@ -1361,6 +1477,7 @@
       .normalize("NFKC")
       .toLowerCase()
       .replace(/[ \t\r\n]/g, "")
+      .replace(/[、，]/g, ",")
       .replace(/＝/g, "=");
   }
 
@@ -1551,6 +1668,7 @@
   }
 
   function showSummary() {
+    markSkippedQuestionsForReview();
     const total = state.quiz.length;
     const correct = state.quiz.reduce((count, question) => {
       return isStoredAnswerCorrect(question, state.answers.get(question.id)) ? count + 1 : count;
@@ -1562,6 +1680,20 @@
     els.summary.classList.remove("hidden");
     els.summaryText.textContent = `${total}問中 ${correct}問正解です。今日は${today.answered}問、正答率${todayAccuracy}%、連続${streak}日目です。間違えた単元は「できなかった問題」に回ります。`;
     renderWeakUnits();
+  }
+
+  function markSkippedQuestionsForReview() {
+    let changed = false;
+    state.quiz.forEach((question) => {
+      if (state.answers.has(question.id)) return;
+      const record = state.progress[question.id] || { correct: 0, wrong: 0 };
+      record.needsReview = true;
+      record.skipped = (record.skipped || 0) + 1;
+      record.lastAnsweredAt = new Date().toISOString();
+      state.progress[question.id] = record;
+      changed = true;
+    });
+    if (changed) saveProgress();
   }
 
   function renderWeakUnits() {

@@ -461,6 +461,28 @@ h3 {
   gap: 10px;
 }
 
+.system-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.system-field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px;
+  align-items: center;
+  color: var(--ink);
+  font-family: var(--math-font);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.system-input {
+  text-align: center;
+}
+
 .answer-input {
   min-height: 48px;
   width: 100%;
@@ -1275,6 +1297,7 @@ h3 {
   }
 
   .sidebar {
+    order: 2;
     position: static;
     height: auto;
     border-right: 0;
@@ -1282,7 +1305,24 @@ h3 {
   }
 
   .quiz-area {
-    padding: 20px;
+    order: 1;
+    padding: 20px 20px 92px;
+  }
+
+  .actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    margin: 16px -20px -20px;
+    padding: 10px 20px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(245, 247, 251, 0.94);
+    border-top: 1px solid var(--line);
+    backdrop-filter: blur(12px);
+  }
+
+  .actions button {
+    flex: 1;
+    min-width: 0;
   }
 
   .topbar {
@@ -1291,7 +1331,7 @@ h3 {
   }
 
   .dashboard {
-    grid-template-columns: 1fr;
+    display: none;
   }
 
   .choices {
@@ -1300,6 +1340,14 @@ h3 {
 
   .input-row {
     grid-template-columns: 1fr;
+  }
+
+  .system-input-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .system-input-row .primary-button {
+    grid-column: 1 / -1;
   }
 
   .scratch-token {

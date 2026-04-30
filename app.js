@@ -7,6 +7,7 @@
     index: 0,
     answers: new Map(),
     choiceOrders: new Map(),
+    manipulations: new Map(),
     progress: loadProgress(),
     stats: loadStats()
   };
@@ -299,6 +300,10 @@
       renderInputAnswer(question, currentAnswer);
       return;
     }
+    if (questionType(question) === "manipulate") {
+      renderManipulateAnswer(question, currentAnswer);
+      return;
+    }
     renderChoiceAnswer(question, currentAnswer);
   }
 
@@ -359,10 +364,10 @@
     if (answered) {
       feedback.classList.add(correct ? "correct" : "wrong");
       feedback.textContent = correct
-        ? "正解です。途中式も同じ流れで書けているか確認しましょう。"
+        ? "正解です。計算の流れも同じ形で追えているか確認しましょう。"
         : `不正解です。正解例: ${answerTextLabel(question)}`;
     } else {
-      feedback.textContent = "紙に途中式を書いてから、最後の答えだけ入力します。";
+      feedback.textContent = "選択肢を見ずに、答えを直接入れます。";
     }
 
     const submit = () => answerInputQuestion(question, input.value);
@@ -375,6 +380,265 @@
     wrapper.append(row, feedback);
     els.choices.appendChild(wrapper);
     if (!answered) input.focus({ preventScroll: true });
+  }
+
+  function renderManipulateAnswer(question, currentAnswer) {
+    els.choices.innerHTML = "";
+    const answered = currentAnswer !== undefined;
+    const draft = answered ? currentAnswer.draft : getManipulationDraft(question);
+    const correct = isStoredAnswerCorrect(question, currentAnswer);
+    const pieceMap = manipulationPieceMap(question);
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "manipulate-answer";
+
+    const bank = document.createElement("div");
+    bank.className = "token-bank";
+    const bankLabel = document.createElement("div");
+    bankLabel.className = "token-area-label";
+    bankLabel.textContent = "使うタイル";
+    const bankGrid = document.createElement("div");
+    bankGrid.className = "token-grid";
+    draft.bank.forEach((pieceId) => {
+      bankGrid.appendChild(createTokenChip(question, pieceMap, pieceId, answered, false));
+    });
+    bank.append(bankLabel, bankGrid);
+
+    const rows = document.createElement("div");
+    rows.className = "manipulate-rows";
+    question.rows.forEach((row, rowIndex) => {
+      const rowEl = document.createElement("div");
+      rowEl.className = "manipulate-row";
+      const label = document.createElement("div");
+      label.className = "token-area-label";
+      label.textContent = row.label;
+      const slots = document.createElement("div");
+      slots.className = "token-slots";
+      row.target.forEach((_targetPieceId, slotIndex) => {
+        const pieceId = draft.rows[rowIndex]?.[slotIndex] || null;
+        const slot = document.createElement("div");
+        slot.className = "token-slot";
+        slot.dataset.rowIndex = String(rowIndex);
+        slot.dataset.slotIndex = String(slotIndex);
+        slot.tabIndex = answered ? -1 : 0;
+        slot.setAttribute("role", "button");
+        slot.setAttribute("aria-label", `${row.label} ${slotIndex + 1}番目`);
+        if (pieceId) {
+          slot.classList.add("filled");
+          slot.appendChild(createTokenChip(question, pieceMap, pieceId, answered, draft.selectedPieceId === pieceId));
+        }
+        if (answered) {
+          slot.classList.add(pieceId === row.target[slotIndex] ? "correct" : "wrong");
+        } else {
+          slot.addEventListener("click", () => handleManipulationSlotClick(question, rowIndex, slotIndex));
+          slot.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              handleManipulationSlotClick(question, rowIndex, slotIndex);
+            }
+          });
+        }
+        slots.appendChild(slot);
+      });
+      rowEl.append(label, slots);
+      rows.appendChild(rowEl);
+    });
+
+    const actions = document.createElement("div");
+    actions.className = "manipulate-actions";
+    const reset = document.createElement("button");
+    reset.className = "ghost-button";
+    reset.type = "button";
+    reset.textContent = "最初に戻す";
+    reset.disabled = answered;
+    reset.addEventListener("click", () => resetManipulation(question));
+    const submit = document.createElement("button");
+    submit.className = "primary-button";
+    submit.type = "button";
+    submit.textContent = "判定";
+    submit.disabled = answered || !isManipulationComplete(question, draft);
+    submit.addEventListener("click", () => answerManipulationQuestion(question));
+    actions.append(reset, submit);
+
+    const feedback = document.createElement("p");
+    feedback.className = "input-feedback";
+    if (answered) {
+      feedback.classList.add(correct ? "correct" : "wrong");
+      feedback.textContent = correct
+        ? "正解です。式を同じ形で動かせています。"
+        : "まだ式の動かし方が崩れています。赤い場所を見直しましょう。";
+    } else {
+      feedback.textContent = draft.selectedPieceId
+        ? `${pieceMap.get(draft.selectedPieceId).text} を置く場所を選びます。`
+        : "タイルをドラッグ、またはタップしてから置く場所を選びます。";
+    }
+
+    wrapper.append(bank, rows, actions, feedback);
+    els.choices.appendChild(wrapper);
+  }
+
+  function createTokenChip(question, pieceMap, pieceId, answered, selected) {
+    const piece = pieceMap.get(pieceId);
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "token-chip";
+    chip.dataset.pieceId = pieceId;
+    chip.setAttribute("aria-label", `${piece.text} タイル`);
+    if (selected) chip.classList.add("selected");
+    chip.textContent = piece.text;
+    chip.disabled = answered;
+    chip.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (!answered) toggleManipulationSelection(question, pieceId);
+    });
+    chip.addEventListener("pointerdown", (event) => {
+      if (!answered) startTokenPointerDrag(event, question, pieceId);
+    });
+    return chip;
+  }
+
+  function getManipulationDraft(question) {
+    if (!state.manipulations.has(question.id)) {
+      state.manipulations.set(question.id, createManipulationDraft(question));
+    }
+    return state.manipulations.get(question.id);
+  }
+
+  function createManipulationDraft(question) {
+    return {
+      bank: question.pieces.map((piece) => piece.id),
+      rows: question.rows.map((row) => row.target.map(() => null)),
+      selectedPieceId: null
+    };
+  }
+
+  function manipulationPieceMap(question) {
+    return new Map(question.pieces.map((piece) => [piece.id, piece]));
+  }
+
+  function toggleManipulationSelection(question, pieceId) {
+    const draft = getManipulationDraft(question);
+    draft.selectedPieceId = draft.selectedPieceId === pieceId ? null : pieceId;
+    renderAnswerArea(question, undefined);
+  }
+
+  function handleManipulationSlotClick(question, rowIndex, slotIndex) {
+    const draft = getManipulationDraft(question);
+    const pieceId = draft.rows[rowIndex]?.[slotIndex];
+    if (!draft.selectedPieceId && pieceId) {
+      draft.selectedPieceId = pieceId;
+      renderAnswerArea(question, undefined);
+      return;
+    }
+    if (draft.selectedPieceId) {
+      placeSelectedPiece(question, rowIndex, slotIndex);
+    }
+  }
+
+  function placeSelectedPiece(question, rowIndex, slotIndex) {
+    const draft = getManipulationDraft(question);
+    const movingPieceId = draft.selectedPieceId;
+    if (!movingPieceId) return;
+
+    const source = findPieceLocation(draft, movingPieceId);
+    const replacedPieceId = draft.rows[rowIndex][slotIndex];
+    removePieceFromDraft(draft, movingPieceId);
+
+    if (replacedPieceId && replacedPieceId !== movingPieceId) {
+      if (source?.type === "slot") {
+        draft.rows[source.rowIndex][source.slotIndex] = replacedPieceId;
+      } else if (!draft.bank.includes(replacedPieceId)) {
+        draft.bank.push(replacedPieceId);
+      }
+    }
+
+    draft.rows[rowIndex][slotIndex] = movingPieceId;
+    draft.bank = draft.bank.filter((pieceId) => pieceId !== movingPieceId);
+    draft.selectedPieceId = null;
+    renderAnswerArea(question, undefined);
+  }
+
+  function findPieceLocation(draft, pieceId) {
+    const bankIndex = draft.bank.indexOf(pieceId);
+    if (bankIndex !== -1) return { type: "bank", index: bankIndex };
+    for (let rowIndex = 0; rowIndex < draft.rows.length; rowIndex += 1) {
+      const slotIndex = draft.rows[rowIndex].indexOf(pieceId);
+      if (slotIndex !== -1) return { type: "slot", rowIndex, slotIndex };
+    }
+    return null;
+  }
+
+  function removePieceFromDraft(draft, pieceId) {
+    draft.bank = draft.bank.filter((id) => id !== pieceId);
+    draft.rows.forEach((row) => {
+      row.forEach((id, index) => {
+        if (id === pieceId) row[index] = null;
+      });
+    });
+  }
+
+  function resetManipulation(question) {
+    state.manipulations.set(question.id, createManipulationDraft(question));
+    renderAnswerArea(question, undefined);
+  }
+
+  function cloneManipulationDraft(draft) {
+    return {
+      bank: draft.bank.slice(),
+      rows: draft.rows.map((row) => row.slice()),
+      selectedPieceId: null
+    };
+  }
+
+  function isManipulationComplete(question, draft) {
+    return question.rows.every((row, rowIndex) => {
+      return row.target.every((_pieceId, slotIndex) => Boolean(draft.rows[rowIndex]?.[slotIndex]));
+    });
+  }
+
+  function isManipulationCorrect(question, draft) {
+    return question.rows.every((row, rowIndex) => {
+      return row.target.every((pieceId, slotIndex) => draft.rows[rowIndex]?.[slotIndex] === pieceId);
+    });
+  }
+
+  function answerManipulationQuestion(question) {
+    if (state.answers.has(question.id)) return;
+    const draft = cloneManipulationDraft(getManipulationDraft(question));
+    const correct = isManipulationCorrect(question, draft);
+    state.answers.set(question.id, { type: "manipulate", draft, correct });
+    recordQuestionResult(question, correct);
+  }
+
+  function startTokenPointerDrag(event, question, pieceId) {
+    if (event.button !== undefined && event.button !== 0) return;
+    event.preventDefault();
+    const source = event.currentTarget;
+    const ghost = source.cloneNode(true);
+    ghost.classList.add("token-drag-ghost");
+    ghost.style.left = `${event.clientX}px`;
+    ghost.style.top = `${event.clientY}px`;
+    document.body.appendChild(ghost);
+
+    const move = (moveEvent) => {
+      ghost.style.left = `${moveEvent.clientX}px`;
+      ghost.style.top = `${moveEvent.clientY}px`;
+    };
+    const end = (endEvent) => {
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", end);
+      ghost.remove();
+      const target = document.elementFromPoint(endEvent.clientX, endEvent.clientY)?.closest(".token-slot");
+      const draft = getManipulationDraft(question);
+      draft.selectedPieceId = pieceId;
+      if (target && target.dataset.rowIndex !== undefined && target.dataset.slotIndex !== undefined) {
+        placeSelectedPiece(question, Number(target.dataset.rowIndex), Number(target.dataset.slotIndex));
+      } else {
+        renderAnswerArea(question, undefined);
+      }
+    };
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", end, { once: true });
   }
 
   function getChoiceOrder(question) {
@@ -460,6 +724,7 @@
     if (typeof storedAnswer === "object" && storedAnswer !== null) {
       if (typeof storedAnswer.correct === "boolean") return storedAnswer.correct;
       if (questionType(question) === "input") return isTextAnswerCorrect(question, storedAnswer.value || "");
+      if (questionType(question) === "manipulate") return isManipulationCorrect(question, storedAnswer.draft);
       return storedAnswer.choiceIndex === question.answer;
     }
     return storedAnswer === question.answer;

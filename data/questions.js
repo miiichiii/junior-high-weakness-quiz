@@ -612,15 +612,50 @@ window.QUIZ_QUESTIONS = [
     explanation: "両辺から2xを引くと 3x - 3 = 12。両辺に3を足して 3x = 15。よって x = 5 です。"
   },
   {
-    id: "math-eq-input-002",
-    type: "input",
+    id: "math-eq-manipulate-001",
+    type: "manipulate",
     subject: "数学",
     unit: "方程式",
     priority: "S",
-    stage: "直接入力",
-    prompt: "方程式 4x + 7 = 31 を解きなさい。",
-    answerText: ["x=6", "6"],
-    placeholder: "例: x=6",
+    stage: "手で動かす",
+    prompt: "タイルを動かして、方程式 4x + 7 = 31 を解きなさい。",
+    pieces: [
+      { id: "eq002-4x-a", text: "4x" },
+      { id: "eq002-plus7", text: "+7" },
+      { id: "eq002-minus7-a", text: "-7" },
+      { id: "eq002-eq-a", text: "=" },
+      { id: "eq002-31", text: "31" },
+      { id: "eq002-minus7-b", text: "-7" },
+      { id: "eq002-4x-b", text: "4x" },
+      { id: "eq002-eq-b", text: "=" },
+      { id: "eq002-24-a", text: "24" },
+      { id: "eq002-4x-c", text: "4x" },
+      { id: "eq002-div4-a", text: "÷4" },
+      { id: "eq002-eq-c", text: "=" },
+      { id: "eq002-24-b", text: "24" },
+      { id: "eq002-div4-b", text: "÷4" },
+      { id: "eq002-x", text: "x" },
+      { id: "eq002-eq-d", text: "=" },
+      { id: "eq002-6", text: "6" }
+    ],
+    rows: [
+      {
+        label: "1. 両辺から7を引く",
+        target: ["eq002-4x-a", "eq002-plus7", "eq002-minus7-a", "eq002-eq-a", "eq002-31", "eq002-minus7-b"]
+      },
+      {
+        label: "2. まとめる",
+        target: ["eq002-4x-b", "eq002-eq-b", "eq002-24-a"]
+      },
+      {
+        label: "3. 両辺を4で割る",
+        target: ["eq002-4x-c", "eq002-div4-a", "eq002-eq-c", "eq002-24-b", "eq002-div4-b"]
+      },
+      {
+        label: "4. 答え",
+        target: ["eq002-x", "eq002-eq-d", "eq002-6"]
+      }
+    ],
     explanation: "両辺から7を引いて 4x = 24。両辺を4で割ると x = 6 です。"
   },
   {

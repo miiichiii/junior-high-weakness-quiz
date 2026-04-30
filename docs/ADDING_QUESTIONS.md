@@ -42,6 +42,53 @@
 
 `answerText` は表記ゆれを配列で持てます。全角/半角、空白、大文字小文字は判定時にある程度吸収します。
 
+## 手で動かす問題
+
+式の文字や記号をタイルにして、ドラッグまたはタップで式変形を組み立てます。
+
+```js
+{
+  id: "math-eq-manipulate-001",
+  type: "manipulate",
+  subject: "数学",
+  unit: "方程式",
+  priority: "S",
+  stage: "手で動かす",
+  prompt: "タイルを動かして、方程式 4x + 7 = 31 を解きなさい。",
+  pieces: [
+    { id: "m001-4x-a", text: "4x" },
+    { id: "m001-plus7", text: "+7" },
+    { id: "m001-minus7-a", text: "-7" },
+    { id: "m001-eq-a", text: "=" },
+    { id: "m001-31", text: "31" },
+    { id: "m001-minus7-b", text: "-7" },
+    { id: "m001-4x-b", text: "4x" },
+    { id: "m001-eq-b", text: "=" },
+    { id: "m001-24", text: "24" },
+    { id: "m001-x", text: "x" },
+    { id: "m001-eq-c", text: "=" },
+    { id: "m001-6", text: "6" }
+  ],
+  rows: [
+    {
+      label: "1. 両辺から7を引く",
+      target: ["m001-4x-a", "m001-plus7", "m001-minus7-a", "m001-eq-a", "m001-31", "m001-minus7-b"]
+    },
+    {
+      label: "2. まとめる",
+      target: ["m001-4x-b", "m001-eq-b", "m001-24"]
+    },
+    {
+      label: "3. 答え",
+      target: ["m001-x", "m001-eq-c", "m001-6"]
+    }
+  ],
+  explanation: "両辺から7を引いて 4x = 24。両辺を4で割ると x = 6 です。"
+}
+```
+
+`pieces` の `id` は同じ文字でも必ず別IDにします。判定は `rows[].target` に並べたIDの順番と一致するかで行います。
+
 ## ミス発見問題
 
 途中式を見て、どこで崩れたかを選ばせます。形式は4択ですが、`type: "find-error"` を付けます。
@@ -66,7 +113,7 @@
 | field | 内容 |
 |---|---|
 | `id` | 重複しない問題ID。例: `math-eq-016` |
-| `type` | `choice`, `input`, `find-error`。省略時は `choice` |
+| `type` | `choice`, `input`, `manipulate`, `find-error`。省略時は `choice` |
 | `subject` | `数学`, `理科`, `社会`, `英語`, `国語` |
 | `unit` | 単元名。例: `方程式`, `1次関数`, `水溶液` |
 | `priority` | `S`, `A`, `B`, `C`。苦手対策は `S` か `A` |
@@ -76,6 +123,8 @@
 | `answer` | 正解の選択肢番号。`choices` の0番目なら `0` |
 | `answerText` | `input` 用の正解表記。文字列または配列 |
 | `placeholder` | `input` 用の入力例 |
+| `pieces` | `manipulate` 用のタイル一覧 |
+| `rows` | `manipulate` 用のステップと正解順 |
 | `explanation` | 解説 |
 
 ## 追加時のチェック
@@ -84,7 +133,7 @@
 - 個人情報、点数、順位、校舎名を入れない。
 - 正解位置はランダム化されるので、`choices` の並び自体は自然でよい。
 - 数学は「なぜその式になるか」を解説に入れる。
-- 計算ミス対策は `input` と `find-error` を優先する。
+- 計算ミス対策は `manipulate`, `input`, `find-error` を優先する。
 - 文章題は、まず `choice` で立式を選ばせ、慣れたら `input` で答えを入れさせる。
 - 追加後に次を実行する。
 

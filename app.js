@@ -577,7 +577,7 @@
       const fraction = document.createElement("div");
       fraction.className = "equation-fraction";
       const top = document.createElement("div");
-      top.textContent = formatTerm(term.coef, term.type, true);
+      appendFormattedTerm(top, term.coef, term.type, true);
       const bottom = document.createElement("div");
       bottom.textContent = term.divisor;
       fraction.append(top, bottom);
@@ -595,7 +595,7 @@
       const wrap = document.createElement("div");
       wrap.className = "equation-x2-wrap";
       const base = document.createElement("span");
-      base.textContent = term.coef === 1 ? "x" : `${term.coef}x`;
+      appendFormattedTerm(base, term.coef, "x", true);
       const exponent = document.createElement("button");
       exponent.type = "button";
       exponent.className = "equation-exponent draggable";
@@ -617,7 +617,7 @@
         && determineEquationPhase(equation.left, equation.right) === PHASE.DONE
         ? "±"
         : "");
-    button.textContent = formatTerm(term.coef, term.type, index === 0, false, displayPrefix);
+    appendFormattedTerm(button, term.coef, term.type, index === 0, displayPrefix);
     button.disabled = !canDrag;
     if (canDrag) {
       button.addEventListener("pointerdown", (event) => startEquationDrag(event, question, term, side));
@@ -636,7 +636,7 @@
     const variable = terms.find(isVariableTerm);
     const suffix = document.createElement("span");
     suffix.className = "equation-var-suffix";
-    suffix.textContent = variable?.type === "x2" ? "x²" : "x";
+    appendVariable(suffix, variable?.type === "x2" ? "x2" : "x");
     return suffix;
   }
 
@@ -799,6 +799,50 @@
     if (isFirst && coef >= 0) return value;
     if (isFirst && coef < 0) return `-${value}`;
     return `${sign} ${value}`;
+  }
+
+  function appendFormattedTerm(parent, coef, type, isFirst, prefix = "") {
+    const sign = coef >= 0 ? "+" : "-";
+    const absCoef = Math.abs(coef);
+    if (prefix) {
+      const prefixSpan = document.createElement("span");
+      prefixSpan.className = "math-prefix";
+      prefixSpan.textContent = prefix;
+      parent.appendChild(prefixSpan);
+    }
+    if (!(isFirst && coef >= 0) && !prefix) {
+      const signSpan = document.createElement("span");
+      signSpan.className = "math-sign";
+      signSpan.textContent = isFirst && coef < 0 ? "-" : `${sign} `;
+      parent.appendChild(signSpan);
+    }
+    if (type === "const") {
+      const number = document.createElement("span");
+      number.className = "math-number";
+      number.textContent = String(absCoef);
+      parent.appendChild(number);
+      return;
+    }
+    if (absCoef !== 1) {
+      const coefficient = document.createElement("span");
+      coefficient.className = "math-coefficient";
+      coefficient.textContent = String(absCoef);
+      parent.appendChild(coefficient);
+    }
+    appendVariable(parent, type);
+  }
+
+  function appendVariable(parent, type) {
+    const variable = document.createElement("span");
+    variable.className = "math-var";
+    variable.textContent = type === "y" ? "y" : "x";
+    parent.appendChild(variable);
+    if (type === "x2") {
+      const exponent = document.createElement("sup");
+      exponent.className = "math-power";
+      exponent.textContent = "2";
+      parent.appendChild(exponent);
+    }
   }
 
   function uniqueEquationId(prefix) {

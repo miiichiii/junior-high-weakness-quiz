@@ -7,9 +7,21 @@
     index: 0,
     answers: new Map(),
     choiceOrders: new Map(),
-    manipulations: new Map(),
+    equationStates: new Map(),
     progress: loadProgress(),
     stats: loadStats()
+  };
+
+  const PHASE = {
+    MOVE_VAR: "move_var",
+    CALC_VAR: "calc_var",
+    MOVE_CONST: "move_constant",
+    CALC_CONST: "calc_constant",
+    DIVIDE: "divide",
+    CALC_DIVIDE: "calc_divide",
+    SQUARE_ROOT: "square_root",
+    CALC_SQRT: "calc_sqrt",
+    DONE: "done"
   };
 
   const subjects = ["all", "数学", "理科", "社会", "英語", "国語"];
@@ -385,237 +397,302 @@
   function renderManipulateAnswer(question, currentAnswer) {
     els.choices.innerHTML = "";
     const answered = currentAnswer !== undefined;
-    const draft = answered ? currentAnswer.draft : getManipulationDraft(question);
-    const correct = isStoredAnswerCorrect(question, currentAnswer);
-    const pieceMap = manipulationPieceMap(question);
+    const equation = getEquationState(question, currentAnswer);
+    const phase = determineEquationPhase(equation.left, equation.right);
+    const correct = phase === PHASE.DONE || isStoredAnswerCorrect(question, currentAnswer);
 
     const wrapper = document.createElement("div");
-    wrapper.className = "manipulate-answer";
+    wrapper.className = "equation-lab";
 
-    const bank = document.createElement("div");
-    bank.className = "token-bank";
-    const bankLabel = document.createElement("div");
-    bankLabel.className = "token-area-label";
-    bankLabel.textContent = "使うタイル";
-    const bankGrid = document.createElement("div");
-    bankGrid.className = "token-grid";
-    draft.bank.forEach((pieceId) => {
-      bankGrid.appendChild(createTokenChip(question, pieceMap, pieceId, answered, false));
-    });
-    bank.append(bankLabel, bankGrid);
+    const guide = document.createElement("div");
+    guide.className = phase === PHASE.DONE ? "equation-guide done" : "equation-guide";
+    guide.textContent = equationGuidance(phase);
 
-    const rows = document.createElement("div");
-    rows.className = "manipulate-rows";
-    question.rows.forEach((row, rowIndex) => {
-      const rowEl = document.createElement("div");
-      rowEl.className = "manipulate-row";
-      const label = document.createElement("div");
-      label.className = "token-area-label";
-      label.textContent = row.label;
-      const slots = document.createElement("div");
-      slots.className = "token-slots";
-      row.target.forEach((_targetPieceId, slotIndex) => {
-        const pieceId = draft.rows[rowIndex]?.[slotIndex] || null;
-        const slot = document.createElement("div");
-        slot.className = "token-slot";
-        slot.dataset.rowIndex = String(rowIndex);
-        slot.dataset.slotIndex = String(slotIndex);
-        slot.tabIndex = answered ? -1 : 0;
-        slot.setAttribute("role", "button");
-        slot.setAttribute("aria-label", `${row.label} ${slotIndex + 1}番目`);
-        if (pieceId) {
-          slot.classList.add("filled");
-          slot.appendChild(createTokenChip(question, pieceMap, pieceId, answered, draft.selectedPieceId === pieceId));
-        }
-        if (answered) {
-          slot.classList.add(pieceId === row.target[slotIndex] ? "correct" : "wrong");
-        } else {
-          slot.addEventListener("click", () => handleManipulationSlotClick(question, rowIndex, slotIndex));
-          slot.addEventListener("keydown", (event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              handleManipulationSlotClick(question, rowIndex, slotIndex);
-            }
-          });
-        }
-        slots.appendChild(slot);
-      });
-      rowEl.append(label, slots);
-      rows.appendChild(rowEl);
+    const notebook = document.createElement("div");
+    notebook.className = "equation-notebook";
+
+    const history = document.createElement("div");
+    history.className = "equation-history";
+    equation.history.forEach((line) => {
+      const item = document.createElement("div");
+      item.textContent = line;
+      history.appendChild(item);
     });
+
+    const current = document.createElement("div");
+    current.className = phase === PHASE.DONE ? "equation-current done" : "equation-current";
+
+    const left = document.createElement("div");
+    left.className = "equation-side left";
+    left.dataset.side = "left";
+    left.appendChild(renderEquationSide(question, equation, "left", phase, answered));
+
+    const equals = document.createElement("div");
+    equals.className = "equation-equals";
+    equals.textContent = "=";
+
+    const right = document.createElement("div");
+    right.className = "equation-side right";
+    right.dataset.side = "right";
+    right.appendChild(renderEquationSide(question, equation, "right", phase, answered));
+
+    current.append(left, equals, right);
+    notebook.append(history, current);
 
     const actions = document.createElement("div");
-    actions.className = "manipulate-actions";
+    actions.className = "equation-actions";
     const reset = document.createElement("button");
     reset.className = "ghost-button";
     reset.type = "button";
     reset.textContent = "最初に戻す";
     reset.disabled = answered;
-    reset.addEventListener("click", () => resetManipulation(question));
-    const submit = document.createElement("button");
-    submit.className = "primary-button";
-    submit.type = "button";
-    submit.textContent = "判定";
-    submit.disabled = answered || !isManipulationComplete(question, draft);
-    submit.addEventListener("click", () => answerManipulationQuestion(question));
-    actions.append(reset, submit);
+    reset.addEventListener("click", () => resetEquation(question));
+    actions.appendChild(reset);
 
     const feedback = document.createElement("p");
     feedback.className = "input-feedback";
-    if (answered) {
+    if (answered || phase === PHASE.DONE) {
       feedback.classList.add(correct ? "correct" : "wrong");
       feedback.textContent = correct
-        ? "正解です。式を同じ形で動かせています。"
-        : "まだ式の動かし方が崩れています。赤い場所を見直しましょう。";
+        ? "正解です。式を手で動かして最後まで解けています。"
+        : "まだ式の動かし方が崩れています。";
     } else {
-      feedback.textContent = draft.selectedPieceId
-        ? `${pieceMap.get(draft.selectedPieceId).text} を置く場所を選びます。`
-        : "タイルをドラッグ、またはタップしてから置く場所を選びます。";
+      feedback.textContent = "動かせる項だけ色が付きます。計算フェーズでは答えを入力します。";
     }
 
-    wrapper.append(bank, rows, actions, feedback);
+    wrapper.append(guide, notebook, actions, feedback);
     els.choices.appendChild(wrapper);
   }
 
-  function createTokenChip(question, pieceMap, pieceId, answered, selected) {
-    const piece = pieceMap.get(pieceId);
-    const chip = document.createElement("button");
-    chip.type = "button";
-    chip.className = "token-chip";
-    chip.dataset.pieceId = pieceId;
-    chip.setAttribute("aria-label", `${piece.text} タイル`);
-    if (selected) chip.classList.add("selected");
-    chip.textContent = piece.text;
-    chip.disabled = answered;
-    chip.addEventListener("click", (event) => {
-      event.stopPropagation();
-      if (!answered) toggleManipulationSelection(question, pieceId);
-    });
-    chip.addEventListener("pointerdown", (event) => {
-      if (!answered) startTokenPointerDrag(event, question, pieceId);
-    });
-    return chip;
-  }
-
-  function getManipulationDraft(question) {
-    if (!state.manipulations.has(question.id)) {
-      state.manipulations.set(question.id, createManipulationDraft(question));
+  function getEquationState(question, currentAnswer) {
+    if (currentAnswer?.equation) return currentAnswer.equation;
+    if (!state.equationStates.has(question.id)) {
+      state.equationStates.set(question.id, createEquationState(question));
     }
-    return state.manipulations.get(question.id);
+    return state.equationStates.get(question.id);
   }
 
-  function createManipulationDraft(question) {
+  function createEquationState(question) {
     return {
-      bank: question.pieces.map((piece) => piece.id),
-      rows: question.rows.map((row) => row.target.map(() => null)),
-      selectedPieceId: null
+      left: cloneTerms(question.left || []),
+      right: cloneTerms(question.right || []),
+      history: [],
+      drag: null
     };
   }
 
-  function manipulationPieceMap(question) {
-    return new Map(question.pieces.map((piece) => [piece.id, piece]));
+  function cloneTerms(terms) {
+    return terms.map((term) => ({ ...term }));
   }
 
-  function toggleManipulationSelection(question, pieceId) {
-    const draft = getManipulationDraft(question);
-    draft.selectedPieceId = draft.selectedPieceId === pieceId ? null : pieceId;
+  function resetEquation(question) {
+    state.equationStates.set(question.id, createEquationState(question));
     renderAnswerArea(question, undefined);
   }
 
-  function handleManipulationSlotClick(question, rowIndex, slotIndex) {
-    const draft = getManipulationDraft(question);
-    const pieceId = draft.rows[rowIndex]?.[slotIndex];
-    if (!draft.selectedPieceId && pieceId) {
-      draft.selectedPieceId = pieceId;
-      renderAnswerArea(question, undefined);
-      return;
-    }
-    if (draft.selectedPieceId) {
-      placeSelectedPiece(question, rowIndex, slotIndex);
+  function determineEquationPhase(left, right) {
+    if (right.some((term) => term.divisor !== undefined)) return PHASE.CALC_DIVIDE;
+    if (right.some((term) => term.isSqrt)) return PHASE.CALC_SQRT;
+    if (right.some(isVariableTerm)) return PHASE.MOVE_VAR;
+    if (left.filter(isVariableTerm).length > 1) return PHASE.CALC_VAR;
+    if (left.some((term) => term.type === "const")) return PHASE.MOVE_CONST;
+    if (right.filter((term) => term.type === "const").length > 1) return PHASE.CALC_CONST;
+
+    const variable = left.find(isVariableTerm);
+    if (variable && variable.coef !== 1) return PHASE.DIVIDE;
+    if (variable && variable.type === "x2" && variable.coef === 1) return PHASE.SQUARE_ROOT;
+    return PHASE.DONE;
+  }
+
+  function isVariableTerm(term) {
+    return term.type === "x" || term.type === "x2";
+  }
+
+  function equationGuidance(phase) {
+    switch (phase) {
+      case PHASE.MOVE_VAR:
+        return "右辺のxを左辺にドラッグして集めよう";
+      case PHASE.CALC_VAR:
+        return "左辺のxを計算してまとめよう";
+      case PHASE.MOVE_CONST:
+        return "左辺の数字を右辺にドラッグして移項しよう";
+      case PHASE.CALC_CONST:
+        return "右辺の数字を計算してまとめよう";
+      case PHASE.DIVIDE:
+        return "xの前の数字を右辺にドラッグして割り算しよう";
+      case PHASE.CALC_DIVIDE:
+        return "割り算の答えを入力しよう";
+      case PHASE.SQUARE_ROOT:
+        return "x²の2を右辺にドラッグして平方根をとろう";
+      case PHASE.CALC_SQRT:
+        return "平方根の答えを入力しよう";
+      case PHASE.DONE:
+        return "正解。方程式が解けました";
+      default:
+        return "";
     }
   }
 
-  function placeSelectedPiece(question, rowIndex, slotIndex) {
-    const draft = getManipulationDraft(question);
-    const movingPieceId = draft.selectedPieceId;
-    if (!movingPieceId) return;
+  function renderEquationSide(question, equation, side, phase, answered) {
+    const terms = side === "left" ? equation.left : equation.right;
+    const container = document.createElement("div");
+    container.className = "equation-terms";
 
-    const source = findPieceLocation(draft, movingPieceId);
-    const replacedPieceId = draft.rows[rowIndex][slotIndex];
-    removePieceFromDraft(draft, movingPieceId);
+    if (phase === PHASE.CALC_VAR && side === "left") {
+      container.append(renderEquationInput(question, expectedEquationValue(equation, phase), phase), renderVariableSuffix(equation.left));
+      return container;
+    }
+    if ((phase === PHASE.CALC_CONST || phase === PHASE.CALC_DIVIDE) && side === "right") {
+      container.appendChild(renderEquationInput(question, expectedEquationValue(equation, phase), phase));
+      return container;
+    }
+    if (phase === PHASE.CALC_SQRT && side === "right") {
+      const prefix = document.createElement("span");
+      prefix.className = "equation-plus-minus";
+      prefix.textContent = "±";
+      container.append(prefix, renderEquationInput(question, expectedEquationValue(equation, phase), phase));
+      return container;
+    }
 
-    if (replacedPieceId && replacedPieceId !== movingPieceId) {
-      if (source?.type === "slot") {
-        draft.rows[source.rowIndex][source.slotIndex] = replacedPieceId;
-      } else if (!draft.bank.includes(replacedPieceId)) {
-        draft.bank.push(replacedPieceId);
+    terms.forEach((term, index) => {
+      container.appendChild(renderEquationTerm(question, equation, term, index, side, phase, answered));
+    });
+    if (terms.length === 0) {
+      const zero = document.createElement("span");
+      zero.className = "equation-term static";
+      zero.textContent = "0";
+      container.appendChild(zero);
+    }
+    return container;
+  }
+
+  function renderEquationTerm(question, equation, term, index, side, phase, answered) {
+    if (term.divisor !== undefined) {
+      const fraction = document.createElement("div");
+      fraction.className = "equation-fraction";
+      const top = document.createElement("div");
+      top.textContent = formatTerm(term.coef, term.type, true);
+      const bottom = document.createElement("div");
+      bottom.textContent = term.divisor;
+      fraction.append(top, bottom);
+      return fraction;
+    }
+
+    if (term.isSqrt) {
+      const sqrt = document.createElement("span");
+      sqrt.className = "equation-term sqrt";
+      sqrt.textContent = `±√${Math.abs(term.coef)}`;
+      return sqrt;
+    }
+
+    if (phase === PHASE.SQUARE_ROOT && side === "left" && term.type === "x2") {
+      const wrap = document.createElement("div");
+      wrap.className = "equation-x2-wrap";
+      const base = document.createElement("span");
+      base.textContent = term.coef === 1 ? "x" : `${term.coef}x`;
+      const exponent = document.createElement("button");
+      exponent.type = "button";
+      exponent.className = "equation-exponent draggable";
+      exponent.textContent = "2";
+      exponent.disabled = answered;
+      exponent.addEventListener("pointerdown", (event) => startEquationDrag(event, question, { ...term, isExponent: true }, side));
+      wrap.append(base, exponent);
+      return wrap;
+    }
+
+    const canDrag = !answered && canDragEquationTerm(term, side, phase);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = canDrag ? "equation-term draggable" : "equation-term static";
+    const displayPrefix = term.prefix
+      || (side === "right"
+        && term.type === "const"
+        && (question.left || []).some((sourceTerm) => sourceTerm.type === "x2")
+        && determineEquationPhase(equation.left, equation.right) === PHASE.DONE
+        ? "±"
+        : "");
+    button.textContent = formatTerm(term.coef, term.type, index === 0, false, displayPrefix);
+    button.disabled = !canDrag;
+    if (canDrag) {
+      button.addEventListener("pointerdown", (event) => startEquationDrag(event, question, term, side));
+    }
+    return button;
+  }
+
+  function canDragEquationTerm(term, side, phase) {
+    if (phase === PHASE.MOVE_VAR) return side === "right" && isVariableTerm(term);
+    if (phase === PHASE.MOVE_CONST) return side === "left" && term.type === "const";
+    if (phase === PHASE.DIVIDE) return side === "left" && isVariableTerm(term);
+    return false;
+  }
+
+  function renderVariableSuffix(terms) {
+    const variable = terms.find(isVariableTerm);
+    const suffix = document.createElement("span");
+    suffix.className = "equation-var-suffix";
+    suffix.textContent = variable?.type === "x2" ? "x²" : "x";
+    return suffix;
+  }
+
+  function renderEquationInput(question, expected, phase) {
+    const form = document.createElement("form");
+    form.className = "equation-calc";
+    const input = document.createElement("input");
+    input.className = "equation-calc-input";
+    input.type = "text";
+    input.inputMode = "numeric";
+    input.placeholder = "?";
+    const button = document.createElement("button");
+    button.type = "submit";
+    button.className = "primary-button";
+    button.textContent = "確定";
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const value = Number(input.value.trim());
+      if (Number.isNaN(value)) return;
+      if (value === expected) {
+        handleEquationCalculation(question, phase, value);
+        return;
       }
+      form.classList.remove("shake");
+      window.requestAnimationFrame(() => form.classList.add("shake"));
+    });
+    form.append(input, button);
+    setTimeout(() => input.focus({ preventScroll: true }), 0);
+    return form;
+  }
+
+  function expectedEquationValue(equation, phase) {
+    if (phase === PHASE.CALC_VAR) return equation.left.filter(isVariableTerm).reduce((sum, term) => sum + term.coef, 0);
+    if (phase === PHASE.CALC_CONST) return equation.right.filter((term) => term.type === "const").reduce((sum, term) => sum + term.coef, 0);
+    if (phase === PHASE.CALC_DIVIDE) return equation.right[0].coef / equation.right[0].divisor;
+    if (phase === PHASE.CALC_SQRT) return Math.sqrt(equation.right[0].coef);
+    return 0;
+  }
+
+  function handleEquationCalculation(question, phase, value) {
+    const equation = getEquationState(question);
+    saveEquationHistory(equation);
+    if (phase === PHASE.CALC_VAR) {
+      const variable = equation.left.find(isVariableTerm);
+      equation.left = [{ id: uniqueEquationId("l"), coef: value, type: variable.type }];
+    } else if (phase === PHASE.CALC_CONST || phase === PHASE.CALC_DIVIDE) {
+      equation.right = [{ id: uniqueEquationId("r"), coef: value, type: "const" }];
+    } else if (phase === PHASE.CALC_SQRT) {
+      equation.right = [{ id: uniqueEquationId("r"), coef: value, type: "const", prefix: "±" }];
     }
-
-    draft.rows[rowIndex][slotIndex] = movingPieceId;
-    draft.bank = draft.bank.filter((pieceId) => pieceId !== movingPieceId);
-    draft.selectedPieceId = null;
-    renderAnswerArea(question, undefined);
+    finishEquationIfDone(question, equation);
+    renderQuestion();
   }
 
-  function findPieceLocation(draft, pieceId) {
-    const bankIndex = draft.bank.indexOf(pieceId);
-    if (bankIndex !== -1) return { type: "bank", index: bankIndex };
-    for (let rowIndex = 0; rowIndex < draft.rows.length; rowIndex += 1) {
-      const slotIndex = draft.rows[rowIndex].indexOf(pieceId);
-      if (slotIndex !== -1) return { type: "slot", rowIndex, slotIndex };
-    }
-    return null;
-  }
-
-  function removePieceFromDraft(draft, pieceId) {
-    draft.bank = draft.bank.filter((id) => id !== pieceId);
-    draft.rows.forEach((row) => {
-      row.forEach((id, index) => {
-        if (id === pieceId) row[index] = null;
-      });
-    });
-  }
-
-  function resetManipulation(question) {
-    state.manipulations.set(question.id, createManipulationDraft(question));
-    renderAnswerArea(question, undefined);
-  }
-
-  function cloneManipulationDraft(draft) {
-    return {
-      bank: draft.bank.slice(),
-      rows: draft.rows.map((row) => row.slice()),
-      selectedPieceId: null
-    };
-  }
-
-  function isManipulationComplete(question, draft) {
-    return question.rows.every((row, rowIndex) => {
-      return row.target.every((_pieceId, slotIndex) => Boolean(draft.rows[rowIndex]?.[slotIndex]));
-    });
-  }
-
-  function isManipulationCorrect(question, draft) {
-    return question.rows.every((row, rowIndex) => {
-      return row.target.every((pieceId, slotIndex) => draft.rows[rowIndex]?.[slotIndex] === pieceId);
-    });
-  }
-
-  function answerManipulationQuestion(question) {
-    if (state.answers.has(question.id)) return;
-    const draft = cloneManipulationDraft(getManipulationDraft(question));
-    const correct = isManipulationCorrect(question, draft);
-    state.answers.set(question.id, { type: "manipulate", draft, correct });
-    recordQuestionResult(question, correct);
-  }
-
-  function startTokenPointerDrag(event, question, pieceId) {
+  function startEquationDrag(event, question, term, side) {
     if (event.button !== undefined && event.button !== 0) return;
     event.preventDefault();
-    const source = event.currentTarget;
-    const ghost = source.cloneNode(true);
-    ghost.classList.add("token-drag-ghost");
+    const equation = getEquationState(question);
+    equation.drag = { term, side };
+    const ghost = document.createElement("div");
+    ghost.className = "equation-drag-ghost";
+    ghost.textContent = term.isExponent ? "²" : formatTerm(term.coef, term.type, true, true);
     ghost.style.left = `${event.clientX}px`;
     ghost.style.top = `${event.clientY}px`;
     document.body.appendChild(ghost);
@@ -628,17 +705,95 @@
       document.removeEventListener("pointermove", move);
       document.removeEventListener("pointerup", end);
       ghost.remove();
-      const target = document.elementFromPoint(endEvent.clientX, endEvent.clientY)?.closest(".token-slot");
-      const draft = getManipulationDraft(question);
-      draft.selectedPieceId = pieceId;
-      if (target && target.dataset.rowIndex !== undefined && target.dataset.slotIndex !== undefined) {
-        placeSelectedPiece(question, Number(target.dataset.rowIndex), Number(target.dataset.slotIndex));
-      } else {
-        renderAnswerArea(question, undefined);
-      }
+      const targetSide = document.elementFromPoint(endEvent.clientX, endEvent.clientY)?.closest(".equation-side")?.dataset.side
+        || (endEvent.clientX > window.innerWidth / 2 ? "right" : "left");
+      handleEquationDrop(question, targetSide);
     };
     document.addEventListener("pointermove", move);
     document.addEventListener("pointerup", end, { once: true });
+  }
+
+  function handleEquationDrop(question, targetSide) {
+    const equation = getEquationState(question);
+    const phase = determineEquationPhase(equation.left, equation.right);
+    const drag = equation.drag;
+    equation.drag = null;
+    if (!drag || !targetSide) {
+      renderQuestion();
+      return;
+    }
+
+    if (phase === PHASE.MOVE_VAR && drag.side === "right" && targetSide === "left" && isVariableTerm(drag.term)) {
+      saveEquationHistory(equation);
+      equation.right = equation.right.filter((term) => term.id !== drag.term.id);
+      equation.left.push({ id: uniqueEquationId("l"), coef: drag.term.coef * -1, type: drag.term.type });
+    } else if (phase === PHASE.MOVE_CONST && drag.side === "left" && targetSide === "right" && drag.term.type === "const") {
+      saveEquationHistory(equation);
+      equation.left = equation.left.filter((term) => term.id !== drag.term.id);
+      equation.right.push({ id: uniqueEquationId("r"), coef: drag.term.coef * -1, type: "const" });
+    } else if (phase === PHASE.DIVIDE && drag.side === "left" && targetSide === "right" && isVariableTerm(drag.term)) {
+      saveEquationHistory(equation);
+      equation.left = [{ id: uniqueEquationId("l"), coef: 1, type: drag.term.type }];
+      equation.right = [{ ...equation.right[0], divisor: drag.term.coef }];
+    } else if (phase === PHASE.SQUARE_ROOT && drag.side === "left" && targetSide === "right" && drag.term.isExponent) {
+      saveEquationHistory(equation);
+      equation.left = [{ id: uniqueEquationId("l"), coef: 1, type: "x" }];
+      equation.right = [{ ...equation.right[0], isSqrt: true }];
+    }
+
+    finishEquationIfDone(question, equation);
+    renderQuestion();
+  }
+
+  function finishEquationIfDone(question, equation) {
+    if (state.answers.has(question.id)) return;
+    if (determineEquationPhase(equation.left, equation.right) !== PHASE.DONE) return;
+    if ((question.left || []).some((term) => term.type === "x2") && equation.right.length === 1 && equation.right[0].type === "const") {
+      equation.right[0].prefix = "±";
+    }
+    state.answers.set(question.id, { type: "manipulate", equation: cloneEquationState(equation), correct: true });
+    recordQuestionResult(question, true);
+  }
+
+  function cloneEquationState(equation) {
+    return {
+      left: cloneTerms(equation.left),
+      right: cloneTerms(equation.right),
+      history: equation.history.slice(),
+      drag: null
+    };
+  }
+
+  function saveEquationHistory(equation) {
+    equation.history.push(equationToString(equation.left, equation.right));
+  }
+
+  function equationToString(left, right) {
+    const leftText = left.map((term, index) => formatTerm(term.coef, term.type, index === 0)).join(" ") || "0";
+    const rightText = right.map((term, index) => {
+      if (term.divisor !== undefined) return `${formatTerm(term.coef, term.type, index === 0)} / ${term.divisor}`;
+      if (term.isSqrt) return `±√${Math.abs(term.coef)}`;
+      return formatTerm(term.coef, term.type, index === 0, false, term.prefix);
+    }).join(" ") || "0";
+    return `${leftText} = ${rightText}`;
+  }
+
+  function formatTerm(coef, type, isFirst, isDragGhost = false, prefix = "") {
+    const sign = coef >= 0 ? "+" : "-";
+    const absCoef = Math.abs(coef);
+    let value = "";
+    if (type === "const") value = String(absCoef);
+    if (type === "x") value = absCoef === 1 ? "x" : `${absCoef}x`;
+    if (type === "x2") value = absCoef === 1 ? "x²" : `${absCoef}x²`;
+    if (prefix) value = `${prefix}${value}`;
+    if (isDragGhost) return `${sign} ${value}`;
+    if (isFirst && coef >= 0) return value;
+    if (isFirst && coef < 0) return `-${value}`;
+    return `${sign} ${value}`;
+  }
+
+  function uniqueEquationId(prefix) {
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   }
 
   function getChoiceOrder(question) {
@@ -724,7 +879,7 @@
     if (typeof storedAnswer === "object" && storedAnswer !== null) {
       if (typeof storedAnswer.correct === "boolean") return storedAnswer.correct;
       if (questionType(question) === "input") return isTextAnswerCorrect(question, storedAnswer.value || "");
-      if (questionType(question) === "manipulate") return isManipulationCorrect(question, storedAnswer.draft);
+      if (questionType(question) === "manipulate") return storedAnswer.correct === true;
       return storedAnswer.choiceIndex === question.answer;
     }
     return storedAnswer === question.answer;

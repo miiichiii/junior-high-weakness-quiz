@@ -44,7 +44,7 @@
 
 ## 手で動かす問題
 
-式の文字や記号をタイルにして、ドラッグまたはタップで式変形を組み立てます。
+式を左辺/右辺の項データとして持たせます。アプリ側がフェーズを自動判定し、移項、まとめ計算、係数で割る、平方根を順に出します。
 
 ```js
 {
@@ -54,40 +54,14 @@
   unit: "方程式",
   priority: "S",
   stage: "手で動かす",
-  prompt: "タイルを動かして、方程式 4x + 7 = 31 を解きなさい。",
-  pieces: [
-    { id: "m001-4x-a", text: "4x" },
-    { id: "m001-plus7", text: "+7" },
-    { id: "m001-minus7-a", text: "-7" },
-    { id: "m001-eq-a", text: "=" },
-    { id: "m001-31", text: "31" },
-    { id: "m001-minus7-b", text: "-7" },
-    { id: "m001-4x-b", text: "4x" },
-    { id: "m001-eq-b", text: "=" },
-    { id: "m001-24", text: "24" },
-    { id: "m001-x", text: "x" },
-    { id: "m001-eq-c", text: "=" },
-    { id: "m001-6", text: "6" }
-  ],
-  rows: [
-    {
-      label: "1. 両辺から7を引く",
-      target: ["m001-4x-a", "m001-plus7", "m001-minus7-a", "m001-eq-a", "m001-31", "m001-minus7-b"]
-    },
-    {
-      label: "2. まとめる",
-      target: ["m001-4x-b", "m001-eq-b", "m001-24"]
-    },
-    {
-      label: "3. 答え",
-      target: ["m001-x", "m001-eq-c", "m001-6"]
-    }
-  ],
+  prompt: "式を動かして、方程式 4x + 7 = 31 を解きなさい。",
+  left: [{ id: "l1", coef: 4, type: "x" }, { id: "l2", coef: 7, type: "const" }],
+  right: [{ id: "r1", coef: 31, type: "const" }],
   explanation: "両辺から7を引いて 4x = 24。両辺を4で割ると x = 6 です。"
 }
 ```
 
-`pieces` の `id` は同じ文字でも必ず別IDにします。判定は `rows[].target` に並べたIDの順番と一致するかで行います。
+`type` は `const`, `x`, `x2` が使えます。`coef` は符号つき係数です。各項の `id` は同一問題内で重複させません。
 
 ## ミス発見問題
 
@@ -123,8 +97,8 @@
 | `answer` | 正解の選択肢番号。`choices` の0番目なら `0` |
 | `answerText` | `input` 用の正解表記。文字列または配列 |
 | `placeholder` | `input` 用の入力例 |
-| `pieces` | `manipulate` 用のタイル一覧 |
-| `rows` | `manipulate` 用のステップと正解順 |
+| `left` | `manipulate` 用の左辺の項配列 |
+| `right` | `manipulate` 用の右辺の項配列 |
 | `explanation` | 解説 |
 
 ## 追加時のチェック

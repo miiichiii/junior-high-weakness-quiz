@@ -618,45 +618,46 @@ window.QUIZ_QUESTIONS = [
     unit: "方程式",
     priority: "S",
     stage: "手で動かす",
-    prompt: "タイルを動かして、方程式 4x + 7 = 31 を解きなさい。",
-    pieces: [
-      { id: "eq002-4x-a", text: "4x" },
-      { id: "eq002-plus7", text: "+7" },
-      { id: "eq002-minus7-a", text: "-7" },
-      { id: "eq002-eq-a", text: "=" },
-      { id: "eq002-31", text: "31" },
-      { id: "eq002-minus7-b", text: "-7" },
-      { id: "eq002-4x-b", text: "4x" },
-      { id: "eq002-eq-b", text: "=" },
-      { id: "eq002-24-a", text: "24" },
-      { id: "eq002-4x-c", text: "4x" },
-      { id: "eq002-div4-a", text: "÷4" },
-      { id: "eq002-eq-c", text: "=" },
-      { id: "eq002-24-b", text: "24" },
-      { id: "eq002-div4-b", text: "÷4" },
-      { id: "eq002-x", text: "x" },
-      { id: "eq002-eq-d", text: "=" },
-      { id: "eq002-6", text: "6" }
-    ],
-    rows: [
-      {
-        label: "1. 両辺から7を引く",
-        target: ["eq002-4x-a", "eq002-plus7", "eq002-minus7-a", "eq002-eq-a", "eq002-31", "eq002-minus7-b"]
-      },
-      {
-        label: "2. まとめる",
-        target: ["eq002-4x-b", "eq002-eq-b", "eq002-24-a"]
-      },
-      {
-        label: "3. 両辺を4で割る",
-        target: ["eq002-4x-c", "eq002-div4-a", "eq002-eq-c", "eq002-24-b", "eq002-div4-b"]
-      },
-      {
-        label: "4. 答え",
-        target: ["eq002-x", "eq002-eq-d", "eq002-6"]
-      }
-    ],
+    prompt: "式を動かして、方程式 4x + 7 = 31 を解きなさい。",
+    left: [{ id: "l1", coef: 4, type: "x" }, { id: "l2", coef: 7, type: "const" }],
+    right: [{ id: "r1", coef: 31, type: "const" }],
     explanation: "両辺から7を引いて 4x = 24。両辺を4で割ると x = 6 です。"
+  },
+  {
+    id: "math-eq-manipulate-002",
+    type: "manipulate",
+    subject: "数学",
+    unit: "方程式",
+    priority: "S",
+    stage: "手で動かす",
+    prompt: "式を動かして、方程式 5x - 3 = 2x + 9 を解きなさい。",
+    left: [{ id: "l1", coef: 5, type: "x" }, { id: "l2", coef: -3, type: "const" }],
+    right: [{ id: "r1", coef: 2, type: "x" }, { id: "r2", coef: 9, type: "const" }],
+    explanation: "右辺の2xを左辺へ移すと 5x - 2x - 3 = 9。3x - 3 = 9 から、x = 4 です。"
+  },
+  {
+    id: "math-eq-manipulate-003",
+    type: "manipulate",
+    subject: "数学",
+    unit: "方程式",
+    priority: "S",
+    stage: "手で動かす",
+    prompt: "式を動かして、方程式 x² - 36 = 0 を解きなさい。",
+    left: [{ id: "l1", coef: 1, type: "x2" }, { id: "l2", coef: -36, type: "const" }],
+    right: [{ id: "r1", coef: 0, type: "const" }],
+    explanation: "-36を右辺へ移して x² = 36。平方根をとるので x = ±6 です。"
+  },
+  {
+    id: "math-eq-manipulate-004",
+    type: "manipulate",
+    subject: "数学",
+    unit: "方程式",
+    priority: "S",
+    stage: "手で動かす",
+    prompt: "式を動かして、方程式 2x² - 14 = 4 を解きなさい。",
+    left: [{ id: "l1", coef: 2, type: "x2" }, { id: "l2", coef: -14, type: "const" }],
+    right: [{ id: "r1", coef: 4, type: "const" }],
+    explanation: "-14を右辺へ移して 2x² = 18。両辺を2で割って x² = 9。平方根をとるので x = ±3 です。"
   },
   {
     id: "math-eq-input-003",

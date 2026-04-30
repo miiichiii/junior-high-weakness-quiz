@@ -2,6 +2,7 @@
   const state = {
     mode: "daily",
     subject: "all",
+    unit: "all",
     quiz: [],
     index: 0,
     answers: new Map(),
@@ -14,11 +15,13 @@
     all: "全教科",
     daily: "今日の20問",
     focus: "苦手集中",
-    review: "復習"
+    review: "できなかった問題",
+    unitAll: "全カテゴリ"
   };
 
   const els = {
     subjectList: document.getElementById("subjectList"),
+    categoryList: document.getElementById("categoryList"),
     modeButtons: Array.from(document.querySelectorAll(".mode-button")),
     quizLabel: document.getElementById("quizLabel"),
     quizTitle: document.getElementById("quizTitle"),
@@ -76,11 +79,45 @@
       if (subject === state.subject) button.classList.add("active");
       button.addEventListener("click", () => {
         state.subject = subject;
+        ensureUnitIsAvailable();
         buildSubjectButtons();
+        buildCategoryButtons();
         startQuiz();
       });
       els.subjectList.appendChild(button);
     });
+  }
+
+  function buildCategoryButtons() {
+    const units = availableUnits();
+    els.categoryList.innerHTML = "";
+    const options = ["all", ...units];
+    options.forEach((unit) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "category-button";
+      button.dataset.unit = unit;
+      button.textContent = unit === "all" ? labels.unitAll : unit;
+      if (unit === state.unit) button.classList.add("active");
+      button.addEventListener("click", () => {
+        state.unit = unit;
+        buildCategoryButtons();
+        startQuiz();
+      });
+      els.categoryList.appendChild(button);
+    });
+  }
+
+  function availableUnits() {
+    return Array.from(new Set(window.QUIZ_QUESTIONS
+      .filter((question) => state.subject === "all" || question.subject === state.subject)
+      .map((question) => question.unit)))
+      .sort((a, b) => unitSortRank(a) - unitSortRank(b) || a.localeCompare(b, "ja"));
+  }
+
+  function ensureUnitIsAvailable() {
+    if (state.unit === "all") return;
+    if (!availableUnits().includes(state.unit)) state.unit = "all";
   }
 
   function weightQuestion(question) {
@@ -95,6 +132,9 @@
     let questions = window.QUIZ_QUESTIONS.slice();
     if (state.subject !== "all") {
       questions = questions.filter((question) => question.subject === state.subject);
+    }
+    if (state.unit !== "all") {
+      questions = questions.filter((question) => question.unit === state.unit);
     }
     if (state.mode === "review") {
       questions = questions.filter((question) => (state.progress[question.id] || {}).needsReview);
@@ -132,9 +172,7 @@
     return picked;
   }
 
-  function sortForStudyOrder(a, b) {
-    const priorityOrder = { S: 0, A: 1, B: 2, C: 3 };
-    const subjectOrder = { "数学": 0, "理科": 1, "社会": 2, "英語": 3, "国語": 4 };
+  function unitSortRank(unit) {
     const unitOrder = {
       "方程式": 0,
       "連立方程式": 1,
@@ -153,9 +191,15 @@
       "空間図形": 14,
       "データの活用": 15
     };
+    return unitOrder[unit] ?? 99;
+  }
+
+  function sortForStudyOrder(a, b) {
+    const priorityOrder = { S: 0, A: 1, B: 2, C: 3 };
+    const subjectOrder = { "数学": 0, "理科": 1, "社会": 2, "英語": 3, "国語": 4 };
     return (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9)
       || (subjectOrder[a.subject] ?? 9) - (subjectOrder[b.subject] ?? 9)
-      || (unitOrder[a.unit] ?? 99) - (unitOrder[b.unit] ?? 99)
+      || unitSortRank(a.unit) - unitSortRank(b.unit)
       || a.id.localeCompare(b.id);
   }
 
@@ -173,25 +217,43 @@
   }
 
   function renderTitle() {
-    els.quizLabel.textContent = `${labels[state.mode]} / ${state.subject === "all" ? "全教科" : state.subject}`;
+    const filterLabel = `${subjectLabel()} / ${unitLabel()}`;
+    els.quizLabel.textContent = `${labels[state.mode]} / ${filterLabel}`;
     if (state.mode === "review") {
-      els.quizTitle.textContent = "間違えた問題を解き直す";
+      els.quizTitle.textContent = state.unit === "all" ? "できなかった問題だけを解き直す" : `${state.unit}の間違い直し`;
     } else if (state.mode === "focus") {
-      els.quizTitle.textContent = "数学の土台を中心に集中補修";
+      els.quizTitle.textContent = state.unit === "all" ? "数学の土台を中心に集中補修" : `${state.unit}を集中補修`;
     } else {
-      els.quizTitle.textContent = "方程式・図形・理科社会の基礎";
+      els.quizTitle.textContent = state.unit === "all" ? "方程式・図形・理科社会の基礎" : `${state.unit}の基礎確認`;
     }
+  }
+
+  function subjectLabel() {
+    return state.subject === "all" ? "全教科" : state.subject;
+  }
+
+  function unitLabel() {
+    return state.unit === "all" ? labels.unitAll : state.unit;
   }
 
   function renderQuestion() {
     if (state.quiz.length === 0) {
       els.questionCard.classList.add("hidden");
       els.summary.classList.remove("hidden");
-      els.summaryText.textContent = "この条件で出題できる問題がありません。教科かモードを変更してください。";
+      els.summaryText.textContent = state.mode === "review"
+        ? "この条件でやり直す問題はありません。別の教科・カテゴリを選ぶか、通常モードで問題を解いてください。"
+        : "この条件で出題できる問題がありません。教科・カテゴリ・モードを変更してください。";
       els.weakUnitList.innerHTML = "";
+      els.prompt.textContent = "";
+      els.choices.innerHTML = "";
+      els.explanation.classList.add("hidden");
       els.progressText.textContent = "0 / 0";
       els.scoreText.textContent = "0 正解";
+      els.progressMetric.textContent = "0/0";
+      els.scoreMetric.textContent = "0";
       els.progressBar.style.width = "0%";
+      els.prevQuestion.disabled = true;
+      els.nextQuestion.disabled = true;
       return;
     }
 
@@ -284,6 +346,7 @@
     els.scoreMetric.textContent = String(correct);
     els.progressBar.style.width = `${total ? (answered / total) * 100 : 0}%`;
     els.prevQuestion.disabled = state.index === 0;
+    els.nextQuestion.disabled = false;
     els.nextQuestion.textContent = state.index === total - 1 ? "結果を見る" : "次へ";
   }
 
@@ -317,8 +380,17 @@
 
     els.unitTrack.innerHTML = "";
     rows.forEach((row) => {
-      const item = document.createElement("div");
+      const item = document.createElement("button");
+      item.type = "button";
       item.className = "unit-row";
+      item.addEventListener("click", () => {
+        state.subject = row.subject;
+        state.unit = row.unit;
+        ensureUnitIsAvailable();
+        buildSubjectButtons();
+        buildCategoryButtons();
+        startQuiz();
+      });
 
       const header = document.createElement("div");
       header.className = "unit-row-header";
@@ -412,5 +484,6 @@
   });
 
   buildSubjectButtons();
+  buildCategoryButtons();
   startQuiz();
 })();

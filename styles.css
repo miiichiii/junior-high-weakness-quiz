@@ -120,14 +120,22 @@ h3 {
   gap: 8px;
 }
 
-.subject-list {
+.subject-list,
+.category-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
+.category-list {
+  max-height: 260px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
 .mode-button,
 .subject-button,
+.category-button,
 .ghost-button,
 .primary-button {
   min-height: 42px;
@@ -144,15 +152,23 @@ h3 {
   text-align: center;
 }
 
+.category-button {
+  min-height: 38px;
+  font-size: 13px;
+  text-align: center;
+}
+
 .mode-button:hover,
 .subject-button:hover,
+.category-button:hover,
 .ghost-button:hover,
 .primary-button:hover {
   transform: translateY(-1px);
 }
 
 .mode-button.active,
-.subject-button.active {
+.subject-button.active,
+.category-button.active {
   border-color: rgba(15, 118, 110, 0.55);
   background: #e7f5f2;
   color: #064e45;
@@ -436,8 +452,18 @@ h3 {
 }
 
 .unit-row {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
   display: grid;
   gap: 7px;
+}
+
+.unit-row:hover .unit-row-header span:first-child {
+  color: var(--accent-dark);
 }
 
 .unit-row-header {

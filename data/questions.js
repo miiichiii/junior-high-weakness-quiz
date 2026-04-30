@@ -1,23 +1,27 @@
 window.QUIZ_QUESTIONS = [
   {
     id: "math-eq-001",
+    type: "manipulate",
     subject: "数学",
     unit: "方程式",
     priority: "S",
-    prompt: "方程式 5x - 3 = 2x + 12 を解くと、x はいくつですか。",
-    choices: ["3", "5", "9", "15"],
-    answer: 1,
-    explanation: "両辺から2xを引くと 3x - 3 = 12。両辺に3を足して 3x = 15、だから x = 5 です。"
+    stage: "手で動かす",
+    prompt: "式を動かして、方程式 5x - 3 = 2x + 12 を解きなさい。",
+    left: [{ id: "l1", coef: 5, type: "x" }, { id: "l2", coef: -3, type: "const" }],
+    right: [{ id: "r1", coef: 2, type: "x" }, { id: "r2", coef: 12, type: "const" }],
+    explanation: "右辺の2xを左辺へ移すと 3x - 3 = 12。-3を右辺へ移すと 3x = 15。両辺を3で割って x = 5 です。"
   },
   {
     id: "math-eq-002",
+    type: "manipulate",
     subject: "数学",
     unit: "方程式",
     priority: "S",
-    prompt: "(x - 3) / 4 = 2 を解くと、x はいくつですか。",
-    choices: ["5", "8", "11", "14"],
-    answer: 2,
-    explanation: "両辺に4をかけて x - 3 = 8。両辺に3を足して x = 11 です。"
+    stage: "手で動かす",
+    prompt: "式を動かして、方程式 x - 3 = 8 を解きなさい。",
+    left: [{ id: "l1", coef: 1, type: "x" }, { id: "l2", coef: -3, type: "const" }],
+    right: [{ id: "r1", coef: 8, type: "const" }],
+    explanation: "-3を右辺へ移すと +3 になるので、x = 8 + 3 = 11 です。元の (x - 3) / 4 = 2 は、両辺に4をかけると x - 3 = 8 になります。"
   },
   {
     id: "math-eq-003",
@@ -211,43 +215,51 @@ window.QUIZ_QUESTIONS = [
   },
   {
     id: "math-eq-007",
+    type: "manipulate",
     subject: "数学",
     unit: "方程式",
     priority: "S",
-    prompt: "方程式 -3x + 7 = 16 を解くと、x はいくつですか。",
-    choices: ["-3", "3", "-9", "9"],
-    answer: 0,
-    explanation: "両辺から7を引くと -3x = 9。両辺を -3 で割って x = -3 です。負の数で割るところを丁寧に確認します。"
+    stage: "手で動かす",
+    prompt: "式を動かして、方程式 -3x + 7 = 16 を解きなさい。",
+    left: [{ id: "l1", coef: -3, type: "x" }, { id: "l2", coef: 7, type: "const" }],
+    right: [{ id: "r1", coef: 16, type: "const" }],
+    explanation: "7を右辺へ移すと -3x = 9。両辺を -3 で割って x = -3 です。"
   },
   {
     id: "math-eq-008",
+    type: "manipulate",
     subject: "数学",
     unit: "方程式",
     priority: "S",
-    prompt: "方程式 2(x - 3) = 10 を解くと、x はいくつですか。",
-    choices: ["2", "5", "8", "13"],
-    answer: 2,
-    explanation: "先に両辺を2で割ると x - 3 = 5。両辺に3を足して x = 8 です。"
+    stage: "手で動かす",
+    prompt: "式を動かして、方程式 2x - 6 = 10 を解きなさい。",
+    left: [{ id: "l1", coef: 2, type: "x" }, { id: "l2", coef: -6, type: "const" }],
+    right: [{ id: "r1", coef: 10, type: "const" }],
+    explanation: "2(x - 3) = 10 を展開すると 2x - 6 = 10。-6を右辺へ移して 2x = 16、両辺を2で割って x = 8 です。"
   },
   {
     id: "math-eq-009",
+    type: "manipulate",
     subject: "数学",
     unit: "方程式",
     priority: "S",
-    prompt: "(2/3)x = 4 を解くと、x はいくつですか。",
-    choices: ["6", "8/3", "12", "2"],
-    answer: 0,
-    explanation: "両辺に 3/2 をかけます。x = 4 × 3/2 = 6 です。分数係数は逆数をかけるのが基本です。"
+    stage: "手で動かす",
+    prompt: "式を動かして、方程式 2x = 12 を解きなさい。",
+    left: [{ id: "l1", coef: 2, type: "x" }],
+    right: [{ id: "r1", coef: 12, type: "const" }],
+    explanation: "(2/3)x = 4 は、両辺に3をかけると 2x = 12。両辺を2で割って x = 6 です。"
   },
   {
     id: "math-eq-010",
+    type: "manipulate",
     subject: "数学",
     unit: "方程式",
     priority: "S",
-    prompt: "方程式 4x + 5 = -7 を解くと、x はいくつですか。",
-    choices: ["-3", "-2", "2", "3"],
-    answer: 0,
-    explanation: "両辺から5を引くと 4x = -12。両辺を4で割って x = -3 です。"
+    stage: "手で動かす",
+    prompt: "式を動かして、方程式 4x + 5 = -7 を解きなさい。",
+    left: [{ id: "l1", coef: 4, type: "x" }, { id: "l2", coef: 5, type: "const" }],
+    right: [{ id: "r1", coef: -7, type: "const" }],
+    explanation: "5を右辺へ移すと 4x = -12。両辺を4で割って x = -3 です。"
   },
   {
     id: "math-eq-011",
@@ -601,15 +613,15 @@ window.QUIZ_QUESTIONS = [
   },
   {
     id: "math-eq-input-001",
-    type: "input",
+    type: "manipulate",
     subject: "数学",
     unit: "方程式",
     priority: "S",
-    stage: "直接入力",
-    prompt: "方程式 5x - 3 = 2x + 12 を解きなさい。",
-    answerText: ["x=5", "5"],
-    placeholder: "例: x=5",
-    explanation: "両辺から2xを引くと 3x - 3 = 12。両辺に3を足して 3x = 15。よって x = 5 です。"
+    stage: "手で動かす",
+    prompt: "式を動かして、方程式 6x - 5 = 19 を解きなさい。",
+    left: [{ id: "l1", coef: 6, type: "x" }, { id: "l2", coef: -5, type: "const" }],
+    right: [{ id: "r1", coef: 19, type: "const" }],
+    explanation: "-5を右辺へ移すと 6x = 24。両辺を6で割って x = 4 です。"
   },
   {
     id: "math-eq-manipulate-001",
@@ -661,51 +673,51 @@ window.QUIZ_QUESTIONS = [
   },
   {
     id: "math-eq-input-003",
-    type: "input",
+    type: "manipulate",
     subject: "数学",
     unit: "方程式",
     priority: "S",
-    stage: "直接入力",
-    prompt: "方程式 3(x - 2) = 18 を解きなさい。",
-    answerText: ["x=8", "8"],
-    placeholder: "例: x=8",
-    explanation: "まず両辺を3で割って x - 2 = 6。両辺に2を足して x = 8 です。"
+    stage: "手で動かす",
+    prompt: "式を動かして、方程式 x - 2 = 6 を解きなさい。",
+    left: [{ id: "l1", coef: 1, type: "x" }, { id: "l2", coef: -2, type: "const" }],
+    right: [{ id: "r1", coef: 6, type: "const" }],
+    explanation: "3(x - 2) = 18 は、両辺を3で割ると x - 2 = 6。-2を右辺へ移して x = 8 です。"
   },
   {
     id: "math-eq-input-004",
-    type: "input",
+    type: "manipulate",
     subject: "数学",
     unit: "方程式",
     priority: "S",
-    stage: "直接入力",
-    prompt: "方程式 -2x + 9 = 17 を解きなさい。",
-    answerText: ["x=-4", "-4"],
-    placeholder: "例: x=-4",
-    explanation: "両辺から9を引いて -2x = 8。両辺を -2 で割るので x = -4 です。符号に注意します。"
+    stage: "手で動かす",
+    prompt: "式を動かして、方程式 -2x + 9 = 17 を解きなさい。",
+    left: [{ id: "l1", coef: -2, type: "x" }, { id: "l2", coef: 9, type: "const" }],
+    right: [{ id: "r1", coef: 17, type: "const" }],
+    explanation: "9を右辺へ移すと -2x = 8。両辺を -2 で割って x = -4 です。"
   },
   {
     id: "math-eq-input-005",
-    type: "input",
+    type: "manipulate",
     subject: "数学",
     unit: "方程式",
     priority: "S",
-    stage: "直接入力",
-    prompt: "方程式 x/3 + 4 = 9 を解きなさい。",
-    answerText: ["x=15", "15"],
-    placeholder: "例: x=15",
-    explanation: "両辺から4を引いて x/3 = 5。両辺に3をかけて x = 15 です。"
+    stage: "手で動かす",
+    prompt: "式を動かして、方程式 x + 12 = 27 を解きなさい。",
+    left: [{ id: "l1", coef: 1, type: "x" }, { id: "l2", coef: 12, type: "const" }],
+    right: [{ id: "r1", coef: 27, type: "const" }],
+    explanation: "x/3 + 4 = 9 は、両辺に3をかけると x + 12 = 27。12を右辺へ移して x = 15 です。"
   },
   {
     id: "math-eq-input-006",
-    type: "input",
+    type: "manipulate",
     subject: "数学",
     unit: "方程式",
     priority: "S",
-    stage: "直接入力",
-    prompt: "方程式 0.5x + 2 = 6 を解きなさい。",
-    answerText: ["x=8", "8"],
-    placeholder: "例: x=8",
-    explanation: "両辺から2を引いて 0.5x = 4。0.5で割ると x = 8 です。小数は分数 1/2 と考えると安全です。"
+    stage: "手で動かす",
+    prompt: "式を動かして、方程式 0.5x + 2 = 6 を解きなさい。",
+    left: [{ id: "l1", coef: 0.5, type: "x" }, { id: "l2", coef: 2, type: "const" }],
+    right: [{ id: "r1", coef: 6, type: "const" }],
+    explanation: "2を右辺へ移すと 0.5x = 4。両辺を0.5で割って x = 8 です。"
   },
   {
     id: "math-sim-input-001",

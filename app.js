@@ -158,6 +158,7 @@
   function weightQuestion(question) {
     const record = state.progress[question.id] || {};
     let weight = question.priority === "S" ? 6 : question.priority === "A" ? 4 : 2;
+    if (questionType(question) === "manipulate") weight += 8;
     if (record.wrong) weight += record.wrong * 4;
     if (record.correct) weight -= Math.min(record.correct, 3);
     return Math.max(1, weight);
@@ -232,9 +233,11 @@
   function sortForStudyOrder(a, b) {
     const priorityOrder = { S: 0, A: 1, B: 2, C: 3 };
     const subjectOrder = { "数学": 0, "理科": 1, "社会": 2, "英語": 3, "国語": 4 };
+    const typeOrder = { manipulate: 0, input: 1, "find-error": 2, choice: 3 };
     return (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9)
       || (subjectOrder[a.subject] ?? 9) - (subjectOrder[b.subject] ?? 9)
       || unitSortRank(a.unit) - unitSortRank(b.unit)
+      || (typeOrder[questionType(a)] ?? 9) - (typeOrder[questionType(b)] ?? 9)
       || a.id.localeCompare(b.id);
   }
 
@@ -540,6 +543,9 @@
 
     if (phase === PHASE.CALC_VAR && side === "left") {
       container.append(renderEquationInput(question, expectedEquationValue(equation, phase), phase), renderVariableSuffix(equation.left));
+      equation.left
+        .filter((term) => term.type === "const")
+        .forEach((term, index) => container.appendChild(renderEquationTerm(question, equation, term, index + 1, side, phase, answered)));
       return container;
     }
     if ((phase === PHASE.CALC_CONST || phase === PHASE.CALC_DIVIDE) && side === "right") {
@@ -675,7 +681,10 @@
     saveEquationHistory(equation);
     if (phase === PHASE.CALC_VAR) {
       const variable = equation.left.find(isVariableTerm);
-      equation.left = [{ id: uniqueEquationId("l"), coef: value, type: variable.type }];
+      equation.left = [
+        { id: uniqueEquationId("l"), coef: value, type: variable.type },
+        ...equation.left.filter((term) => term.type === "const")
+      ];
     } else if (phase === PHASE.CALC_CONST || phase === PHASE.CALC_DIVIDE) {
       equation.right = [{ id: uniqueEquationId("r"), coef: value, type: "const" }];
     } else if (phase === PHASE.CALC_SQRT) {

@@ -624,6 +624,7 @@
         && hasEquals
         && rightTokenCount > 0
         && isEquationStartToken(token)
+        && !isScratchOperator(current[current.length - 1])
         && hasEqualsAhead(tokens, index)
       ) {
         groups.push({ tokens: current });

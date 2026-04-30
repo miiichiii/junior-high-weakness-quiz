@@ -218,7 +218,7 @@
         if (weighted[i].id === choice.id) weighted.splice(i, 1);
       }
     }
-    return picked;
+    return picked.sort(sortForStudyOrder);
   }
 
   function unitSortRank(unit) {
@@ -504,7 +504,7 @@
     makerInput.type = "text";
     makerInput.inputMode = "text";
     makerInput.autocomplete = "off";
-    makerInput.placeholder = "例: 2x";
+    makerInput.placeholder = "例: 2x=8";
     const makerButton = document.createElement("button");
     makerButton.type = "submit";
     makerButton.className = "scratchpad-clear primary";
@@ -516,9 +516,9 @@
     });
     maker.addEventListener("submit", (event) => {
       event.preventDefault();
-      const token = normalizeScratchResultToken(makerInput.value);
-      if (!token) return;
-      addScratchToken(question, scratch, token);
+      const tokens = normalizeScratchResultTokens(makerInput.value);
+      if (tokens.length === 0) return;
+      addScratchTokens(question, scratch, tokens);
       makerInput.value = "";
       refreshWorkspace();
     });
@@ -688,7 +688,7 @@
     return String(value);
   }
 
-  function normalizeScratchResultToken(value) {
+  function normalizeScratchResultTokens(value) {
     const normalized = String(value || "")
       .normalize("NFKC")
       .trim()
@@ -697,10 +697,9 @@
       .replace(/[＊*]/g, "×")
       .replace(/[／/]/g, "÷")
       .replace(/\^2/g, "²");
-    if (!normalized) return "";
-    if (/^[-+]?(\d+(\.\d+)?[xy]²?|[xy]²?|\d+(\.\d+)?|0)$/.test(normalized)) return normalized;
-    if (/^[=+\-×÷()]$/.test(normalized)) return normalized;
-    return "";
+    if (!normalized || !/^[0-9xy=+\-×÷().²√±]+$/.test(normalized)) return [];
+    const tokens = tokenizeScratchText(normalized);
+    return tokens.join("") === normalized ? tokens : [];
   }
 
   function tokenizeScratchText(text) {
@@ -743,6 +742,13 @@
   function addScratchToken(question, scratch, token, lineIndex = scratch.activeLine) {
     if (!scratch.lines[lineIndex]) scratch.lines[lineIndex] = [];
     scratch.lines[lineIndex].push(token);
+    scratch.activeLine = lineIndex;
+    saveScratchState(question, scratch);
+  }
+
+  function addScratchTokens(question, scratch, tokens, lineIndex = scratch.activeLine) {
+    if (!scratch.lines[lineIndex]) scratch.lines[lineIndex] = [];
+    scratch.lines[lineIndex].push(...tokens);
     scratch.activeLine = lineIndex;
     saveScratchState(question, scratch);
   }
@@ -891,7 +897,7 @@
   function equationGuidance(phase) {
     switch (phase) {
       case PHASE.MOVE_VAR:
-        return "右辺のxを左辺にドラッグして集めよう";
+        return "右辺のxを左辺へ。左辺の数字を先に右辺へ動かしてもOK";
       case PHASE.CALC_VAR:
         return "左辺のxを計算してまとめよう";
       case PHASE.MOVE_CONST:
@@ -930,10 +936,7 @@
       return container;
     }
     if (phase === PHASE.CALC_SQRT && side === "right") {
-      const prefix = document.createElement("span");
-      prefix.className = "equation-plus-minus";
-      prefix.textContent = "±";
-      container.append(prefix, renderEquationInput(question, expectedEquationValue(equation, phase), phase));
+      container.appendChild(renderEquationInput(question, expectedEquationValue(equation, phase), phase));
       return container;
     }
 
@@ -1003,7 +1006,7 @@
   }
 
   function canDragEquationTerm(term, side, phase) {
-    if (phase === PHASE.MOVE_VAR) return side === "right" && isVariableTerm(term);
+    if (phase === PHASE.MOVE_VAR) return (side === "right" && isVariableTerm(term)) || (side === "left" && term.type === "const");
     if (phase === PHASE.MOVE_CONST) return side === "left" && term.type === "const";
     if (phase === PHASE.DIVIDE) return side === "left" && isVariableTerm(term);
     return false;
@@ -1023,26 +1026,90 @@
     const input = document.createElement("input");
     input.className = "equation-calc-input";
     input.type = "text";
-    input.inputMode = "numeric";
-    input.placeholder = "?";
+    input.inputMode = "text";
+    input.placeholder = phase === PHASE.CALC_SQRT ? `±${expected}` : "?";
     const button = document.createElement("button");
     button.type = "submit";
-    button.className = "primary-button";
-    button.textContent = "確定";
+    button.className = "equation-calc-submit";
+    button.textContent = "✓";
+    button.setAttribute("aria-label", "確定");
+    const hint = document.createElement("span");
+    hint.className = "equation-calc-hint";
     form.addEventListener("submit", (event) => {
       event.preventDefault();
+      if (phase === PHASE.CALC_SQRT) {
+        if (isPlusMinusAnswer(input.value, expected)) {
+          handleEquationCalculation(question, phase, expected);
+          return;
+        }
+        recordEquationMistake(question, phase, input.value);
+        hint.textContent = equationMistakeHint(getEquationState(question), phase);
+        form.classList.remove("shake");
+        window.requestAnimationFrame(() => form.classList.add("shake"));
+        return;
+      }
       const value = Number(input.value.trim());
       if (Number.isNaN(value)) return;
       if (value === expected) {
         handleEquationCalculation(question, phase, value);
         return;
       }
+      recordEquationMistake(question, phase, input.value);
+      hint.textContent = equationMistakeHint(getEquationState(question), phase);
       form.classList.remove("shake");
       window.requestAnimationFrame(() => form.classList.add("shake"));
     });
-    form.append(input, button);
+    form.append(input, button, hint);
     setTimeout(() => input.focus({ preventScroll: true }), 0);
     return form;
+  }
+
+  function equationMistakeHint(equation, phase) {
+    if (phase === PHASE.CALC_VAR) {
+      const terms = equation.left.filter(isVariableTerm).map((term) => formatSignedNumber(term.coef));
+      return `${terms.join(" ")} を計算`;
+    }
+    if (phase === PHASE.CALC_CONST) {
+      const terms = equation.right.filter((term) => term.type === "const").map((term) => formatSignedNumber(term.coef));
+      return `${terms.join(" ")} を計算`;
+    }
+    if (phase === PHASE.CALC_DIVIDE) {
+      const term = equation.right[0];
+      return `${term.coef} ÷ ${term.divisor} を計算`;
+    }
+    if (phase === PHASE.CALC_SQRT) {
+      return `±${Math.sqrt(equation.right[0].coef)} の形で入力`;
+    }
+    return "もう一度計算";
+  }
+
+  function formatSignedNumber(value) {
+    return value >= 0 ? `+ ${value}` : `- ${Math.abs(value)}`;
+  }
+
+  function isPlusMinusAnswer(rawValue, expected) {
+    const normalized = normalizeAnswer(rawValue).replace(/^x=/, "");
+    return normalized === `±${expected}` || normalized === `+-${expected}`;
+  }
+
+  function recordEquationMistake(question, phase, rawValue) {
+    const record = state.progress[question.id] || { correct: 0, wrong: 0 };
+    record.wrong = (record.wrong || 0) + 1;
+    record.needsReview = true;
+    record.lastAnsweredAt = new Date().toISOString();
+    record.mistakeType = record.mistakeType || inferEquationMistakeType(phase);
+    record.lastWrongInput = String(rawValue || "").trim();
+    state.progress[question.id] = record;
+    saveProgress();
+    renderProgressStats();
+    renderUnitTrack();
+  }
+
+  function inferEquationMistakeType(phase) {
+    if (phase === PHASE.CALC_VAR || phase === PHASE.CALC_CONST) return "計算ミス";
+    if (phase === PHASE.CALC_DIVIDE) return "割り算ミス";
+    if (phase === PHASE.CALC_SQRT) return "平方根ミス";
+    return "計算ミス";
   }
 
   function expectedEquationValue(equation, phase) {
@@ -1113,6 +1180,10 @@
       saveEquationHistory(equation);
       equation.right = equation.right.filter((term) => term.id !== drag.term.id);
       equation.left.push({ id: uniqueEquationId("l"), coef: drag.term.coef * -1, type: drag.term.type });
+    } else if (phase === PHASE.MOVE_VAR && drag.side === "left" && targetSide === "right" && drag.term.type === "const") {
+      saveEquationHistory(equation);
+      equation.left = equation.left.filter((term) => term.id !== drag.term.id);
+      equation.right.push({ id: uniqueEquationId("r"), coef: drag.term.coef * -1, type: "const" });
     } else if (phase === PHASE.MOVE_CONST && drag.side === "left" && targetSide === "right" && drag.term.type === "const") {
       saveEquationHistory(equation);
       equation.left = equation.left.filter((term) => term.id !== drag.term.id);

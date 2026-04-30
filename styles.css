@@ -932,7 +932,8 @@ h3 {
 .equation-calc {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .equation-calc-input {
@@ -952,6 +953,29 @@ h3 {
   border-color: #1957a6;
   background: #eef5ff;
   color: #123a67;
+}
+
+.equation-calc-submit {
+  width: 40px;
+  min-height: 40px;
+  border: 1px solid rgba(15, 118, 110, 0.28);
+  border-radius: 8px;
+  background: #0f766e;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.equation-calc-submit:hover {
+  background: #0b5f55;
+}
+
+.equation-calc-hint {
+  flex-basis: 100%;
+  color: #b42318;
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
 }
 
 .equation-calc.shake {

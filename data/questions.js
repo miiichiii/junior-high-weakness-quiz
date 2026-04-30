@@ -612,7 +612,7 @@ window.QUIZ_QUESTIONS = [
     explanation: "古典では主語が省略されやすく、助動詞の意味も内容理解に直結します。"
   },
   {
-    id: "math-eq-input-001",
+    id: "math-eq-manipulate-005",
     type: "manipulate",
     subject: "数学",
     unit: "方程式",
@@ -645,7 +645,7 @@ window.QUIZ_QUESTIONS = [
     prompt: "式を動かして、方程式 5x - 3 = 2x + 9 を解きなさい。",
     left: [{ id: "l1", coef: 5, type: "x" }, { id: "l2", coef: -3, type: "const" }],
     right: [{ id: "r1", coef: 2, type: "x" }, { id: "r2", coef: 9, type: "const" }],
-    explanation: "右辺の2xを左辺へ移すと 5x - 2x - 3 = 9。3x - 3 = 9 から、x = 4 です。"
+    explanation: "右辺の2xを左辺へ移すと 5x - 2x - 3 = 9。左辺のxをまとめて 3x - 3 = 9。-3を右辺へ移して 3x = 12、両辺を3で割って x = 4 です。"
   },
   {
     id: "math-eq-manipulate-003",
@@ -672,7 +672,7 @@ window.QUIZ_QUESTIONS = [
     explanation: "-14を右辺へ移して 2x² = 18。両辺を2で割って x² = 9。平方根をとるので x = ±3 です。"
   },
   {
-    id: "math-eq-input-003",
+    id: "math-eq-manipulate-006",
     type: "manipulate",
     subject: "数学",
     unit: "方程式",
@@ -684,7 +684,7 @@ window.QUIZ_QUESTIONS = [
     explanation: "-2を右辺へ移して x = 8 です。"
   },
   {
-    id: "math-eq-input-004",
+    id: "math-eq-manipulate-007",
     type: "manipulate",
     subject: "数学",
     unit: "方程式",
@@ -696,7 +696,7 @@ window.QUIZ_QUESTIONS = [
     explanation: "9を右辺へ移すと -2x = 8。両辺を -2 で割って x = -4 です。"
   },
   {
-    id: "math-eq-input-005",
+    id: "math-eq-manipulate-008",
     type: "manipulate",
     subject: "数学",
     unit: "方程式",
@@ -708,7 +708,7 @@ window.QUIZ_QUESTIONS = [
     explanation: "12を右辺へ移して x = 27 - 12 = 15 です。"
   },
   {
-    id: "math-eq-input-006",
+    id: "math-eq-manipulate-009",
     type: "manipulate",
     subject: "数学",
     unit: "方程式",

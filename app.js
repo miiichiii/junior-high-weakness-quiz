@@ -7,7 +7,8 @@
     index: 0,
     answers: new Map(),
     choiceOrders: new Map(),
-    progress: loadProgress()
+    progress: loadProgress(),
+    stats: loadStats()
   };
 
   const subjects = ["all", "数学", "理科", "社会", "英語", "国語"];
@@ -31,6 +32,9 @@
     progressBar: document.getElementById("progressBar"),
     progressMetric: document.getElementById("progressMetric"),
     scoreMetric: document.getElementById("scoreMetric"),
+    todayAnsweredMetric: document.getElementById("todayAnsweredMetric"),
+    todayAccuracyMetric: document.getElementById("todayAccuracyMetric"),
+    streakMetric: document.getElementById("streakMetric"),
     reviewMetric: document.getElementById("reviewMetric"),
     questionCard: document.getElementById("questionCard"),
     subjectPill: document.getElementById("subjectPill"),
@@ -49,9 +53,12 @@
     weakUnitList: document.getElementById("weakUnitList"),
     answeredCount: document.getElementById("answeredCount"),
     accuracyRate: document.getElementById("accuracyRate"),
+    studyDaysCount: document.getElementById("studyDaysCount"),
+    streakCount: document.getElementById("streakCount"),
     reviewCount: document.getElementById("reviewCount"),
     bankCount: document.getElementById("bankCount"),
     priorityCount: document.getElementById("priorityCount"),
+    badgeList: document.getElementById("badgeList"),
     unitTrack: document.getElementById("unitTrack"),
     resetProgress: document.getElementById("resetProgress")
   };
@@ -66,6 +73,18 @@
 
   function saveProgress() {
     localStorage.setItem("weaknessQuizProgress", JSON.stringify(state.progress));
+  }
+
+  function loadStats() {
+    try {
+      return JSON.parse(localStorage.getItem("weaknessQuizStats")) || { daily: {} };
+    } catch (_error) {
+      return { daily: {} };
+    }
+  }
+
+  function saveStats() {
+    localStorage.setItem("weaknessQuizStats", JSON.stringify(state.stats));
   }
 
   function buildSubjectButtons() {
@@ -214,6 +233,7 @@
     renderQuestion();
     renderProgressStats();
     renderUnitTrack();
+    renderBadges();
   }
 
   function renderTitle() {
@@ -328,10 +348,66 @@
     }
     record.lastAnsweredAt = new Date().toISOString();
     state.progress[question.id] = record;
+    recordDailyAnswer(correct);
     saveProgress();
+    saveStats();
     renderQuestion();
     renderProgressStats();
     renderUnitTrack();
+    renderBadges();
+  }
+
+  function recordDailyAnswer(correct) {
+    const key = todayKey();
+    if (!state.stats.daily) state.stats.daily = {};
+    if (!state.stats.daily[key]) {
+      state.stats.daily[key] = { answered: 0, correct: 0 };
+    }
+    state.stats.daily[key].answered += 1;
+    if (correct) state.stats.daily[key].correct += 1;
+  }
+
+  function todayKey(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function dateFromKey(key) {
+    const [year, month, day] = key.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  function previousDayKey(key) {
+    const date = dateFromKey(key);
+    date.setDate(date.getDate() - 1);
+    return todayKey(date);
+  }
+
+  function currentStreak() {
+    const daily = state.stats.daily || {};
+    let key = todayKey();
+    if (!daily[key]?.answered) {
+      const yesterday = previousDayKey(key);
+      if (!daily[yesterday]?.answered) return 0;
+      key = yesterday;
+    }
+    let streak = 0;
+    while (daily[key]?.answered) {
+      streak += 1;
+      key = previousDayKey(key);
+    }
+    return streak;
+  }
+
+  function dailyTotals() {
+    const daily = state.stats.daily || {};
+    return Object.values(daily).reduce((totals, day) => {
+      totals.answered += day.answered || 0;
+      totals.correct += day.correct || 0;
+      return totals;
+    }, { answered: 0, correct: 0 });
   }
 
   function renderProgressBar() {
@@ -352,15 +428,48 @@
 
   function renderProgressStats() {
     const records = Object.values(state.progress);
-    const answered = records.reduce((sum, record) => sum + (record.correct || 0) + (record.wrong || 0), 0);
-    const correct = records.reduce((sum, record) => sum + (record.correct || 0), 0);
+    const totals = dailyTotals();
+    const fallbackAnswered = records.reduce((sum, record) => sum + (record.correct || 0) + (record.wrong || 0), 0);
+    const fallbackCorrect = records.reduce((sum, record) => sum + (record.correct || 0), 0);
+    const answered = totals.answered || fallbackAnswered;
+    const correct = totals.answered ? totals.correct : fallbackCorrect;
     const review = records.filter((record) => record.needsReview).length;
+    const today = state.stats.daily?.[todayKey()] || { answered: 0, correct: 0 };
+    const todayAccuracy = today.answered ? Math.round((today.correct / today.answered) * 100) : 0;
+    const studyDays = Object.values(state.stats.daily || {}).filter((day) => day.answered > 0).length;
+    const streak = currentStreak();
     els.answeredCount.textContent = String(answered);
     els.accuracyRate.textContent = answered ? `${Math.round((correct / answered) * 100)}%` : "0%";
+    els.studyDaysCount.textContent = String(studyDays);
+    els.streakCount.textContent = `${streak}日`;
     els.reviewCount.textContent = String(review);
+    els.todayAnsweredMetric.textContent = String(today.answered || 0);
+    els.todayAccuracyMetric.textContent = `${todayAccuracy}%`;
+    els.streakMetric.textContent = `${streak}日`;
     els.reviewMetric.textContent = String(review);
     els.bankCount.textContent = String(window.QUIZ_QUESTIONS.length);
     els.priorityCount.textContent = String(window.QUIZ_QUESTIONS.filter((question) => question.priority === "S" || question.priority === "A").length);
+  }
+
+  function renderBadges() {
+    const totals = dailyTotals();
+    const today = state.stats.daily?.[todayKey()] || { answered: 0, correct: 0 };
+    const streak = currentStreak();
+    const badges = [
+      { label: "今日5問", earned: today.answered >= 5 },
+      { label: "今日20問", earned: today.answered >= 20 },
+      { label: "正答率80%", earned: today.answered >= 5 && today.correct / today.answered >= 0.8 },
+      { label: "3日連続", earned: streak >= 3 },
+      { label: "7日連続", earned: streak >= 7 },
+      { label: "累計100問", earned: totals.answered >= 100 }
+    ];
+    els.badgeList.innerHTML = "";
+    badges.forEach((badge) => {
+      const item = document.createElement("div");
+      item.className = badge.earned ? "badge earned" : "badge";
+      item.textContent = badge.label;
+      els.badgeList.appendChild(item);
+    });
   }
 
   function renderUnitTrack() {
@@ -417,9 +526,12 @@
     const correct = state.quiz.reduce((count, question) => {
       return state.answers.get(question.id) === question.answer ? count + 1 : count;
     }, 0);
+    const today = state.stats.daily?.[todayKey()] || { answered: 0, correct: 0 };
+    const todayAccuracy = today.answered ? Math.round((today.correct / today.answered) * 100) : 0;
+    const streak = currentStreak();
     els.questionCard.classList.add("hidden");
     els.summary.classList.remove("hidden");
-    els.summaryText.textContent = `${total}問中 ${correct}問正解です。間違えた単元は復習モードに回ります。`;
+    els.summaryText.textContent = `${total}問中 ${correct}問正解です。今日は${today.answered}問、正答率${todayAccuracy}%、連続${streak}日目です。間違えた単元は「できなかった問題」に回ります。`;
     renderWeakUnits();
   }
 
@@ -477,9 +589,11 @@
     saveProgress();
   });
   els.resetProgress.addEventListener("click", () => {
-    if (!confirm("このブラウザに保存した解答記録をリセットしますか。")) return;
+    if (!confirm("このブラウザに保存した解答記録と連続日数をリセットしますか。")) return;
     state.progress = {};
+    state.stats = { daily: {} };
     saveProgress();
+    saveStats();
     startQuiz();
   });
 

@@ -46,8 +46,10 @@
           <h2>記録</h2>
         </div>
         <dl class="stats">
-          <div><dt>解答数</dt><dd id="answeredCount">0</dd></div>
-          <div><dt>正答率</dt><dd id="accuracyRate">0%</dd></div>
+          <div><dt>累計解答</dt><dd id="answeredCount">0</dd></div>
+          <div><dt>累計正答率</dt><dd id="accuracyRate">0%</dd></div>
+          <div><dt>学習日数</dt><dd id="studyDaysCount">0</dd></div>
+          <div><dt>連続日数</dt><dd id="streakCount">0</dd></div>
           <div><dt>復習待ち</dt><dd id="reviewCount">0</dd></div>
         </dl>
       </section>
@@ -81,6 +83,18 @@
         <div class="metric">
           <span class="metric-label">今回の正答</span>
           <strong id="scoreMetric">0</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">今日の解答</span>
+          <strong id="todayAnsweredMetric">0</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">今日の正答率</span>
+          <strong id="todayAccuracyMetric">0%</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">連続日数</span>
+          <strong id="streakMetric">0</strong>
         </div>
         <div class="metric">
           <span class="metric-label">復習待ち</span>
@@ -124,6 +138,11 @@
 
         <aside class="unit-panel" aria-label="単元別の状態">
           <div class="panel-heading">
+            <h2>バッジ</h2>
+          </div>
+          <div id="badgeList" class="badge-list"></div>
+
+          <div class="panel-heading unit-heading">
             <h2>単元</h2>
           </div>
           <div id="unitTrack" class="unit-track"></div>

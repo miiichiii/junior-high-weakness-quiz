@@ -426,64 +426,208 @@
   function renderScratchPad(question) {
     const wrapper = document.createElement("section");
     wrapper.className = "scratchpad";
-    wrapper.setAttribute("aria-label", "途中式メモ");
+    wrapper.setAttribute("aria-label", "式を動かすメモ");
+    const scratch = getScratchState(question);
 
     const toolbar = document.createElement("div");
     toolbar.className = "scratchpad-toolbar";
 
     const label = document.createElement("span");
     label.className = "scratchpad-label";
-    label.textContent = "メモ";
+    label.textContent = "式メモ";
     toolbar.appendChild(label);
 
-    const textarea = document.createElement("textarea");
-    textarea.className = "scratchpad-text";
-    textarea.rows = 5;
-    textarea.spellcheck = false;
-    textarea.placeholder = "途中式メモ";
-    textarea.value = state.scratchNotes[question.id] || "";
-    textarea.addEventListener("input", () => {
-      state.scratchNotes[question.id] = textarea.value;
-      saveScratchNotes();
+    const undo = document.createElement("button");
+    undo.type = "button";
+    undo.className = "scratchpad-clear";
+    undo.textContent = "1つ戻す";
+    undo.addEventListener("click", () => {
+      const line = scratch.lines[scratch.activeLine] || [];
+      line.pop();
+      saveScratchState(question, scratch);
+      refreshWorkspace();
     });
 
-    const symbols = ["x", "y", "=", "+", "-", "(", ")", "×", "÷", "→"];
-    symbols.forEach((symbol) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "scratchpad-symbol";
-      button.textContent = symbol;
-      button.setAttribute("aria-label", `${symbol}を入力`);
-      button.addEventListener("click", () => insertIntoScratchPad(question, textarea, symbol));
-      toolbar.appendChild(button);
+    const addLine = document.createElement("button");
+    addLine.type = "button";
+    addLine.className = "scratchpad-clear";
+    addLine.textContent = "行追加";
+    addLine.addEventListener("click", () => {
+      scratch.lines.push([]);
+      scratch.activeLine = scratch.lines.length - 1;
+      saveScratchState(question, scratch);
+      refreshWorkspace();
     });
 
     const clear = document.createElement("button");
     clear.type = "button";
     clear.className = "scratchpad-clear";
-    clear.textContent = "消す";
+    clear.textContent = "全部消す";
     clear.addEventListener("click", () => {
-      textarea.value = "";
-      state.scratchNotes[question.id] = "";
-      saveScratchNotes();
-      textarea.focus({ preventScroll: true });
+      scratch.lines = [[], [], []];
+      scratch.activeLine = 0;
+      saveScratchState(question, scratch);
+      refreshWorkspace();
     });
-    toolbar.appendChild(clear);
+    toolbar.append(undo, addLine, clear);
 
-    wrapper.append(toolbar, textarea);
+    const source = document.createElement("div");
+    source.className = "scratchpad-source";
+    const sourceLabel = document.createElement("span");
+    sourceLabel.className = "scratchpad-section-label";
+    sourceLabel.textContent = "問題の式";
+    const sourceTokens = document.createElement("div");
+    sourceTokens.className = "scratchpad-token-row";
+    extractScratchTokens(question).forEach((token) => {
+      sourceTokens.appendChild(renderScratchSourceToken(question, scratch, token, () => refreshWorkspace()));
+    });
+    source.append(sourceLabel, sourceTokens);
+
+    const workspace = document.createElement("div");
+    workspace.className = "scratchpad-workspace";
+
+    function refreshWorkspace() {
+      workspace.innerHTML = "";
+      scratch.lines.forEach((line, lineIndex) => {
+        const lineButton = document.createElement("button");
+        lineButton.type = "button";
+        lineButton.className = lineIndex === scratch.activeLine ? "scratch-work-line active" : "scratch-work-line";
+        lineButton.dataset.lineIndex = String(lineIndex);
+        lineButton.addEventListener("click", () => {
+          scratch.activeLine = lineIndex;
+          saveScratchState(question, scratch);
+          refreshWorkspace();
+        });
+
+        const lineLabel = document.createElement("span");
+        lineLabel.className = "scratch-line-label";
+        lineLabel.textContent = `${lineIndex + 1}`;
+        lineButton.appendChild(lineLabel);
+
+        const lineTokens = document.createElement("span");
+        lineTokens.className = "scratch-line-tokens";
+        if (line.length === 0) {
+          const empty = document.createElement("span");
+          empty.className = "scratch-line-empty";
+          empty.textContent = "ここに式を置く";
+          lineTokens.appendChild(empty);
+        } else {
+          line.forEach((token, tokenIndex) => {
+            lineTokens.appendChild(renderScratchPlacedToken(question, scratch, token, lineIndex, tokenIndex, () => refreshWorkspace()));
+          });
+        }
+        lineButton.appendChild(lineTokens);
+        workspace.appendChild(lineButton);
+      });
+    }
+
+    refreshWorkspace();
+    wrapper.append(toolbar, source, workspace);
     return wrapper;
   }
 
-  function insertIntoScratchPad(question, textarea, symbol) {
-    const start = textarea.selectionStart ?? textarea.value.length;
-    const end = textarea.selectionEnd ?? textarea.value.length;
-    const nextValue = `${textarea.value.slice(0, start)}${symbol}${textarea.value.slice(end)}`;
-    textarea.value = nextValue;
-    const cursor = start + symbol.length;
-    textarea.setSelectionRange(cursor, cursor);
-    state.scratchNotes[question.id] = nextValue;
+  function getScratchState(question) {
+    const stored = state.scratchNotes[question.id];
+    if (stored && typeof stored === "object" && Array.isArray(stored.lines)) {
+      return {
+        lines: stored.lines.map((line) => Array.isArray(line) ? line.slice() : tokenizeScratchText(String(line || ""))),
+        activeLine: Number.isInteger(stored.activeLine) ? stored.activeLine : 0
+      };
+    }
+    if (typeof stored === "string" && stored.trim()) {
+      return {
+        lines: stored.split("\n").map(tokenizeScratchText).concat([[], []]).slice(0, 4),
+        activeLine: 0
+      };
+    }
+    return { lines: [[], [], []], activeLine: 0 };
+  }
+
+  function saveScratchState(question, scratch) {
+    const activeLine = Math.min(Math.max(scratch.activeLine || 0, 0), Math.max(scratch.lines.length - 1, 0));
+    scratch.activeLine = activeLine;
+    state.scratchNotes[question.id] = {
+      lines: scratch.lines.map((line) => line.slice()),
+      activeLine
+    };
     saveScratchNotes();
-    textarea.focus({ preventScroll: true });
+  }
+
+  function extractScratchTokens(question) {
+    const tokens = tokenizeScratchText(question.prompt);
+    const baseTokens = tokens.length ? tokens : ["x", "y", "=", "+", "-", "×", "÷", "→"];
+    return baseTokens.slice(0, 36);
+  }
+
+  function tokenizeScratchText(text) {
+    const normalized = String(text || "")
+      .normalize("NFKC")
+      .replace(/−/g, "-")
+      .replace(/[＊*]/g, "×")
+      .replace(/[／/]/g, "÷");
+    return normalized.match(/±|√|→|[+-]?\d+(?:\.\d+)?[xy](?:²)?|[xy](?:²)?|[+-]?\d+(?:\.\d+)?|[=+\-×÷()]/g) || [];
+  }
+
+  function renderScratchSourceToken(question, scratch, token, refreshWorkspace) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "scratch-token source";
+    button.textContent = token;
+    button.addEventListener("click", () => {
+      addScratchToken(question, scratch, token);
+      refreshWorkspace();
+    });
+    button.addEventListener("pointerdown", (event) => startScratchTokenDrag(event, question, scratch, token, refreshWorkspace));
+    return button;
+  }
+
+  function renderScratchPlacedToken(question, scratch, token, lineIndex, tokenIndex, refreshWorkspace) {
+    const chip = document.createElement("span");
+    chip.className = "scratch-token placed";
+    chip.textContent = token;
+    chip.title = "タップで消す";
+    chip.addEventListener("click", (event) => {
+      event.stopPropagation();
+      scratch.lines[lineIndex].splice(tokenIndex, 1);
+      scratch.activeLine = lineIndex;
+      saveScratchState(question, scratch);
+      refreshWorkspace();
+    });
+    return chip;
+  }
+
+  function addScratchToken(question, scratch, token, lineIndex = scratch.activeLine) {
+    if (!scratch.lines[lineIndex]) scratch.lines[lineIndex] = [];
+    scratch.lines[lineIndex].push(token);
+    scratch.activeLine = lineIndex;
+    saveScratchState(question, scratch);
+  }
+
+  function startScratchTokenDrag(event, question, scratch, token, refreshWorkspace) {
+    if (event.button !== undefined && event.button !== 0) return;
+    event.preventDefault();
+    const ghost = document.createElement("div");
+    ghost.className = "scratch-drag-ghost";
+    ghost.textContent = token;
+    ghost.style.left = `${event.clientX}px`;
+    ghost.style.top = `${event.clientY}px`;
+    document.body.appendChild(ghost);
+
+    const move = (moveEvent) => {
+      ghost.style.left = `${moveEvent.clientX}px`;
+      ghost.style.top = `${moveEvent.clientY}px`;
+    };
+    const end = (endEvent) => {
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", end);
+      ghost.remove();
+      const target = document.elementFromPoint(endEvent.clientX, endEvent.clientY)?.closest(".scratch-work-line");
+      if (!target) return;
+      addScratchToken(question, scratch, token, Number(target.dataset.lineIndex || 0));
+      refreshWorkspace();
+    };
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", end, { once: true });
   }
 
   function renderManipulateAnswer(question, currentAnswer) {

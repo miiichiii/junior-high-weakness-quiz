@@ -522,54 +522,149 @@ h3 {
   font-weight: 900;
 }
 
-.scratchpad-symbol,
 .scratchpad-clear {
-  min-width: 38px;
   min-height: 34px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
   color: var(--ink);
   padding: 6px 10px;
-  font-family: var(--math-font);
-  font-size: 18px;
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 900;
 }
 
 .scratchpad-clear {
-  margin-left: auto;
-  font-family: inherit;
-  font-size: 13px;
   color: var(--muted);
 }
 
-.scratchpad-symbol:hover,
 .scratchpad-clear:hover {
   border-color: rgba(15, 118, 110, 0.55);
   background: #f7fbfa;
 }
 
-.scratchpad-text {
-  width: 100%;
-  min-height: 150px;
+.scratchpad-source,
+.scratchpad-workspace {
+  display: grid;
+  gap: 8px;
+}
+
+.scratchpad-section-label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.scratchpad-token-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.scratch-token {
+  min-width: 42px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid #d7e0ea;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 7px 10px;
+  font-family: var(--math-font);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  touch-action: none;
+  user-select: none;
+}
+
+.scratch-token.source {
+  box-shadow: 0 7px 16px rgba(23, 32, 42, 0.06);
+  cursor: grab;
+}
+
+.scratch-token.source:hover {
+  border-color: rgba(15, 118, 110, 0.55);
+  transform: translateY(-1px);
+}
+
+.scratch-token.placed {
+  min-width: auto;
+  min-height: 34px;
+  border-color: rgba(25, 87, 166, 0.24);
+  background: #e8f1ff;
+  color: #174a8b;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.scratch-work-line {
+  width: 100%;
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  border: 1px dashed #c8d4e1;
   border-radius: 8px;
   background:
     repeating-linear-gradient(to bottom, transparent 0, transparent 33px, rgba(25, 87, 166, 0.12) 34px),
     #fff;
-  color: var(--ink);
-  padding: 12px;
-  font-family: var(--math-font);
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 34px;
-  resize: vertical;
-  outline: none;
+  padding: 8px;
+  text-align: left;
 }
 
-.scratchpad-text:focus {
-  border-color: rgba(25, 87, 166, 0.55);
-  box-shadow: 0 0 0 3px rgba(25, 87, 166, 0.12);
+.scratch-work-line.active {
+  border-color: rgba(25, 87, 166, 0.62);
+  box-shadow: 0 0 0 3px rgba(25, 87, 166, 0.1);
+}
+
+.scratch-line-label {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #eef0f3;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.scratch-line-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.scratch-line-empty {
+  color: #98a2b3;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.scratch-drag-ghost {
+  position: fixed;
+  z-index: 999;
+  pointer-events: none;
+  min-width: 48px;
+  min-height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #1957a6;
+  color: #fff;
+  padding: 8px 12px;
+  box-shadow: 0 18px 36px rgba(23, 32, 42, 0.22);
+  font-family: var(--math-font);
+  font-size: 24px;
+  font-weight: 900;
+  transform: translate(-50%, -50%) rotate(4deg);
 }
 
 .equation-lab {
@@ -1118,13 +1213,18 @@ h3 {
     grid-template-columns: 1fr;
   }
 
-  .scratchpad-text {
-    min-height: 132px;
-    font-size: 22px;
+  .scratch-token {
+    min-height: 36px;
+    font-size: 20px;
   }
 
-  .scratchpad-clear {
-    margin-left: 0;
+  .scratch-token.placed {
+    min-height: 32px;
+    font-size: 18px;
+  }
+
+  .scratch-work-line {
+    min-height: 50px;
   }
 
   .equation-notebook {

@@ -21,7 +21,7 @@ window.QUIZ_QUESTIONS = [
     prompt: "式を動かして、方程式 x - 3 = 8 を解きなさい。",
     left: [{ id: "l1", coef: 1, type: "x" }, { id: "l2", coef: -3, type: "const" }],
     right: [{ id: "r1", coef: 8, type: "const" }],
-    explanation: "-3を右辺へ移すと +3 になるので、x = 8 + 3 = 11 です。元の (x - 3) / 4 = 2 は、両辺に4をかけると x - 3 = 8 になります。"
+    explanation: "-3を右辺へ移すと +3 になるので、x = 8 + 3 = 11 です。"
   },
   {
     id: "math-eq-003",
@@ -235,7 +235,7 @@ window.QUIZ_QUESTIONS = [
     prompt: "式を動かして、方程式 2x - 6 = 10 を解きなさい。",
     left: [{ id: "l1", coef: 2, type: "x" }, { id: "l2", coef: -6, type: "const" }],
     right: [{ id: "r1", coef: 10, type: "const" }],
-    explanation: "2(x - 3) = 10 を展開すると 2x - 6 = 10。-6を右辺へ移して 2x = 16、両辺を2で割って x = 8 です。"
+    explanation: "-6を右辺へ移して 2x = 16、両辺を2で割って x = 8 です。"
   },
   {
     id: "math-eq-009",
@@ -247,7 +247,7 @@ window.QUIZ_QUESTIONS = [
     prompt: "式を動かして、方程式 2x = 12 を解きなさい。",
     left: [{ id: "l1", coef: 2, type: "x" }],
     right: [{ id: "r1", coef: 12, type: "const" }],
-    explanation: "(2/3)x = 4 は、両辺に3をかけると 2x = 12。両辺を2で割って x = 6 です。"
+    explanation: "両辺を2で割って x = 6 です。"
   },
   {
     id: "math-eq-010",
@@ -681,7 +681,7 @@ window.QUIZ_QUESTIONS = [
     prompt: "式を動かして、方程式 x - 2 = 6 を解きなさい。",
     left: [{ id: "l1", coef: 1, type: "x" }, { id: "l2", coef: -2, type: "const" }],
     right: [{ id: "r1", coef: 6, type: "const" }],
-    explanation: "3(x - 2) = 18 は、両辺を3で割ると x - 2 = 6。-2を右辺へ移して x = 8 です。"
+    explanation: "-2を右辺へ移して x = 8 です。"
   },
   {
     id: "math-eq-input-004",
@@ -705,7 +705,7 @@ window.QUIZ_QUESTIONS = [
     prompt: "式を動かして、方程式 x + 12 = 27 を解きなさい。",
     left: [{ id: "l1", coef: 1, type: "x" }, { id: "l2", coef: 12, type: "const" }],
     right: [{ id: "r1", coef: 27, type: "const" }],
-    explanation: "x/3 + 4 = 9 は、両辺に3をかけると x + 12 = 27。12を右辺へ移して x = 15 です。"
+    explanation: "12を右辺へ移して x = 27 - 12 = 15 です。"
   },
   {
     id: "math-eq-input-006",
@@ -727,7 +727,7 @@ window.QUIZ_QUESTIONS = [
     priority: "S",
     stage: "直接入力",
     prompt: "連立方程式 x + y = 9, x - y = 3 を解きなさい。",
-    answerText: ["x=6,y=3", "x=6 y=3", "6,3"],
+    answerText: ["x=6,y=3", "x=6 y=3", "6,3", "y=3,x=6", "y=3 x=6"],
     placeholder: "例: x=6,y=3",
     explanation: "2つの式を足すと 2x = 12 なので x = 6。x + y = 9 に代入して y = 3 です。"
   },
@@ -739,7 +739,7 @@ window.QUIZ_QUESTIONS = [
     priority: "S",
     stage: "直接入力",
     prompt: "連立方程式 2x + y = 11, x + y = 7 を解きなさい。",
-    answerText: ["x=4,y=3", "x=4 y=3", "4,3"],
+    answerText: ["x=4,y=3", "x=4 y=3", "4,3", "y=3,x=4", "y=3 x=4"],
     placeholder: "例: x=4,y=3",
     explanation: "上の式から下の式を引くと x = 4。x + y = 7 に代入して y = 3 です。"
   },

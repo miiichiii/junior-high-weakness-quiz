@@ -57,7 +57,7 @@ window.QUIZ_QUESTIONS = [
     prompt: "時速4kmで歩く時間を x 時間、時速6kmで歩く時間を y 時間として、合計2時間で10km進んだ。正しい式はどれですか。",
     choices: ["x+y=10, 4x+6y=2", "x+y=2, 4x+6y=10", "4x+6y=2, x-y=10", "x+y=2, 6x+4y=2"],
     answer: 1,
-    explanation: "時間の合計は x + y = 2、距離は 速さ x 時間 なので 4x + 6y = 10 です。"
+    explanation: "時間の合計は x + y = 2、距離は 速さ × 時間 なので 4x + 6y = 10 です。"
   },
   {
     id: "math-alg-001",
@@ -87,7 +87,7 @@ window.QUIZ_QUESTIONS = [
     prompt: "x = -2 のとき、3x^2 - 4x + 1 の値はいくつですか。",
     choices: ["5", "13", "21", "-19"],
     answer: 2,
-    explanation: "3x^2 は 3 x 4 = 12、-4x は -4 x -2 = 8。12 + 8 + 1 = 21 です。"
+    explanation: "3x^2 は 3 × 4 = 12、-4x は -4 × -2 = 8。12 + 8 + 1 = 21 です。"
   },
   {
     id: "math-fn-001",
@@ -117,7 +117,7 @@ window.QUIZ_QUESTIONS = [
     prompt: "y は x に反比例し、x=3 のとき y=4 です。x=6 のとき y はいくつですか。",
     choices: ["1", "2", "8", "12"],
     answer: 1,
-    explanation: "反比例では xy が一定です。3 x 4 = 12 なので y = 12 / 6 = 2 です。"
+    explanation: "反比例では xy が一定です。3 × 4 = 12 なので y = 12 / 6 = 2 です。"
   },
   {
     id: "math-data-001",
@@ -157,7 +157,7 @@ window.QUIZ_QUESTIONS = [
     prompt: "五角形の内角の和は何度ですか。",
     choices: ["360度", "480度", "540度", "720度"],
     answer: 2,
-    explanation: "n角形の内角の和は 180 x (n - 2)。五角形なら 180 x 3 = 540度です。"
+    explanation: "n角形の内角の和は 180 × (n - 2)。五角形なら 180 × 3 = 540度です。"
   },
   {
     id: "math-geo-003",
@@ -207,7 +207,197 @@ window.QUIZ_QUESTIONS = [
     prompt: "三角形で、底辺が同じで高さも同じなら、何が等しくなりますか。",
     choices: ["周の長さ", "面積", "3辺の長さ", "3つの角"],
     answer: 1,
-    explanation: "三角形の面積は 底辺 x 高さ / 2。同じ底辺と高さなら面積が等しくなります。"
+    explanation: "三角形の面積は 底辺 × 高さ / 2。同じ底辺と高さなら面積が等しくなります。"
+  },
+  {
+    id: "math-eq-007",
+    subject: "数学",
+    unit: "方程式",
+    priority: "S",
+    prompt: "方程式 -3x + 7 = 16 を解くと、x はいくつですか。",
+    choices: ["-3", "3", "-9", "9"],
+    answer: 0,
+    explanation: "両辺から7を引くと -3x = 9。両辺を -3 で割って x = -3 です。負の数で割るところを丁寧に確認します。"
+  },
+  {
+    id: "math-eq-008",
+    subject: "数学",
+    unit: "方程式",
+    priority: "S",
+    prompt: "方程式 2(x - 3) = 10 を解くと、x はいくつですか。",
+    choices: ["2", "5", "8", "13"],
+    answer: 2,
+    explanation: "先に両辺を2で割ると x - 3 = 5。両辺に3を足して x = 8 です。"
+  },
+  {
+    id: "math-eq-009",
+    subject: "数学",
+    unit: "方程式",
+    priority: "S",
+    prompt: "(2/3)x = 4 を解くと、x はいくつですか。",
+    choices: ["6", "8/3", "12", "2"],
+    answer: 0,
+    explanation: "両辺に 3/2 をかけます。x = 4 × 3/2 = 6 です。分数係数は逆数をかけるのが基本です。"
+  },
+  {
+    id: "math-eq-010",
+    subject: "数学",
+    unit: "方程式",
+    priority: "S",
+    prompt: "方程式 4x + 5 = -7 を解くと、x はいくつですか。",
+    choices: ["-3", "-2", "2", "3"],
+    answer: 0,
+    explanation: "両辺から5を引くと 4x = -12。両辺を4で割って x = -3 です。"
+  },
+  {
+    id: "math-eq-011",
+    subject: "数学",
+    unit: "連立方程式",
+    priority: "S",
+    prompt: "連立方程式 2x + y = 9、x - y = 3 の解として正しいものはどれですか。",
+    choices: ["x=2, y=5", "x=3, y=3", "x=4, y=1", "x=5, y=-1"],
+    answer: 2,
+    explanation: "2つの式を足すと 3x = 12。x = 4、x - y = 3 に入れて y = 1 です。"
+  },
+  {
+    id: "math-eq-012",
+    subject: "数学",
+    unit: "連立方程式",
+    priority: "S",
+    prompt: "連立方程式 y = 2x + 1、x + y = 10 を解くと、x はいくつですか。",
+    choices: ["2", "3", "4", "5"],
+    answer: 1,
+    explanation: "x + y = 10 に y = 2x + 1 を代入すると x + 2x + 1 = 10。3x = 9 なので x = 3 です。"
+  },
+  {
+    id: "math-eq-013",
+    subject: "数学",
+    unit: "連立方程式",
+    priority: "S",
+    prompt: "連立方程式 3x + 2y = 16、x + 2y = 8 を解くと、x はいくつですか。",
+    choices: ["2", "3", "4", "5"],
+    answer: 2,
+    explanation: "2つの式を引くと 2x = 8。x = 4 です。同じ項を消す形を見つけるのがポイントです。"
+  },
+  {
+    id: "math-eq-014",
+    subject: "数学",
+    unit: "方程式の利用",
+    priority: "S",
+    prompt: "ある数の3倍から5を引くと16になる。ある数を x とすると、正しい式はどれですか。",
+    choices: ["3x - 5 = 16", "3(x - 5) = 16", "x/3 - 5 = 16", "5x - 3 = 16"],
+    answer: 0,
+    explanation: "ある数の3倍は 3x。そのあと5を引くので 3x - 5 = 16 です。文章を左から式にします。"
+  },
+  {
+    id: "math-eq-015",
+    subject: "数学",
+    unit: "方程式の利用",
+    priority: "S",
+    prompt: "1冊120円のノートと1本80円のペンを合わせて8個買い、合計800円でした。ノートを x 冊、ペンを y 本としたとき、正しい式はどれですか。",
+    choices: ["x+y=8, 120x+80y=800", "x+y=800, 120x+80y=8", "120x+80y=8, x-y=800", "x+y=8, 80x+120y=800"],
+    answer: 0,
+    explanation: "個数は x + y = 8、金額は 120x + 80y = 800 です。個数と金額を混ぜないようにします。"
+  },
+  {
+    id: "math-alg-004",
+    subject: "数学",
+    unit: "式の計算",
+    priority: "S",
+    prompt: "3(2a - 5) - 2(a + 1) を簡単にすると、どれになりますか。",
+    choices: ["4a - 17", "4a - 13", "8a - 17", "6a - 7"],
+    answer: 0,
+    explanation: "3(2a - 5)=6a-15、-2(a+1)=-2a-2。合わせて 4a - 17 です。符号に注意します。"
+  },
+  {
+    id: "math-alg-005",
+    subject: "数学",
+    unit: "等式変形",
+    priority: "S",
+    prompt: "v = d / t を d について解くと、どれになりますか。",
+    choices: ["d = vt", "d = v/t", "d = t/v", "d = v + t"],
+    answer: 0,
+    explanation: "両辺に t をかけると vt = d。つまり d = vt です。理科の公式にもつながる等式変形です。"
+  },
+  {
+    id: "math-fn-004",
+    subject: "数学",
+    unit: "1次関数",
+    priority: "S",
+    prompt: "y = -2x + 6 で、x が -1 から 3 まで動くとき、y の範囲はどれですか。",
+    choices: ["0 から 8", "-1 から 3", "3 から 6", "-8 から 0"],
+    answer: 0,
+    explanation: "x=-1 なら y=8、x=3 なら y=0。傾きが負なので、y は 0 から 8 までです。"
+  },
+  {
+    id: "math-fn-005",
+    subject: "数学",
+    unit: "1次関数",
+    priority: "S",
+    prompt: "点 (0, 2) と点 (3, 8) を通る直線の傾きはどれですか。",
+    choices: ["1", "2", "3", "6"],
+    answer: 1,
+    explanation: "x が 0 から3へ増えると、y は2から8へ6増えます。傾きは 6 / 3 = 2 です。"
+  },
+  {
+    id: "math-fn-006",
+    subject: "数学",
+    unit: "1次関数",
+    priority: "S",
+    prompt: "2直線 y = 2x + 1 と y = -x + 7 の交点の x 座標はどれですか。",
+    choices: ["1", "2", "3", "4"],
+    answer: 1,
+    explanation: "交点では y が等しいので、2x + 1 = -x + 7。3x = 6 だから x = 2 です。"
+  },
+  {
+    id: "math-geo-008",
+    subject: "数学",
+    unit: "図形",
+    priority: "S",
+    prompt: "三角形の2つの角が50度、60度のとき、残りの角は何度ですか。",
+    choices: ["60度", "70度", "80度", "90度"],
+    answer: 1,
+    explanation: "三角形の内角の和は180度。180 - 50 - 60 = 70度です。"
+  },
+  {
+    id: "math-geo-009",
+    subject: "数学",
+    unit: "多角形",
+    priority: "S",
+    prompt: "どんな多角形でも、外角の和は何度ですか。",
+    choices: ["90度", "180度", "270度", "360度"],
+    answer: 3,
+    explanation: "多角形の外角の和はいつでも360度です。内角の和の公式と区別します。"
+  },
+  {
+    id: "math-geo-010",
+    subject: "数学",
+    unit: "合同",
+    priority: "S",
+    prompt: "合同証明で「ABは共通」であることを使うとき、理由として最も自然なのはどれですか。",
+    choices: ["共通な辺だから等しい", "平行だから等しい", "円周角だから等しい", "平均だから等しい"],
+    answer: 0,
+    explanation: "同じ線分を2つの三角形で使っているときは、共通な辺だから等しい、と書けます。"
+  },
+  {
+    id: "math-data-003",
+    subject: "数学",
+    unit: "データの活用",
+    priority: "A",
+    prompt: "データ 1, 2, 4, 6, 9, 10 の第1四分位数はどれですか。",
+    choices: ["2", "3", "4", "5"],
+    answer: 0,
+    explanation: "下半分 1, 2, 4 の中央値が第1四分位数です。真ん中は2です。"
+  },
+  {
+    id: "math-data-004",
+    subject: "数学",
+    unit: "データの活用",
+    priority: "A",
+    prompt: "データの最大値が18、最小値が5のとき、範囲はいくつですか。",
+    choices: ["9", "13", "18", "23"],
+    answer: 1,
+    explanation: "範囲は 最大値 - 最小値。18 - 5 = 13 です。"
   },
   {
     id: "science-phy-001",
@@ -227,7 +417,7 @@ window.QUIZ_QUESTIONS = [
     prompt: "50gのおもりでばねが2cmのびる。150gのおもりでは何cmのびますか。",
     choices: ["3cm", "4cm", "6cm", "8cm"],
     answer: 2,
-    explanation: "150gは50gの3倍なので、のびも3倍。2cm x 3 = 6cmです。"
+    explanation: "150gは50gの3倍なので、のびも3倍。2cm × 3 = 6cmです。"
   },
   {
     id: "science-elec-001",
@@ -257,7 +447,7 @@ window.QUIZ_QUESTIONS = [
     prompt: "食塩水100gに食塩が5g含まれるとき、質量パーセント濃度はいくつですか。",
     choices: ["2%", "5%", "10%", "20%"],
     answer: 1,
-    explanation: "質量パーセント濃度は 溶質の質量 / 水溶液の質量 x 100。5 / 100 x 100 = 5%です。"
+    explanation: "質量パーセント濃度は 溶質の質量 / 水溶液の質量 × 100。5 / 100 × 100 = 5%です。"
   },
   {
     id: "science-chem-002",
@@ -410,4 +600,3 @@ window.QUIZ_QUESTIONS = [
     explanation: "古典では主語が省略されやすく、助動詞の意味も内容理解に直結します。"
   }
 ];
-

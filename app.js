@@ -100,6 +100,12 @@
   function pickQuiz() {
     const pool = poolQuestions();
     if (pool.length === 0) return [];
+    if (state.mode === "focus") {
+      return pool
+        .slice()
+        .sort(sortForStudyOrder)
+        .slice(0, 20);
+    }
     const weighted = [];
     pool.forEach((question) => {
       const count = weightQuestion(question);
@@ -116,6 +122,33 @@
       }
     }
     return picked;
+  }
+
+  function sortForStudyOrder(a, b) {
+    const priorityOrder = { S: 0, A: 1, B: 2, C: 3 };
+    const subjectOrder = { "数学": 0, "理科": 1, "社会": 2, "英語": 3, "国語": 4 };
+    const unitOrder = {
+      "方程式": 0,
+      "連立方程式": 1,
+      "方程式の利用": 2,
+      "式の計算": 3,
+      "等式変形": 4,
+      "式の値": 5,
+      "1次関数": 6,
+      "反比例": 7,
+      "図形": 8,
+      "多角形": 9,
+      "作図": 10,
+      "円": 11,
+      "合同": 12,
+      "等積変形": 13,
+      "空間図形": 14,
+      "データの活用": 15
+    };
+    return (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9)
+      || (subjectOrder[a.subject] ?? 9) - (subjectOrder[b.subject] ?? 9)
+      || (unitOrder[a.unit] ?? 99) - (unitOrder[b.unit] ?? 99)
+      || a.id.localeCompare(b.id);
   }
 
   function startQuiz() {
@@ -175,6 +208,7 @@
       if (currentAnswer !== undefined) {
         if (index === question.answer) button.classList.add("correct");
         if (index === currentAnswer && index !== question.answer) button.classList.add("wrong");
+        button.disabled = true;
       }
       button.addEventListener("click", () => answerQuestion(question, index));
       els.choices.appendChild(button);
@@ -182,12 +216,13 @@
   }
 
   function answerQuestion(question, choiceIndex) {
+    if (state.answers.has(question.id)) return;
     state.answers.set(question.id, choiceIndex);
     const correct = choiceIndex === question.answer;
     const record = state.progress[question.id] || { correct: 0, wrong: 0 };
     if (correct) {
       record.correct = (record.correct || 0) + 1;
-      record.needsReview = false;
+      record.needsReview = record.needsReview && state.mode !== "review";
     } else {
       record.wrong = (record.wrong || 0) + 1;
       record.needsReview = true;
@@ -296,4 +331,3 @@
   buildSubjectButtons();
   startQuiz();
 })();
-

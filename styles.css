@@ -259,6 +259,10 @@ h3 {
   border-color: var(--accent);
 }
 
+.choice-button:disabled {
+  cursor: default;
+}
+
 .choice-button.correct {
   border-color: var(--ok);
   background: #eaf7ee;
@@ -356,4 +360,3 @@ h3 {
     min-height: 80px;
   }
 }
-

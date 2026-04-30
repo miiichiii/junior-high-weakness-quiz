@@ -555,10 +555,38 @@ h3 {
   font-weight: 900;
 }
 
+.scratchpad-source-groups {
+  display: grid;
+  gap: 8px;
+}
+
+.scratchpad-token-group {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.scratchpad-equation-label {
+  min-width: 54px;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #eef0f3;
+  color: var(--muted);
+  padding: 5px 8px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .scratchpad-token-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
 }
 
 .scratch-token {
@@ -1221,6 +1249,16 @@ h3 {
   .scratch-token.placed {
     min-height: 32px;
     font-size: 18px;
+  }
+
+  .scratchpad-token-group {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .scratchpad-equation-label {
+    justify-self: start;
+    min-height: 26px;
   }
 
   .scratch-work-line {

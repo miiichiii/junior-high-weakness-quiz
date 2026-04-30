@@ -476,12 +476,23 @@
     const sourceLabel = document.createElement("span");
     sourceLabel.className = "scratchpad-section-label";
     sourceLabel.textContent = "問題の式";
-    const sourceTokens = document.createElement("div");
-    sourceTokens.className = "scratchpad-token-row";
-    extractScratchTokens(question).forEach((token) => {
-      sourceTokens.appendChild(renderScratchSourceToken(question, scratch, token, () => refreshWorkspace()));
+    const sourceGroups = document.createElement("div");
+    sourceGroups.className = "scratchpad-source-groups";
+    extractScratchTokenGroups(question).forEach((group, groupIndex, groups) => {
+      const groupRow = document.createElement("div");
+      groupRow.className = "scratchpad-token-group";
+      const groupLabel = document.createElement("span");
+      groupLabel.className = "scratchpad-equation-label";
+      groupLabel.textContent = scratchGroupLabel(groupIndex, groups.length);
+      const sourceTokens = document.createElement("div");
+      sourceTokens.className = "scratchpad-token-row";
+      group.tokens.forEach((token) => {
+        sourceTokens.appendChild(renderScratchSourceToken(question, scratch, token, () => refreshWorkspace()));
+      });
+      groupRow.append(groupLabel, sourceTokens);
+      sourceGroups.appendChild(groupRow);
     });
-    source.append(sourceLabel, sourceTokens);
+    source.append(sourceLabel, sourceGroups);
 
     const workspace = document.createElement("div");
     workspace.className = "scratchpad-workspace";
@@ -553,10 +564,59 @@
     saveScratchNotes();
   }
 
-  function extractScratchTokens(question) {
+  function extractScratchTokenGroups(question) {
     const tokens = tokenizeScratchText(question.prompt);
     const baseTokens = tokens.length ? tokens : ["x", "y", "=", "+", "-", "×", "÷", "→"];
-    return baseTokens.slice(0, 36);
+    const groups = groupEquationTokens(baseTokens);
+    return groups.length ? groups.slice(0, 5) : [{ tokens: baseTokens.slice(0, 36) }];
+  }
+
+  function groupEquationTokens(tokens) {
+    const groups = [];
+    let current = [];
+    let hasEquals = false;
+    let rightTokenCount = 0;
+
+    tokens.forEach((token, index) => {
+      if (
+        current.length > 0
+        && hasEquals
+        && rightTokenCount > 0
+        && isEquationStartToken(token)
+        && hasEqualsAhead(tokens, index)
+      ) {
+        groups.push({ tokens: current });
+        current = [];
+        hasEquals = false;
+        rightTokenCount = 0;
+      }
+
+      current.push(token);
+      if (token === "=") {
+        hasEquals = true;
+        rightTokenCount = 0;
+      } else if (hasEquals) {
+        rightTokenCount += 1;
+      }
+    });
+
+    if (current.length > 0) groups.push({ tokens: current });
+    return groups.filter((group) => group.tokens.includes("="));
+  }
+
+  function isEquationStartToken(token) {
+    return /^[+-]?(?:\d+(?:\.\d+)?)?[xy](?:²)?$/.test(token) || /^[+-]?\d+(?:\.\d+)?$/.test(token);
+  }
+
+  function hasEqualsAhead(tokens, startIndex) {
+    const lookahead = tokens.slice(startIndex, startIndex + 7);
+    return lookahead.includes("=");
+  }
+
+  function scratchGroupLabel(index, groupCount) {
+    if (groupCount <= 1) return "式";
+    if (groupCount >= 3 && index === groupCount - 1) return "変形後";
+    return `式${index + 1}`;
   }
 
   function tokenizeScratchText(text) {

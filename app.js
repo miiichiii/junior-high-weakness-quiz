@@ -494,6 +494,36 @@
     });
     source.append(sourceLabel, sourceGroups);
 
+    const maker = document.createElement("form");
+    maker.className = "scratchpad-maker";
+    const makerLabel = document.createElement("span");
+    makerLabel.className = "scratchpad-section-label";
+    makerLabel.textContent = "計算結果";
+    const makerInput = document.createElement("input");
+    makerInput.className = "scratchpad-result-input";
+    makerInput.type = "text";
+    makerInput.inputMode = "text";
+    makerInput.autocomplete = "off";
+    makerInput.placeholder = "例: 2x";
+    const makerButton = document.createElement("button");
+    makerButton.type = "submit";
+    makerButton.className = "scratchpad-clear primary";
+    makerButton.textContent = "置く";
+    const quickResults = document.createElement("div");
+    quickResults.className = "scratchpad-token-row";
+    buildScratchResultSuggestions(question).forEach((token) => {
+      quickResults.appendChild(renderScratchSourceToken(question, scratch, token, () => refreshWorkspace(), "result"));
+    });
+    maker.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const token = normalizeScratchResultToken(makerInput.value);
+      if (!token) return;
+      addScratchToken(question, scratch, token);
+      makerInput.value = "";
+      refreshWorkspace();
+    });
+    maker.append(makerLabel, makerInput, makerButton, quickResults);
+
     const workspace = document.createElement("div");
     workspace.className = "scratchpad-workspace";
 
@@ -533,7 +563,7 @@
     }
 
     refreshWorkspace();
-    wrapper.append(toolbar, source, workspace);
+    wrapper.append(toolbar, source, maker, workspace);
     return wrapper;
   }
 
@@ -583,6 +613,17 @@
         && hasEquals
         && rightTokenCount > 0
         && isEquationStartToken(token)
+        && !hasEqualsAhead(tokens, index)
+        && !isScratchOperator(current[current.length - 1])
+      ) {
+        return;
+      }
+
+      if (
+        current.length > 0
+        && hasEquals
+        && rightTokenCount > 0
+        && isEquationStartToken(token)
         && hasEqualsAhead(tokens, index)
       ) {
         groups.push({ tokens: current });
@@ -613,10 +654,52 @@
     return lookahead.includes("=");
   }
 
+  function isScratchOperator(token) {
+    return ["+", "-", "×", "÷", "(", "="].includes(token);
+  }
+
   function scratchGroupLabel(index, groupCount) {
     if (groupCount <= 1) return "式";
     if (groupCount >= 3 && index === groupCount - 1) return "変形後";
     return `式${index + 1}`;
+  }
+
+  function buildScratchResultSuggestions(question) {
+    const tokens = tokenizeScratchText(question.prompt);
+    const suggestions = new Set(["0", "x", "y", "2x", "2y", "3x", "3y", "4x", "4y"]);
+    tokens.forEach((token) => {
+      if (/^[+-]?\d+(?:\.\d+)?$/.test(token)) suggestions.add(token);
+      const variableMatch = token.match(/^([+-]?\d+(?:\.\d+)?)([xy])$/);
+      if (variableMatch) {
+        const coef = Number(variableMatch[1]);
+        const variable = variableMatch[2];
+        [coef - 1, coef + 1, coef * 2].forEach((value) => {
+          if (Number.isFinite(value) && value !== 0) suggestions.add(`${formatScratchCoefficient(value)}${variable}`);
+        });
+      }
+    });
+    return Array.from(suggestions).slice(0, 18);
+  }
+
+  function formatScratchCoefficient(value) {
+    if (value === 1) return "";
+    if (value === -1) return "-";
+    return String(value);
+  }
+
+  function normalizeScratchResultToken(value) {
+    const normalized = String(value || "")
+      .normalize("NFKC")
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/−/g, "-")
+      .replace(/[＊*]/g, "×")
+      .replace(/[／/]/g, "÷")
+      .replace(/\^2/g, "²");
+    if (!normalized) return "";
+    if (/^[-+]?(\d+(\.\d+)?[xy]²?|[xy]²?|\d+(\.\d+)?|0)$/.test(normalized)) return normalized;
+    if (/^[=+\-×÷()]$/.test(normalized)) return normalized;
+    return "";
   }
 
   function tokenizeScratchText(text) {
@@ -628,10 +711,10 @@
     return normalized.match(/±|√|→|[+-]?\d+(?:\.\d+)?[xy](?:²)?|[xy](?:²)?|[+-]?\d+(?:\.\d+)?|[=+\-×÷()]/g) || [];
   }
 
-  function renderScratchSourceToken(question, scratch, token, refreshWorkspace) {
+  function renderScratchSourceToken(question, scratch, token, refreshWorkspace, variant = "source") {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "scratch-token source";
+    button.className = variant === "result" ? "scratch-token source result" : "scratch-token source";
     button.textContent = token;
     button.addEventListener("click", () => {
       addScratchToken(question, scratch, token);

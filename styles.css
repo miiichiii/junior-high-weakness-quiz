@@ -544,6 +544,7 @@ h3 {
 }
 
 .scratchpad-source,
+.scratchpad-maker,
 .scratchpad-workspace {
   display: grid;
   gap: 8px;
@@ -617,6 +618,42 @@ h3 {
 .scratch-token.source:hover {
   border-color: rgba(15, 118, 110, 0.55);
   transform: translateY(-1px);
+}
+
+.scratch-token.source.result {
+  border-color: rgba(15, 118, 110, 0.24);
+  background: #eefaf7;
+  color: #0b5f55;
+}
+
+.scratchpad-maker {
+  grid-template-columns: auto minmax(110px, 180px) auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.scratchpad-result-input {
+  min-height: 38px;
+  width: 100%;
+  border: 1px solid #d7e0ea;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 7px 10px;
+  font-family: var(--math-font);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.scratchpad-result-input:focus {
+  border-color: rgba(25, 87, 166, 0.55);
+  box-shadow: 0 0 0 3px rgba(25, 87, 166, 0.1);
+  outline: none;
+}
+
+.scratchpad-clear.primary {
+  border-color: rgba(15, 118, 110, 0.32);
+  background: #0f766e;
+  color: #fff;
 }
 
 .scratch-token.placed {
@@ -1254,6 +1291,15 @@ h3 {
   .scratchpad-token-group {
     grid-template-columns: 1fr;
     gap: 5px;
+  }
+
+  .scratchpad-maker {
+    grid-template-columns: 1fr auto;
+  }
+
+  .scratchpad-maker .scratchpad-section-label,
+  .scratchpad-maker .scratchpad-token-row {
+    grid-column: 1 / -1;
   }
 
   .scratchpad-equation-label {

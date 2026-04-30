@@ -8,6 +8,7 @@
     answers: new Map(),
     choiceOrders: new Map(),
     equationStates: new Map(),
+    scratchNotes: loadScratchNotes(),
     progress: loadProgress(),
     stats: loadStats()
   };
@@ -101,6 +102,18 @@
 
   function saveStats() {
     localStorage.setItem("weaknessQuizStats", JSON.stringify(state.stats));
+  }
+
+  function loadScratchNotes() {
+    try {
+      return JSON.parse(localStorage.getItem("weaknessQuizScratchNotes")) || {};
+    } catch (_error) {
+      return {};
+    }
+  }
+
+  function saveScratchNotes() {
+    localStorage.setItem("weaknessQuizScratchNotes", JSON.stringify(state.scratchNotes));
   }
 
   function buildSubjectButtons() {
@@ -328,6 +341,7 @@
 
   function renderChoiceAnswer(question, currentAnswer) {
     els.choices.innerHTML = "";
+    appendScratchPadIfNeeded(question);
     const order = getChoiceOrder(question);
     const selectedChoice = typeof currentAnswer === "object" ? currentAnswer.choiceIndex : currentAnswer;
     order.forEach((choiceIndex, displayIndex) => {
@@ -349,6 +363,7 @@
 
   function renderInputAnswer(question, currentAnswer) {
     els.choices.innerHTML = "";
+    appendScratchPadIfNeeded(question);
     const answered = currentAnswer !== undefined;
     const value = typeof currentAnswer === "object" ? currentAnswer.value : "";
     const correct = isStoredAnswerCorrect(question, currentAnswer);
@@ -395,6 +410,80 @@
     wrapper.append(row, feedback);
     els.choices.appendChild(wrapper);
     if (!answered) input.focus({ preventScroll: true });
+  }
+
+  function appendScratchPadIfNeeded(question) {
+    if (!shouldShowScratchPad(question)) return;
+    els.choices.appendChild(renderScratchPad(question));
+  }
+
+  function shouldShowScratchPad(question) {
+    if (question.subject !== "数学") return false;
+    if (questionType(question) === "manipulate") return false;
+    return ["方程式", "連立方程式", "1次関数"].includes(question.unit);
+  }
+
+  function renderScratchPad(question) {
+    const wrapper = document.createElement("section");
+    wrapper.className = "scratchpad";
+    wrapper.setAttribute("aria-label", "途中式メモ");
+
+    const toolbar = document.createElement("div");
+    toolbar.className = "scratchpad-toolbar";
+
+    const label = document.createElement("span");
+    label.className = "scratchpad-label";
+    label.textContent = "メモ";
+    toolbar.appendChild(label);
+
+    const textarea = document.createElement("textarea");
+    textarea.className = "scratchpad-text";
+    textarea.rows = 5;
+    textarea.spellcheck = false;
+    textarea.placeholder = "途中式メモ";
+    textarea.value = state.scratchNotes[question.id] || "";
+    textarea.addEventListener("input", () => {
+      state.scratchNotes[question.id] = textarea.value;
+      saveScratchNotes();
+    });
+
+    const symbols = ["x", "y", "=", "+", "-", "(", ")", "×", "÷", "→"];
+    symbols.forEach((symbol) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "scratchpad-symbol";
+      button.textContent = symbol;
+      button.setAttribute("aria-label", `${symbol}を入力`);
+      button.addEventListener("click", () => insertIntoScratchPad(question, textarea, symbol));
+      toolbar.appendChild(button);
+    });
+
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "scratchpad-clear";
+    clear.textContent = "消す";
+    clear.addEventListener("click", () => {
+      textarea.value = "";
+      state.scratchNotes[question.id] = "";
+      saveScratchNotes();
+      textarea.focus({ preventScroll: true });
+    });
+    toolbar.appendChild(clear);
+
+    wrapper.append(toolbar, textarea);
+    return wrapper;
+  }
+
+  function insertIntoScratchPad(question, textarea, symbol) {
+    const start = textarea.selectionStart ?? textarea.value.length;
+    const end = textarea.selectionEnd ?? textarea.value.length;
+    const nextValue = `${textarea.value.slice(0, start)}${symbol}${textarea.value.slice(end)}`;
+    textarea.value = nextValue;
+    const cursor = start + symbol.length;
+    textarea.setSelectionRange(cursor, cursor);
+    state.scratchNotes[question.id] = nextValue;
+    saveScratchNotes();
+    textarea.focus({ preventScroll: true });
   }
 
   function renderManipulateAnswer(question, currentAnswer) {
@@ -1144,7 +1233,8 @@
       version: 1,
       exportedAt: new Date().toISOString(),
       progress: state.progress,
-      stats: state.stats
+      stats: state.stats,
+      scratchNotes: state.scratchNotes
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -1170,8 +1260,10 @@
         if (!confirm("このブラウザの解答記録を、読み込んだ記録で上書きしますか。")) return;
         state.progress = payload.progress || {};
         state.stats = payload.stats || { daily: {} };
+        state.scratchNotes = payload.scratchNotes || {};
         saveProgress();
         saveStats();
+        saveScratchNotes();
         startQuiz();
       } catch (_error) {
         alert("記録ファイルを読み込めませんでした。");
@@ -1228,8 +1320,10 @@
     if (!confirm("このブラウザに保存した解答記録と連続日数をリセットしますか。")) return;
     state.progress = {};
     state.stats = { daily: {} };
+    state.scratchNotes = {};
     saveProgress();
     saveStats();
+    saveScratchNotes();
     startQuiz();
   });
 

@@ -6,6 +6,7 @@
 
 - `weaknessQuizProgress`: 問題ごとの正解数、不正解数、復習待ち、ミス分類
 - `weaknessQuizStats`: 日別の解答数、正答数
+- `weaknessQuizScratchNotes`: 方程式系問題の途中式メモ
 
 保存先は `localStorage` です。iPhoneで開いた場合も、そのiPhoneのそのブラウザ内には保存されます。
 

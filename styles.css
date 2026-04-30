@@ -368,6 +368,12 @@ h3 {
   line-height: 1.45;
 }
 
+.question-card:has(.scratchpad) .prompt {
+  min-height: 72px;
+  font-size: clamp(20px, 2vw, 26px);
+  line-height: 1.45;
+}
+
 .choices {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -440,6 +446,7 @@ h3 {
 }
 
 .input-answer {
+  grid-column: 1 / -1;
   display: grid;
   gap: 12px;
   padding: 16px;
@@ -484,6 +491,85 @@ h3 {
 
 .input-feedback.wrong {
   color: var(--danger);
+}
+
+.scratchpad {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+  padding: 12px;
+}
+
+.scratchpad-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.scratchpad-label {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  background: #eef0f3;
+  color: var(--muted);
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.scratchpad-symbol,
+.scratchpad-clear {
+  min-width: 38px;
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 6px 10px;
+  font-family: var(--math-font);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.scratchpad-clear {
+  margin-left: auto;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.scratchpad-symbol:hover,
+.scratchpad-clear:hover {
+  border-color: rgba(15, 118, 110, 0.55);
+  background: #f7fbfa;
+}
+
+.scratchpad-text {
+  width: 100%;
+  min-height: 150px;
+  border: 1px solid #d7e0ea;
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0, transparent 33px, rgba(25, 87, 166, 0.12) 34px),
+    #fff;
+  color: var(--ink);
+  padding: 12px;
+  font-family: var(--math-font);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 34px;
+  resize: vertical;
+  outline: none;
+}
+
+.scratchpad-text:focus {
+  border-color: rgba(25, 87, 166, 0.55);
+  box-shadow: 0 0 0 3px rgba(25, 87, 166, 0.12);
 }
 
 .equation-lab {
@@ -1030,6 +1116,15 @@ h3 {
 
   .input-row {
     grid-template-columns: 1fr;
+  }
+
+  .scratchpad-text {
+    min-height: 132px;
+    font-size: 22px;
+  }
+
+  .scratchpad-clear {
+    margin-left: 0;
   }
 
   .equation-notebook {

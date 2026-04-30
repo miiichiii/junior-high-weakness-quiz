@@ -6,11 +6,14 @@
 
 `index.html` をブラウザで開くと動きます。GitHub Pagesでもそのまま配信できます。
 
+問題追加は [docs/ADDING_QUESTIONS.md](docs/ADDING_QUESTIONS.md) を見ながら、`data/questions.js` に同じ形式で追記します。
+
 ## 設計方針
 
 - 数学を最優先に、理科・社会を短問で補強する
 - 問題ごとに短い解説を付ける
 - 不正解はローカル保存し、復習モードで解き直せる
+- 選択肢は表示時にランダム化する
 - 元PDF、氏名、校舎、点数、順位は保存しない
 
 ## ファイル
@@ -18,5 +21,6 @@
 - `index.html`: 画面
 - `styles.css`: 見た目
 - `data/questions.js`: 問題データ
+- `data/question-template.js`: 追加用テンプレート
 - `app.js`: クイズ動作
-
+- `docs/ADDING_QUESTIONS.md`: 問題追加ルール

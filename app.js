@@ -5,6 +5,7 @@
     quiz: [],
     index: 0,
     answers: new Map(),
+    choiceOrders: new Map(),
     progress: loadProgress()
   };
 
@@ -25,10 +26,14 @@
     progressText: document.getElementById("progressText"),
     scoreText: document.getElementById("scoreText"),
     progressBar: document.getElementById("progressBar"),
+    progressMetric: document.getElementById("progressMetric"),
+    scoreMetric: document.getElementById("scoreMetric"),
+    reviewMetric: document.getElementById("reviewMetric"),
     questionCard: document.getElementById("questionCard"),
     subjectPill: document.getElementById("subjectPill"),
     unitPill: document.getElementById("unitPill"),
     priorityPill: document.getElementById("priorityPill"),
+    questionStage: document.getElementById("questionStage"),
     prompt: document.getElementById("prompt"),
     choices: document.getElementById("choices"),
     explanation: document.getElementById("explanation"),
@@ -42,6 +47,9 @@
     answeredCount: document.getElementById("answeredCount"),
     accuracyRate: document.getElementById("accuracyRate"),
     reviewCount: document.getElementById("reviewCount"),
+    bankCount: document.getElementById("bankCount"),
+    priorityCount: document.getElementById("priorityCount"),
+    unitTrack: document.getElementById("unitTrack"),
     resetProgress: document.getElementById("resetProgress")
   };
 
@@ -155,11 +163,13 @@
     state.quiz = pickQuiz();
     state.index = 0;
     state.answers = new Map();
+    state.choiceOrders = new Map();
     els.summary.classList.add("hidden");
     els.questionCard.classList.remove("hidden");
     renderTitle();
     renderQuestion();
     renderProgressStats();
+    renderUnitTrack();
   }
 
   function renderTitle() {
@@ -190,6 +200,7 @@
     els.subjectPill.textContent = question.subject;
     els.unitPill.textContent = question.unit;
     els.priorityPill.textContent = question.priority;
+    els.questionStage.textContent = question.stage || inferStage(question);
     els.prompt.textContent = question.prompt;
     els.explanation.classList.toggle("hidden", currentAnswer === undefined);
     els.explanationText.textContent = question.explanation;
@@ -200,19 +211,45 @@
 
   function renderChoices(question, currentAnswer) {
     els.choices.innerHTML = "";
-    question.choices.forEach((choice, index) => {
+    const order = getChoiceOrder(question);
+    order.forEach((choiceIndex, displayIndex) => {
+      const choice = question.choices[choiceIndex];
       const button = document.createElement("button");
       button.type = "button";
       button.className = "choice-button";
+      button.dataset.label = String.fromCharCode(65 + displayIndex);
       button.textContent = choice;
       if (currentAnswer !== undefined) {
-        if (index === question.answer) button.classList.add("correct");
-        if (index === currentAnswer && index !== question.answer) button.classList.add("wrong");
+        if (choiceIndex === question.answer) button.classList.add("correct");
+        if (choiceIndex === currentAnswer && choiceIndex !== question.answer) button.classList.add("wrong");
         button.disabled = true;
       }
-      button.addEventListener("click", () => answerQuestion(question, index));
+      button.addEventListener("click", () => answerQuestion(question, choiceIndex));
       els.choices.appendChild(button);
     });
+  }
+
+  function getChoiceOrder(question) {
+    if (!state.choiceOrders.has(question.id)) {
+      state.choiceOrders.set(question.id, shuffle(question.choices.map((_choice, index) => index)));
+    }
+    return state.choiceOrders.get(question.id);
+  }
+
+  function shuffle(items) {
+    const result = items.slice();
+    for (let index = result.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(Math.random() * (index + 1));
+      [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+    }
+    return result;
+  }
+
+  function inferStage(question) {
+    if (question.priority === "S") return "基礎";
+    if (question.priority === "A") return "確認";
+    if (question.priority === "B") return "補修";
+    return "維持";
   }
 
   function answerQuestion(question, choiceIndex) {
@@ -232,6 +269,7 @@
     saveProgress();
     renderQuestion();
     renderProgressStats();
+    renderUnitTrack();
   }
 
   function renderProgressBar() {
@@ -242,6 +280,8 @@
     }, 0);
     els.progressText.textContent = `${Math.min(state.index + 1, total)} / ${total}`;
     els.scoreText.textContent = `${correct} 正解`;
+    els.progressMetric.textContent = `${answered}/${total}`;
+    els.scoreMetric.textContent = String(correct);
     els.progressBar.style.width = `${total ? (answered / total) * 100 : 0}%`;
     els.prevQuestion.disabled = state.index === 0;
     els.nextQuestion.textContent = state.index === total - 1 ? "結果を見る" : "次へ";
@@ -255,6 +295,49 @@
     els.answeredCount.textContent = String(answered);
     els.accuracyRate.textContent = answered ? `${Math.round((correct / answered) * 100)}%` : "0%";
     els.reviewCount.textContent = String(review);
+    els.reviewMetric.textContent = String(review);
+    els.bankCount.textContent = String(window.QUIZ_QUESTIONS.length);
+    els.priorityCount.textContent = String(window.QUIZ_QUESTIONS.filter((question) => question.priority === "S" || question.priority === "A").length);
+  }
+
+  function renderUnitTrack() {
+    const rows = Object.values(window.QUIZ_QUESTIONS.reduce((acc, question) => {
+      const key = `${question.subject} / ${question.unit}`;
+      if (!acc[key]) {
+        acc[key] = { key, subject: question.subject, unit: question.unit, total: 0, review: 0, wrong: 0 };
+      }
+      const record = state.progress[question.id] || {};
+      acc[key].total += 1;
+      if (record.needsReview) acc[key].review += 1;
+      acc[key].wrong += record.wrong || 0;
+      return acc;
+    }, {}))
+      .sort((a, b) => b.review - a.review || b.wrong - a.wrong || b.total - a.total)
+      .slice(0, 8);
+
+    els.unitTrack.innerHTML = "";
+    rows.forEach((row) => {
+      const item = document.createElement("div");
+      item.className = "unit-row";
+
+      const header = document.createElement("div");
+      header.className = "unit-row-header";
+      const name = document.createElement("span");
+      name.textContent = row.key;
+      const count = document.createElement("span");
+      count.textContent = row.review ? `${row.review} 復習` : `${row.total} 問`;
+      header.append(name, count);
+
+      const meter = document.createElement("div");
+      meter.className = "unit-meter";
+      const bar = document.createElement("span");
+      const ratio = row.total ? Math.max(row.review / row.total, row.wrong ? 0.18 : 0.06) : 0.06;
+      bar.style.width = `${Math.min(100, Math.round(ratio * 100))}%`;
+      meter.appendChild(bar);
+
+      item.append(header, meter);
+      els.unitTrack.appendChild(item);
+    });
   }
 
   function showSummary() {

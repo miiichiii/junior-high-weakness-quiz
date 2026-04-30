@@ -11,12 +11,15 @@
   <main class="app-shell">
     <aside class="sidebar" aria-label="学習設定">
       <div class="brand">
-        <p class="label">中3 基礎補修</p>
+        <p class="label">中3 苦手克服</p>
         <h1>Weakness Quiz</h1>
+        <p class="brand-subtitle">数学を軸に、理科・社会の取りこぼしを短時間で戻す。</p>
       </div>
 
       <section class="panel">
-        <h2>モード</h2>
+        <div class="panel-heading">
+          <h2>モード</h2>
+        </div>
         <div class="segmented" role="group" aria-label="クイズモード">
           <button class="mode-button active" data-mode="daily" type="button">今日の20問</button>
           <button class="mode-button" data-mode="focus" type="button">苦手集中</button>
@@ -25,16 +28,30 @@
       </section>
 
       <section class="panel">
-        <h2>教科</h2>
+        <div class="panel-heading">
+          <h2>教科</h2>
+        </div>
         <div class="subject-list" id="subjectList"></div>
       </section>
 
-      <section class="panel compact">
-        <h2>記録</h2>
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>記録</h2>
+        </div>
         <dl class="stats">
           <div><dt>解答数</dt><dd id="answeredCount">0</dd></div>
           <div><dt>正答率</dt><dd id="accuracyRate">0%</dd></div>
           <div><dt>復習待ち</dt><dd id="reviewCount">0</dd></div>
+        </dl>
+      </section>
+
+      <section class="panel compact">
+        <div class="panel-heading">
+          <h2>問題バンク</h2>
+        </div>
+        <dl class="stats">
+          <div><dt>登録問題</dt><dd id="bankCount">0</dd></div>
+          <div><dt>S/A問題</dt><dd id="priorityCount">0</dd></div>
         </dl>
         <button class="ghost-button" id="resetProgress" type="button">記録をリセット</button>
       </section>
@@ -49,6 +66,21 @@
         <button class="primary-button" id="newQuiz" type="button">出題を更新</button>
       </header>
 
+      <section class="dashboard" aria-label="学習状況">
+        <div class="metric">
+          <span class="metric-label">今日の進み</span>
+          <strong id="progressMetric">0/20</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">今回の正答</span>
+          <strong id="scoreMetric">0</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">復習待ち</span>
+          <strong id="reviewMetric">0</strong>
+        </div>
+      </section>
+
       <div class="progress-wrap">
         <div class="progress-info">
           <span id="progressText">1 / 20</span>
@@ -57,29 +89,39 @@
         <div class="progress-bar" aria-hidden="true"><span id="progressBar"></span></div>
       </div>
 
-      <article class="question-card" id="questionCard">
-        <div class="meta-row">
-          <span class="pill" id="subjectPill">数学</span>
-          <span class="pill muted" id="unitPill">方程式</span>
-          <span class="pill priority" id="priorityPill">S</span>
-        </div>
-        <p class="prompt" id="prompt"></p>
-        <div class="choices" id="choices"></div>
-        <section class="explanation hidden" id="explanation">
-          <h3>解説</h3>
-          <p id="explanationText"></p>
-          <div class="mistake-box">
-            <label for="mistakeType">ミスの種類</label>
-            <select id="mistakeType">
-              <option value="">選択しない</option>
-              <option value="計算ミス">計算ミス</option>
-              <option value="知識不足">知識不足</option>
-              <option value="問題文の読み違い">問題文の読み違い</option>
-              <option value="途中式不足">途中式不足</option>
-            </select>
+      <div class="workspace">
+        <article class="question-card" id="questionCard">
+          <div class="meta-row">
+            <span class="pill" id="subjectPill">数学</span>
+            <span class="pill muted" id="unitPill">方程式</span>
+            <span class="pill priority" id="priorityPill">S</span>
+            <span class="pill muted" id="questionStage">基礎</span>
           </div>
-        </section>
-      </article>
+          <p class="prompt" id="prompt"></p>
+          <div class="choices" id="choices"></div>
+          <section class="explanation hidden" id="explanation">
+            <h3>解説</h3>
+            <p id="explanationText"></p>
+            <div class="mistake-box">
+              <label for="mistakeType">ミスの種類</label>
+              <select id="mistakeType">
+                <option value="">選択しない</option>
+                <option value="計算ミス">計算ミス</option>
+                <option value="知識不足">知識不足</option>
+                <option value="問題文の読み違い">問題文の読み違い</option>
+                <option value="途中式不足">途中式不足</option>
+              </select>
+            </div>
+          </section>
+        </article>
+
+        <aside class="unit-panel" aria-label="単元別の状態">
+          <div class="panel-heading">
+            <h2>単元</h2>
+          </div>
+          <div id="unitTrack" class="unit-track"></div>
+        </aside>
+      </div>
 
       <nav class="actions" aria-label="問題操作">
         <button class="ghost-button" id="prevQuestion" type="button">前へ</button>

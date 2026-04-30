@@ -62,6 +62,11 @@
           <div><dt>登録問題</dt><dd id="bankCount">0</dd></div>
           <div><dt>S/A問題</dt><dd id="priorityCount">0</dd></div>
         </dl>
+        <div class="record-actions">
+          <button class="ghost-button" id="exportProgress" type="button">記録を書き出す</button>
+          <button class="ghost-button" id="importProgress" type="button">記録を読み込む</button>
+          <input class="hidden" id="importProgressFile" type="file" accept="application/json,.json">
+        </div>
         <button class="ghost-button" id="resetProgress" type="button">記録をリセット</button>
       </section>
     </aside>
@@ -128,6 +133,10 @@
               <select id="mistakeType">
                 <option value="">選択しない</option>
                 <option value="計算ミス">計算ミス</option>
+                <option value="符号ミス">符号ミス</option>
+                <option value="移項ミス">移項ミス</option>
+                <option value="分数処理ミス">分数処理ミス</option>
+                <option value="立式ミス">立式ミス</option>
                 <option value="知識不足">知識不足</option>
                 <option value="問題文の読み違い">問題文の読み違い</option>
                 <option value="途中式不足">途中式不足</option>

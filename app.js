@@ -60,6 +60,9 @@
     priorityCount: document.getElementById("priorityCount"),
     badgeList: document.getElementById("badgeList"),
     unitTrack: document.getElementById("unitTrack"),
+    exportProgress: document.getElementById("exportProgress"),
+    importProgress: document.getElementById("importProgress"),
+    importProgressFile: document.getElementById("importProgressFile"),
     resetProgress: document.getElementById("resetProgress")
   };
 
@@ -287,13 +290,26 @@
     els.explanation.classList.toggle("hidden", currentAnswer === undefined);
     els.explanationText.textContent = question.explanation;
     els.mistakeType.value = (state.progress[question.id] || {}).mistakeType || "";
-    renderChoices(question, currentAnswer);
+    renderAnswerArea(question, currentAnswer);
     renderProgressBar();
   }
 
-  function renderChoices(question, currentAnswer) {
+  function renderAnswerArea(question, currentAnswer) {
+    if (questionType(question) === "input") {
+      renderInputAnswer(question, currentAnswer);
+      return;
+    }
+    renderChoiceAnswer(question, currentAnswer);
+  }
+
+  function questionType(question) {
+    return question.type || "choice";
+  }
+
+  function renderChoiceAnswer(question, currentAnswer) {
     els.choices.innerHTML = "";
     const order = getChoiceOrder(question);
+    const selectedChoice = typeof currentAnswer === "object" ? currentAnswer.choiceIndex : currentAnswer;
     order.forEach((choiceIndex, displayIndex) => {
       const choice = question.choices[choiceIndex];
       const button = document.createElement("button");
@@ -303,12 +319,62 @@
       button.textContent = choice;
       if (currentAnswer !== undefined) {
         if (choiceIndex === question.answer) button.classList.add("correct");
-        if (choiceIndex === currentAnswer && choiceIndex !== question.answer) button.classList.add("wrong");
+        if (choiceIndex === selectedChoice && choiceIndex !== question.answer) button.classList.add("wrong");
         button.disabled = true;
       }
-      button.addEventListener("click", () => answerQuestion(question, choiceIndex));
+      button.addEventListener("click", () => answerChoiceQuestion(question, choiceIndex));
       els.choices.appendChild(button);
     });
+  }
+
+  function renderInputAnswer(question, currentAnswer) {
+    els.choices.innerHTML = "";
+    const answered = currentAnswer !== undefined;
+    const value = typeof currentAnswer === "object" ? currentAnswer.value : "";
+    const correct = isStoredAnswerCorrect(question, currentAnswer);
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "input-answer";
+
+    const row = document.createElement("div");
+    row.className = "input-row";
+
+    const input = document.createElement("input");
+    input.className = "answer-input";
+    input.type = "text";
+    input.inputMode = "text";
+    input.autocomplete = "off";
+    input.placeholder = question.placeholder || "答えを入力";
+    input.value = value;
+    input.disabled = answered;
+
+    const button = document.createElement("button");
+    button.className = "primary-button";
+    button.type = "button";
+    button.textContent = "判定";
+    button.disabled = answered;
+
+    const feedback = document.createElement("p");
+    feedback.className = "input-feedback";
+    if (answered) {
+      feedback.classList.add(correct ? "correct" : "wrong");
+      feedback.textContent = correct
+        ? "正解です。途中式も同じ流れで書けているか確認しましょう。"
+        : `不正解です。正解例: ${answerTextLabel(question)}`;
+    } else {
+      feedback.textContent = "紙に途中式を書いてから、最後の答えだけ入力します。";
+    }
+
+    const submit = () => answerInputQuestion(question, input.value);
+    button.addEventListener("click", submit);
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") submit();
+    });
+
+    row.append(input, button);
+    wrapper.append(row, feedback);
+    els.choices.appendChild(wrapper);
+    if (!answered) input.focus({ preventScroll: true });
   }
 
   function getChoiceOrder(question) {
@@ -334,10 +400,23 @@
     return "維持";
   }
 
-  function answerQuestion(question, choiceIndex) {
+  function answerChoiceQuestion(question, choiceIndex) {
     if (state.answers.has(question.id)) return;
-    state.answers.set(question.id, choiceIndex);
     const correct = choiceIndex === question.answer;
+    state.answers.set(question.id, { type: questionType(question), choiceIndex, correct });
+    recordQuestionResult(question, correct);
+  }
+
+  function answerInputQuestion(question, rawValue) {
+    if (state.answers.has(question.id)) return;
+    const value = rawValue.trim();
+    if (!value) return;
+    const correct = isTextAnswerCorrect(question, value);
+    state.answers.set(question.id, { type: "input", value, correct });
+    recordQuestionResult(question, correct);
+  }
+
+  function recordQuestionResult(question, correct) {
     const record = state.progress[question.id] || { correct: 0, wrong: 0 };
     if (correct) {
       record.correct = (record.correct || 0) + 1;
@@ -355,6 +434,35 @@
     renderProgressStats();
     renderUnitTrack();
     renderBadges();
+  }
+
+  function normalizeAnswer(value) {
+    return String(value)
+      .normalize("NFKC")
+      .toLowerCase()
+      .replace(/[ \t\r\n]/g, "")
+      .replace(/＝/g, "=");
+  }
+
+  function isTextAnswerCorrect(question, value) {
+    const candidates = Array.isArray(question.answerText) ? question.answerText : [question.answerText];
+    const normalized = normalizeAnswer(value);
+    return candidates.some((candidate) => normalizeAnswer(candidate) === normalized);
+  }
+
+  function answerTextLabel(question) {
+    if (Array.isArray(question.answerText)) return question.answerText[0];
+    return question.answerText;
+  }
+
+  function isStoredAnswerCorrect(question, storedAnswer) {
+    if (storedAnswer === undefined) return false;
+    if (typeof storedAnswer === "object" && storedAnswer !== null) {
+      if (typeof storedAnswer.correct === "boolean") return storedAnswer.correct;
+      if (questionType(question) === "input") return isTextAnswerCorrect(question, storedAnswer.value || "");
+      return storedAnswer.choiceIndex === question.answer;
+    }
+    return storedAnswer === question.answer;
   }
 
   function recordDailyAnswer(correct) {
@@ -414,7 +522,7 @@
     const total = state.quiz.length;
     const answered = state.answers.size;
     const correct = state.quiz.reduce((count, question) => {
-      return state.answers.get(question.id) === question.answer ? count + 1 : count;
+      return isStoredAnswerCorrect(question, state.answers.get(question.id)) ? count + 1 : count;
     }, 0);
     els.progressText.textContent = `${Math.min(state.index + 1, total)} / ${total}`;
     els.scoreText.textContent = `${correct} 正解`;
@@ -524,7 +632,7 @@
   function showSummary() {
     const total = state.quiz.length;
     const correct = state.quiz.reduce((count, question) => {
-      return state.answers.get(question.id) === question.answer ? count + 1 : count;
+      return isStoredAnswerCorrect(question, state.answers.get(question.id)) ? count + 1 : count;
     }, 0);
     const today = state.stats.daily?.[todayKey()] || { answered: 0, correct: 0 };
     const todayAccuracy = today.answered ? Math.round((today.correct / today.answered) * 100) : 0;
@@ -538,7 +646,7 @@
   function renderWeakUnits() {
     const misses = {};
     state.quiz.forEach((question) => {
-      if (state.answers.get(question.id) !== question.answer) {
+      if (!isStoredAnswerCorrect(question, state.answers.get(question.id))) {
         const key = `${question.subject} / ${question.unit}`;
         misses[key] = (misses[key] || 0) + 1;
       }
@@ -556,6 +664,58 @@
       item.textContent = "今回の間違いはありません。次は苦手集中モードで負荷を上げましょう。";
       els.weakUnitList.appendChild(item);
     }
+  }
+
+  function exportRecords() {
+    const payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      progress: state.progress,
+      stats: state.stats
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `weakness-quiz-records-${todayKey()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function importRecordsFromFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      try {
+        const payload = JSON.parse(String(reader.result || "{}"));
+        if (!isValidRecordPayload(payload)) {
+          alert("読み込める記録ファイルではありません。");
+          return;
+        }
+        if (!confirm("このブラウザの解答記録を、読み込んだ記録で上書きしますか。")) return;
+        state.progress = payload.progress || {};
+        state.stats = payload.stats || { daily: {} };
+        saveProgress();
+        saveStats();
+        startQuiz();
+      } catch (_error) {
+        alert("記録ファイルを読み込めませんでした。");
+      } finally {
+        els.importProgressFile.value = "";
+      }
+    });
+    reader.readAsText(file);
+  }
+
+  function isValidRecordPayload(payload) {
+    return payload
+      && typeof payload === "object"
+      && payload.progress
+      && typeof payload.progress === "object"
+      && payload.stats
+      && typeof payload.stats === "object";
   }
 
   els.modeButtons.forEach((button) => {
@@ -588,6 +748,9 @@
     state.progress[question.id] = record;
     saveProgress();
   });
+  els.exportProgress.addEventListener("click", exportRecords);
+  els.importProgress.addEventListener("click", () => els.importProgressFile.click());
+  els.importProgressFile.addEventListener("change", () => importRecordsFromFile(els.importProgressFile.files[0]));
   els.resetProgress.addEventListener("click", () => {
     if (!confirm("このブラウザに保存した解答記録と連続日数をリセットしますか。")) return;
     state.progress = {};

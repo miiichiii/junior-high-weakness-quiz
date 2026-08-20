@@ -3,6 +3,7 @@
 const CHOICE_QUESTION_TEMPLATE = {
   type: "choice",
   id: "math-eq-016",
+  childIds: ["child-1"],
   subject: "数学",
   unit: "方程式",
   priority: "S",
@@ -16,19 +17,21 @@ const CHOICE_QUESTION_TEMPLATE = {
 const INPUT_QUESTION_TEMPLATE = {
   id: "math-eq-input-011",
   type: "input",
+  childIds: ["child-1"],
   subject: "数学",
   unit: "方程式",
   priority: "S",
   stage: "直接入力",
   prompt: "方程式 5x - 3 = 2x + 12 を解きなさい。",
   answerText: ["x=5", "5"],
-  placeholder: "例: x=5",
+  placeholder: "答えを入力",
   explanation: "両辺から2xを引くと 3x - 3 = 12。両辺に3を足して 3x = 15。よって x = 5 です。"
 };
 
 const MANIPULATE_QUESTION_TEMPLATE = {
   id: "math-eq-manipulate-001",
   type: "manipulate",
+  childIds: ["child-1"],
   subject: "数学",
   unit: "方程式",
   priority: "S",
@@ -42,6 +45,7 @@ const MANIPULATE_QUESTION_TEMPLATE = {
 const FIND_ERROR_QUESTION_TEMPLATE = {
   id: "math-eq-error-011",
   type: "find-error",
+  childIds: ["child-1"],
   subject: "数学",
   unit: "方程式",
   priority: "S",

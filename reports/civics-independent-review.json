@@ -1,0 +1,51 @@
+{
+  "status": "PASS",
+  "reviewedOn": "2026-08-04",
+  "questionsReviewed": 192,
+  "reviewStandard": "茨城県立高校入試の社会で、公民の基本語句だけでなく、資料読取、制度比較、因果、事例判断、選択肢なしの再生まで練習できること",
+  "reviewedRanges": [
+    { "unitId": "civ-22", "start": 1, "end": 24 },
+    { "unitId": "civ-23", "start": 1, "end": 24 },
+    { "unitId": "civ-24", "start": 1, "end": 24 },
+    { "unitId": "civ-25", "start": 1, "end": 24 },
+    { "unitId": "civ-26", "start": 1, "end": 24 },
+    { "unitId": "civ-27", "start": 1, "end": 24 },
+    { "unitId": "civ-28", "start": 1, "end": 24 },
+    { "unitId": "civ-29", "start": 1, "end": 24 }
+  ],
+  "checks": {
+    "sourcePageVisualCheck": "PASS",
+    "curriculumCoverage": "PASS",
+    "constitutionalAndInstitutionalAccuracy": "PASS",
+    "currentPublicInstitutionCrossCheck": "PASS",
+    "choiceValidity": "PASS",
+    "directInputAcceptableVariants": "PASS",
+    "originalFigureAndCopyright": "PASS",
+    "mobileSafeFigureBounds": "PASS",
+    "admissionsSkillMix": "PASS"
+  },
+  "officialCrossChecks": [
+    "https://www.mext.go.jp/content/20240919-mxt_kyoiku01-100002608.pdf",
+    "https://www.shugiin.go.jp/internet/itdb_annai.nsf/html/statics/shiryo/dl-constitution.htm",
+    "https://www.shugiin.go.jp/internet/itdb_annai.nsf/html/statics/kokkai/kokkai_sankenbunritsu.htm",
+    "https://www.shugiin.go.jp/internet/itdb_annai.nsf/html/statics/kokkai/kokkai_kengen2.htm",
+    "https://www.courts.go.jp/about/sosiki/gaiyo/index.html",
+    "https://www.courts.go.jp/saibanin/index.html",
+    "https://www.nta.go.jp/taxes/kids/hatten/page02.htm",
+    "https://www.mhlw.go.jp/stf/newpage_21479.html",
+    "https://www.caa.go.jp/policies/policy/consumer_safety/other/pl_qa.html",
+    "https://www.un.org/about-us/un-charter/chapter-5"
+  ],
+  "coverageNotes": [
+    "各単元は基本8問、資料・制度判断8問、直接入力8問で構成する。",
+    "政治分野は憲法三原則、人権、選挙、国会、内閣、裁判所、三権分立、地方自治を含む。",
+    "経済分野は消費者、企業、市場、労働、金融、財政、租税、社会保障、環境を含む。",
+    "国際分野は主権国家、国際法、国際連合、安全保障理事会、PKO、ODA、NGO、地球的課題を含む。",
+    "数字や制度が変わりうる箇所は2026年8月時点の公的機関情報と照合し、人物名など短期で変動する時事事項は出題しない。"
+  ],
+  "limitations": [
+    "この192問だけで合格を保証するものではなく、地理・歴史、茨城県形式の総合演習、時間配分は別に必要。",
+    "教材のOCRは検索補助に限定し、問題文は教材の設問を転載せず新規作成した。"
+  ],
+  "unresolvedIssues": []
+}

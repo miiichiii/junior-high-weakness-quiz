@@ -5,16 +5,78 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Weakness Quiz</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="styles.css?v=20260430-critic-record-fixes">
+  <link rel="stylesheet" href="styles.css?v=20260820-eldest-alias-v1">
+  <link rel="stylesheet" href="challenge-theme.css?v=20260804-quiz-focus-v1">
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem("weaknessQuiz:challengeTheme") || "aurora";
+        var scale = localStorage.getItem("weaknessQuiz:challengeFontScale") || "1";
+        document.documentElement.setAttribute("data-challenge-theme", theme);
+        document.documentElement.style.setProperty("--challenge-font-scale", scale);
+        var params = new URLSearchParams(location.search);
+        if (/^challenge-(?:social|science)-/.test(params.get("pack") || "")) {
+          document.documentElement.classList.add("challenge-mode");
+          if (params.get("view") === "quiz") document.documentElement.classList.add("quiz-only-mode");
+        }
+      } catch (_error) {}
+    })();
+  </script>
 </head>
 <body>
-  <main class="app-shell">
+  <section class="home-screen" id="homeScreen" aria-label="学習者選択">
+    <div class="home-inner">
+      <header class="home-header">
+        <p class="label">学習者を選択</p>
+        <h1>Weakness Quiz</h1>
+        <p>子供ごとに学年、問題、記録、目標を分けて管理します。</p>
+      </header>
+      <div class="child-select-grid" id="childHomeCards"></div>
+    </div>
+  </section>
+
+  <main class="app-shell hidden" id="appShell">
     <aside class="sidebar" aria-label="学習設定">
       <div class="brand">
-        <p class="label">中3 苦手克服</p>
+        <p class="label" id="appStageLabel">中3 苦手克服</p>
         <h1>Weakness Quiz</h1>
-        <p class="brand-subtitle">数学を軸に、理科・社会の取りこぼしを短時間で戻す。</p>
+        <p class="brand-subtitle" id="appSubtitle">数学を軸に、理科・社会の取りこぼしを短時間で戻す。</p>
       </div>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>学習者</h2>
+          <span class="active-child" id="activeChildName">子ども1</span>
+        </div>
+        <p class="child-grade" id="activeChildGrade">中3</p>
+        <div class="child-list" id="childProfileList"></div>
+        <button class="ghost-button" id="backToHome" type="button">トップに戻る</button>
+        <div class="sync-panel">
+          <span class="sync-status" id="cloudStatus" data-status="local">ローカル保存</span>
+          <div class="sync-actions">
+            <button class="ghost-button compact-button" id="cloudSignIn" type="button">Googleで同期</button>
+            <button class="ghost-button compact-button hidden" id="syncNow" type="button">今すぐ同期</button>
+            <button class="ghost-button compact-button hidden" id="cloudSignOut" type="button">ログアウト</button>
+            <a class="ghost-button compact-button parent-view-link" id="parentViewLink" href="family-dashboard.html">保護者管理</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>受験目標</h2>
+        </div>
+        <dl class="stats goal-stats">
+          <div><dt>志望校</dt><dd id="goalSchoolName">下妻一高</dd></div>
+          <div><dt>余裕目標</dt><dd id="goalTargetScore">400/500</dd></div>
+          <div><dt>入試日</dt><dd id="goalExamDate">2027/2/26</dd></div>
+          <div><dt>最新模試</dt><dd id="goalLatestMock">未入力</dd></div>
+        </dl>
+        <div class="record-actions">
+          <button class="ghost-button" id="editGoal" type="button">目標を編集</button>
+          <button class="ghost-button" id="addMockScore" type="button">模試点を記録</button>
+        </div>
+      </section>
 
       <section class="panel">
         <div class="panel-heading">
@@ -24,6 +86,8 @@
           <button class="mode-button active" data-mode="daily" type="button">今日の20問</button>
           <button class="mode-button" data-mode="focus" type="button">苦手集中</button>
           <button class="mode-button" data-mode="review" type="button">できなかった問題</button>
+          <button class="mode-button" data-mode="weekly" type="button">週1実戦</button>
+          <button class="mode-button" data-mode="trial" type="button">お試し</button>
         </div>
       </section>
 
@@ -47,6 +111,7 @@
         </div>
         <dl class="stats">
           <div><dt>累計解答</dt><dd id="answeredCount">0</dd></div>
+          <div><dt>練習回数</dt><dd id="sessionCount">0</dd></div>
           <div><dt>累計正答率</dt><dd id="accuracyRate">0%</dd></div>
           <div><dt>学習日数</dt><dd id="studyDaysCount">0</dd></div>
           <div><dt>連続日数</dt><dd id="streakCount">0</dd></div>
@@ -72,6 +137,82 @@
     </aside>
 
     <section class="quiz-area" aria-live="polite">
+      <header class="quiz-only-header hidden" id="quizOnlyHeader">
+        <button class="quiz-only-home" id="quizOnlyHome" type="button">← Base</button>
+        <div class="quiz-only-heading">
+          <small id="quizOnlyPackTitle">Challenge社会・地理</small>
+          <h1><span id="quizOnlyUnitNumber">単元1</span><span id="quizOnlyUnitTitle">世界の地域構成</span></h1>
+        </div>
+        <strong class="quiz-only-tier" id="quizOnlyTier">基本</strong>
+      </header>
+
+      <section class="pack-hero hidden" id="packHero" aria-label="7月13日 定期テスト対策">
+        <div class="pack-hero-heading">
+          <div class="pack-hero-title">
+            <button class="pack-home-button" id="packHome" type="button">← コース一覧</button>
+            <p class="label" id="packEyebrow">7月13日 定期テスト</p>
+            <h1 id="packTitle">定期テスト 200問チャレンジ</h1>
+          </div>
+          <div class="pack-current-tier">
+            <span>現在レベル</span>
+            <strong id="packCurrentTier">基本攻略</strong>
+            <div class="pack-timer hidden" id="packTimer" role="timer" aria-live="off">
+              <span>残り時間</span>
+              <strong id="packTimerValue">20:00</strong>
+            </div>
+          </div>
+        </div>
+
+        <section class="pack-corner-panel hidden" id="packCornerPanel" aria-label="学習コーナー">
+          <div class="pack-corner-heading">
+            <strong id="packCornerHeading">コーナーを選ぶ</strong>
+            <span id="packCornerHint">どこからでも挑戦OK</span>
+          </div>
+          <div class="pack-corner-selector" id="packCornerSelector" role="group" aria-label="学習コーナー"></div>
+          <p class="pack-corner-description" id="packCornerDescription"></p>
+        </section>
+
+        <details class="pack-study-guide hidden" id="packStudyGuide">
+          <summary>
+            <span id="packStudyGuideTitle">先に人物を整理する</span>
+            <small>タップして確認</small>
+          </summary>
+          <div class="pack-study-guide-items" id="packStudyGuideItems"></div>
+        </details>
+
+        <div class="pack-tier-progress" aria-label="レベル別進捗">
+          <div data-pack-tier-progress="core">
+            <span>基本</span>
+            <strong id="packCoreProgress">0 / 80</strong>
+            <small id="packCoreAccuracy">正答率 --</small>
+          </div>
+          <div data-pack-tier-progress="challenge">
+            <span>応用</span>
+            <strong id="packChallengeProgress">0 / 80</strong>
+            <small id="packChallengeAccuracy">正答率 --</small>
+          </div>
+          <div data-pack-tier-progress="final">
+            <span>最終</span>
+            <strong id="packFinalProgress">0 / 40</strong>
+            <small id="packFinalAccuracy">正答率 --</small>
+          </div>
+        </div>
+
+        <div class="pack-tier-selector" role="group" aria-label="挑戦レベル">
+          <button class="pack-tier-button active" data-pack-tier="core" type="button">基本</button>
+          <button class="pack-tier-button" data-pack-tier="challenge" type="button">応用</button>
+          <button class="pack-tier-button" data-pack-tier="final" type="button">最終</button>
+          <button class="pack-tier-button" data-pack-tier="max" type="button">MAX</button>
+        </div>
+
+        <p class="pack-recommendation" id="packRecommendation" role="status">まずは基本10問から始めよう。</p>
+        <div class="pack-hero-actions">
+          <button class="primary-button" id="packStart" type="button">10問始める</button>
+          <button class="ghost-button" id="packReview" type="button">間違いだけ</button>
+          <button class="ghost-button" id="packLevelUp" type="button">上のレベルへ</button>
+        </div>
+      </section>
+
       <header class="topbar">
         <div>
           <p class="label" id="quizLabel">数学中心</p>
@@ -79,6 +220,31 @@
         </div>
         <button class="primary-button" id="newQuiz" type="button">出題を更新</button>
       </header>
+
+      <section class="exam-dashboard" aria-label="受験ダッシュボード">
+        <div class="exam-main">
+          <p class="label">高校受験ロードマップ</p>
+          <h2 id="examSchoolTitle">下妻一高 余裕合格</h2>
+          <p id="examGoalLabel" class="exam-goal-label">茨城県立下妻第一高等学校 / 目標 400点</p>
+          <div class="exam-metrics">
+            <div><span>入試まで</span><strong id="examDaysLeft">0日</strong></div>
+            <div><span>目標点</span><strong id="examTargetScore">400</strong></div>
+            <div><span>最新模試</span><strong id="examLatestScore">--</strong></div>
+            <div><span>差分</span><strong id="examScoreGap">模試点を入力</strong></div>
+            <div><span>到達度</span><strong id="examReadiness">0%</strong></div>
+          </div>
+        </div>
+        <div class="exam-side">
+          <div>
+            <h3>今週重点</h3>
+            <div id="examPlanList" class="exam-plan-list"></div>
+          </div>
+          <div>
+            <h3>5教科</h3>
+            <div id="subjectReadinessList" class="subject-readiness-list"></div>
+          </div>
+        </div>
+      </section>
 
       <section class="dashboard" aria-label="学習状況">
         <div class="metric">
@@ -102,6 +268,26 @@
           <strong id="streakMetric">0</strong>
         </div>
         <div class="metric">
+          <span class="metric-label">累計演習</span>
+          <strong id="totalAnsweredMetric">0</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">練習回数</span>
+          <strong id="sessionMetric">0</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">学習日数</span>
+          <strong id="studyDaysMetric">0日</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">最長連続</span>
+          <strong id="longestStreakMetric">0日</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">7日間</span>
+          <strong id="weeklyAnsweredMetric">0</strong>
+        </div>
+        <div class="metric">
           <span class="metric-label">復習待ち</span>
           <strong id="reviewMetric">0</strong>
         </div>
@@ -123,28 +309,23 @@
             <span class="pill priority" id="priorityPill">S</span>
             <span class="pill muted" id="questionStage">基礎</span>
           </div>
-          <p class="prompt" id="prompt"></p>
+          <section class="reading-passage hidden" id="readingPassage" aria-label="本文">
+            <span class="reading-passage-label">本文</span>
+            <p id="readingPassageText"></p>
+          </section>
+          <p class="prompt" id="prompt" tabindex="-1"></p>
+          <div class="question-figure hidden" id="questionFigure"></div>
           <div class="choices" id="choices"></div>
           <section class="explanation hidden" id="explanation">
             <h3>解説</h3>
             <p id="explanationText"></p>
-            <div class="mistake-box">
-              <label for="mistakeType">ミスの種類</label>
-              <select id="mistakeType">
-                <option value="">選択しない</option>
-                <option value="計算ミス">計算ミス</option>
-                <option value="符号ミス">符号ミス</option>
-                <option value="移項ミス">移項ミス</option>
-                <option value="割り算ミス">割り算ミス</option>
-                <option value="平方根ミス">平方根ミス</option>
-                <option value="分数処理ミス">分数処理ミス</option>
-                <option value="立式ミス">立式ミス</option>
-                <option value="知識不足">知識不足</option>
-                <option value="問題文の読み違い">問題文の読み違い</option>
-                <option value="途中式不足">途中式不足</option>
-              </select>
-            </div>
+            <p class="paper-ref hidden" id="paperRef"></p>
           </section>
+          <nav class="actions" aria-label="問題操作">
+            <button class="ghost-button" id="prevQuestion" type="button">前へ</button>
+            <button class="ghost-button pack-only-control" id="unknownAnswer" type="button">わからない</button>
+            <button class="primary-button" id="nextQuestion" type="button">次へ</button>
+          </nav>
         </article>
 
         <aside class="unit-panel" aria-label="単元別の状態">
@@ -154,26 +335,80 @@
           <div id="badgeList" class="badge-list"></div>
 
           <div class="panel-heading unit-heading">
+            <h2>週間</h2>
+          </div>
+          <div id="weeklyTrack" class="weekly-track"></div>
+
+          <div class="panel-heading unit-heading">
             <h2>単元</h2>
           </div>
           <div id="unitTrack" class="unit-track"></div>
         </aside>
       </div>
 
-      <nav class="actions" aria-label="問題操作">
-        <button class="ghost-button" id="prevQuestion" type="button">前へ</button>
-        <button class="primary-button" id="nextQuestion" type="button">次へ</button>
-      </nav>
-
       <section class="summary hidden" id="summary">
         <h2>結果</h2>
         <p id="summaryText"></p>
         <div id="weakUnitList" class="weak-list"></div>
+        <div class="quiz-only-summary-actions">
+          <button class="ghost-button" id="quizOnlyRetry" type="button">同じステップをもう一度</button>
+          <button class="primary-button" id="quizOnlyAdvance" type="button">次のステップへ</button>
+        </div>
       </section>
     </section>
   </main>
 
-  <script src="data/questions.js?v=20260430-critic-record-fixes"></script>
-  <script src="app.js?v=20260430-critic-record-fixes"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js?v=20260805-shared-cloud-v1"></script>
+  <script src="firebase-sync.js?v=20260820-google-login-recovery-v1"></script>
+  <script src="data/questions.js?v=20260715-guided-math-v1"></script>
+  <script src="data/entrance-ibaraki-2027-pack.js?v=20260715-guided-math-v1"></script>
+  <script src="data/term-test-2026-07-13-config.js?v=20260710-gifted-v4"></script>
+  <script src="data/social-author-drill-config.js?v=20260723-kanji-fair-review-v1"></script>
+  <script src="data/science-ion-drill-config.js?v=20260717-ion-drill-v1"></script>
+  <script src="data/eiken-grade4-config.js?v=20260815-eiken4-v1"></script>
+  <script src="data/challenge-social-geography-config.js?v=20260804-geo-unit12-v1"></script>
+  <script src="data/challenge-social-history-config.js?v=20260804-history-v1"></script>
+  <script src="data/challenge-social-civics-config.js?v=20260804-civics-v1"></script>
+  <script src="data/challenge-science-year1-config.js?v=20260804-science2-v2"></script>
+  <script src="data/challenge-science-year2-config.js?v=20260804-science2-v2"></script>
+  <script src="data/term-test-2026-07-13-humanities.js?v=20260710-gifted-v4"></script>
+  <script src="data/term-test-2026-07-13-stem.js?v=20260715-guided-math-v1"></script>
+  <script src="data/social-author-drill.js?v=20260723-kanji-fair-review-v1"></script>
+  <script src="data/social-author-drill-expanded.js?v=20260723-kanji-fair-review-v1"></script>
+  <script src="data/science-ion-drill.js?v=20260717-ion-drill-v1"></script>
+  <script src="data/eiken-grade4.js?v=20260815-eiken4-v1"></script>
+  <script src="data/challenge-social-geography.js?v=20260804-geo-unit12-v1"></script>
+  <script src="data/challenge-social-geography-geo-02.js?v=20260804-geo-unit12-v1"></script>
+  <script src="data/challenge-social-geography-geo-03.js?v=20260804-geo-unit12-v1"></script>
+  <script src="data/challenge-social-geography-geo-04.js?v=20260804-geo-unit12-v1"></script>
+  <script src="data/challenge-social-geography-geo-05.js?v=20260804-geo-unit12-v1"></script>
+  <script src="data/challenge-social-geography-geo-06.js?v=20260804-geo-unit12-v1"></script>
+  <script src="data/challenge-social-geography-geo-07.js?v=20260804-geo-unit12-v1"></script>
+  <script src="data/challenge-social-geography-geo-08.js?v=20260804-geo-unit12-v1"></script>
+  <script src="data/challenge-social-geography-geo-09.js?v=20260804-geo-unit12-v1"></script>
+  <script src="data/challenge-social-geography-geo-10.js?v=20260804-geo-unit12-v1"></script>
+  <script src="data/challenge-social-geography-geo-11.js?v=20260804-geo-unit12-v1"></script>
+  <script src="data/challenge-social-geography-geo-12.js?v=20260804-geo-unit12-v1"></script>
+  <script src="data/challenge-social-history-his-13.js?v=20260804-history-v1"></script>
+  <script src="data/challenge-social-history-his-14.js?v=20260804-history-v1"></script>
+  <script src="data/challenge-social-history-his-15.js?v=20260804-history-v1"></script>
+  <script src="data/challenge-social-history-his-16.js?v=20260804-history-v1"></script>
+  <script src="data/challenge-social-history-his-17.js?v=20260804-history-v1"></script>
+  <script src="data/challenge-social-history-his-18.js?v=20260804-history-v1"></script>
+  <script src="data/challenge-social-history-his-19.js?v=20260804-history-v1"></script>
+  <script src="data/challenge-social-history-his-20.js?v=20260804-history-v1"></script>
+  <script src="data/challenge-social-history-his-21.js?v=20260804-history-v1"></script>
+  <script src="data/challenge-social-history-normalize.js?v=20260804-history-v1"></script>
+  <script src="data/challenge-social-civics.js?v=20260804-civics-v1"></script>
+  <script src="data/challenge-science-year1.js?v=20260815-science-context-v4"></script>
+  <script src="data/challenge-science-year2.js?v=20260815-science-context-v4"></script>
+  <script src="challenge-theme.js?v=20260804-quiz-focus-v1"></script>
+  <script src="math-work-utils.js?v=20260715-guided-math-v1"></script>
+  <script src="math-keypad-utils.js?v=20260716-all-math-keypad-v1"></script>
+  <script src="responsive-math-layout.js?v=20260716-all-math-keypad-v1"></script>
+  <script src="app.js?v=20260820-eldest-alias-v1"></script>
 </body>
 </html>

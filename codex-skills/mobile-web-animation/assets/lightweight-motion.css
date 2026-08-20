@@ -1,0 +1,137 @@
+:root {
+  --motion-distance: 14px;
+  --motion-duration: 420ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-stagger: 55ms;
+}
+
+@keyframes motion-float {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0);
+  }
+}
+
+@keyframes motion-bounce-soft {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  45% {
+    transform: translate3d(0, -10px, 0) scale(1.02);
+  }
+  65% {
+    transform: translate3d(0, 2px, 0) scale(0.99);
+  }
+}
+
+@keyframes motion-word-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.55em, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.motion-float {
+  animation: motion-float 4.8s ease-in-out infinite;
+}
+
+.motion-bounce-soft {
+  animation: motion-bounce-soft 3.8s ease-in-out infinite;
+}
+
+.motion-reveal {
+  opacity: 0;
+  transform: translate3d(0, var(--motion-distance), 0);
+  transition:
+    opacity var(--motion-duration) var(--motion-ease),
+    transform var(--motion-duration) var(--motion-ease);
+}
+
+.motion-reveal.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+[data-motion-stagger] .motion-reveal {
+  transition-delay: calc(var(--motion-index, 0) * var(--motion-stagger));
+}
+
+.motion-pressable {
+  transform: translate3d(0, 0, 0) scale(1);
+  transition:
+    transform 170ms ease,
+    opacity 170ms ease;
+  touch-action: manipulation;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .motion-pressable:hover {
+    transform: translate3d(0, -1px, 0) scale(1.02);
+  }
+}
+
+.motion-pressable:active {
+  transform: translate3d(0, 1px, 0) scale(0.98);
+}
+
+.motion-glow {
+  position: relative;
+  isolation: isolate;
+}
+
+.motion-glow::after {
+  position: absolute;
+  inset: -3px;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 0.12), 0 0 18px rgb(56 189 248 / 0.32);
+  content: "";
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .motion-glow:hover::after {
+    opacity: 1;
+  }
+}
+
+.motion-words .motion-word {
+  display: inline-block;
+  opacity: 0;
+  transform: translate3d(0, 0.55em, 0);
+  animation: motion-word-in 420ms var(--motion-ease) forwards;
+  animation-delay: calc(var(--word-index, 0) * 45ms);
+}
+
+.motion-parallax {
+  transform: translate3d(0, calc(var(--parallax-y, 0) * 1px), 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-float,
+  .motion-bounce-soft,
+  .motion-words .motion-word {
+    animation: none !important;
+  }
+
+  .motion-reveal,
+  .motion-reveal.is-visible,
+  .motion-pressable,
+  .motion-parallax,
+  .motion-words .motion-word {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .motion-glow::after {
+    transition: none !important;
+  }
+}

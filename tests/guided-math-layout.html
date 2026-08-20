@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guided Math Layout Audit</title>
+  <link rel="stylesheet" href="../styles.css?v=20260715-guided-math-v1">
+  <style>
+    .audit-heading { margin: 0 0 12px; font-size: 16px; }
+    .audit-prompt-list { min-width: 0; display: grid; gap: 8px; }
+    .audit-prompt-list .prompt { width: 100%; min-width: 0; margin: 0; }
+    .audit-choice-row { margin-top: 16px; }
+  </style>
+</head>
+<body class="pack-mode">
+  <main class="app-shell">
+    <section class="quiz-area">
+      <div class="workspace">
+        <article class="question-card">
+          <h1 class="audit-heading">Guided Math Layout Audit</h1>
+          <section id="auditPrompts" class="audit-prompt-list"></section>
+          <div class="choices">
+            <section class="math-work-builder audit-choice-row">
+              <div class="math-work-rows">
+                <section class="math-work-row active">
+                  <div id="auditTokens" class="math-work-line"></div>
+                  <section class="math-work-step-choices">
+                    <div id="auditChoices" class="math-work-step-choice-list"></div>
+                  </section>
+                </section>
+              </div>
+            </section>
+          </div>
+          <output id="layoutAudit" hidden></output>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script src="../data/questions.js?v=20260715-guided-math-v1"></script>
+  <script src="../data/entrance-ibaraki-2027-pack.js?v=20260715-guided-math-v1"></script>
+  <script src="../data/term-test-2026-07-13-config.js?v=20260710-gifted-v4"></script>
+  <script src="../data/term-test-2026-07-13-humanities.js?v=20260710-gifted-v4"></script>
+  <script src="../data/term-test-2026-07-13-stem.js?v=20260715-guided-math-v1"></script>
+  <script src="../math-work-utils.js?v=20260715-guided-math-v1"></script>
+  <script src="../responsive-math-layout.js?v=20260715-guided-math-v1"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      const staticQuestions = (window.QUIZ_QUESTIONS || []).filter((question) => (
+        question.packId === "term-2026-07-13" && question.answerMode === "drag-work"
+      ));
+      const generatedQuestions = [];
+      for (let seed = 1; seed <= 24; seed += 1) {
+        window.TERM_TEST_GENERATE_VARIANTS(12, "layout-audit-" + seed)
+          .filter((question) => question.answerMode === "drag-work")
+          .forEach((question) => generatedQuestions.push(question));
+      }
+      const questions = staticQuestions.concat(generatedQuestions);
+      const promptHost = document.getElementById("auditPrompts");
+      const choiceHost = document.getElementById("auditChoices");
+      const tokenHost = document.getElementById("auditTokens");
+      const choiceValues = [];
+
+      questions.forEach((question) => {
+        const prompt = document.createElement("p");
+        prompt.className = "prompt";
+        prompt.dataset.questionId = question.id;
+        prompt.textContent = question.prompt;
+        promptHost.appendChild(prompt);
+        window.ResponsiveMathLayout.fitQuestionPrompt(prompt, true);
+
+        question.workSteps.forEach((step, stepIndex) => {
+          window.MathWorkUtils.buildWorkStepChoices(
+            step,
+            question.prompt,
+            question.id + ":layout:" + stepIndex
+          ).forEach((choice, choiceIndex) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "math-work-step-choice";
+            button.dataset.choiceLabel = ["ア", "イ", "ウ", "エ"][choiceIndex];
+            button.dataset.questionId = question.id;
+            const text = document.createElement("span");
+            text.className = "math-work-step-choice-text";
+            text.textContent = choice.text;
+            button.appendChild(text);
+            choiceHost.appendChild(button);
+            choiceValues.push(choice.text);
+          });
+        });
+      });
+
+      window.ResponsiveMathLayout.fitGuidedChoices(choiceHost);
+      const choiceTexts = Array.from(document.querySelectorAll(".math-work-step-choice-text"));
+      const choiceOverflow = choiceTexts.filter((element) => element.scrollWidth > element.clientWidth + 1).length;
+      const minimumChoiceFontSize = Math.min(...choiceTexts.map((element) => parseFloat(getComputedStyle(element).fontSize)));
+      choiceHost.replaceChildren();
+
+      choiceValues.forEach((value) => {
+        const token = document.createElement("button");
+        token.type = "button";
+        token.className = "math-work-token grouped from-choice";
+        const tokenText = document.createElement("span");
+        tokenText.className = "math-work-token-text";
+        tokenText.textContent = value;
+        token.appendChild(tokenText);
+        tokenHost.appendChild(token);
+      });
+      window.ResponsiveMathLayout.fitGuidedChoices(tokenHost);
+      const tokenTexts = Array.from(document.querySelectorAll(".math-work-token-text"));
+      const prompts = Array.from(document.querySelectorAll(".audit-prompt-list .prompt"));
+      const report = {
+        questions: questions.length,
+        choices: choiceValues.length,
+        tokens: tokenTexts.length,
+        choiceOverflow,
+        tokenOverflow: tokenTexts.filter((element) => element.scrollWidth > element.clientWidth + 1).length,
+        promptOverflow: prompts.filter((element) => element.scrollWidth > element.clientWidth + 1).length,
+        wrappedPrompts: prompts.filter((element) => !element.classList.contains("single-line-math")).length,
+        pageOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+        minimumChoiceFontSize,
+        minimumTokenFontSize: Math.min(...tokenTexts.map((element) => parseFloat(getComputedStyle(element).fontSize)))
+      };
+      const output = document.getElementById("layoutAudit");
+      Object.entries(report).forEach(([key, value]) => {
+        output.dataset[key] = String(value);
+      });
+      document.body.dataset.auditReady = "true";
+    }());
+  </script>
+</body>
+</html>

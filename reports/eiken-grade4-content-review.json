@@ -1,0 +1,60 @@
+{
+  "packId": "eiken-grade4",
+  "reviewedOn": "2026-08-15",
+  "reviewer": "Codex self-critic",
+  "status": "PASS",
+  "questionsReviewed": 100,
+  "distribution": {
+    "vocabularyAndGrammar": 35,
+    "dialogueAndWordOrder": 20,
+    "reading": 15,
+    "listening": 30
+  },
+  "criteria": {
+    "officialFormatAlignment": "The pack covers every current Grade 4 reading and listening task family while adapting each task to the existing web quiz interface. The 100-item training allocation intentionally gives extra repetition to sentence completion instead of claiming to reproduce one official test booklet proportionally.",
+    "levelAlignment": "Vocabulary, grammar, passage length, and listening scripts were checked against the EIKEN Grade 4 target of junior-high intermediate level.",
+    "answerUniqueness": "Every item has one contextually and grammatically best answer, with three distinct same-domain distractors.",
+    "explanationConsistency": "Every correct answer was checked against its Japanese explanation, passage, or listening transcript.",
+    "contextCompleteness": "Every item is independently solvable; reading passages and listening audio are included in the same question.",
+    "originality": "All prompts, passages, scripts, names, times, and numerical details are newly written and do not reproduce official past questions.",
+    "mobileListening": "Thirty listening items use the device English speech engine, expose no transcript before answering, and show the transcript in the explanation afterward."
+  },
+  "criticFindingsResolved": [
+    {
+      "severity": "major",
+      "finding": "Four initial grammar patterns were at or above typical Grade 3 scope.",
+      "resolution": "Present perfect, want-person-to, and too-for-to items were replaced with Grade 4-appropriate past tense, infinitive, conjunction, and duration patterns."
+    },
+    {
+      "severity": "major",
+      "finding": "The first version of the word-order section only asked learners to choose a complete sentence, which was easier than the Grade 4 task.",
+      "resolution": "All ten items now use five shuffled chunks and ask for the second and fourth chunks, matching the reasoning required by the official format while fitting the four-choice UI."
+    },
+    {
+      "severity": "major",
+      "finding": "Speaker labels in text-to-speech scripts would have been read aloud as words.",
+      "resolution": "Speaker labels were removed from audio text while conversational turn punctuation was retained."
+    },
+    {
+      "severity": "major",
+      "finding": "Several early distractors could also fit loosely or made the intended answer depend on an unstated assumption.",
+      "resolution": "The season, arrive-in, some/any, and fixed-expression items were rewritten so that each question has one contextually and grammatically best answer."
+    },
+    {
+      "severity": "minor",
+      "finding": "Final-tier listening items inherited a reading-oriented format label.",
+      "resolution": "Audio and passage items now receive listening and source-reading format labels independently of tier."
+    }
+  ],
+  "officialSources": [
+    "https://www.eiken.or.jp/eiken/exam/grade_4/",
+    "https://www.eiken.or.jp/eiken/exam/grade_4/solutions.html",
+    "https://www.eiken.or.jp/eiken/exam/criteria/index.html"
+  ],
+  "unresolvedIssues": [],
+  "limitations": [
+    "Word-order questions reproduce the official second-and-fourth-chunk decision using five shuffled chunks, but the screen layout is adapted to the existing four-choice web interface.",
+    "Listening uses the device speech engine, so voice quality and accent vary by iPhone settings.",
+    "The optional Grade 4 speaking test is not included because Grade 4 certification is determined by the reading and listening first-stage test."
+  ]
+}

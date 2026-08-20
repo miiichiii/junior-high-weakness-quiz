@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>英検4級 本番ドリル</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="eiken-study.css?v=20260815-eiken-study-v1">
+</head>
+<body class="eiken-study-page exam-page">
+  <header class="study-topbar">
+    <a class="study-home" href="./?child=child-2">← child2</a>
+    <div><small>公式構成 65問</small><h1>英検4級 本番ドリル</h1></div>
+    <span id="examSyncStatus" class="study-sync" data-state="local">端末保存</span>
+  </header>
+  <main class="study-shell">
+    <section id="examHome" class="study-screen">
+      <div class="study-hero"><div><p class="eyebrow">FULL PRACTICE</p><h2>3回分の本番練習</h2><p>リーディング35分＋リスニング約30分。答えは最後まで表示しません。</p></div><div class="study-ring"><strong id="formsCompleted">0</strong><span>/3 完了</span></div></div>
+      <div id="formList" class="exam-form-list"></div>
+      <p class="exam-note">「4級準備OK」はアプリ独自の厳しめ基準です。英検の公式合格を保証する表示ではありません。</p>
+      <a class="study-secondary full-width" href="eiken-vocab.html?child=child-2">単語帳420へ</a>
+    </section>
+    <section id="examRunner" class="study-screen hidden" aria-live="polite">
+      <div class="exam-runner-head"><div><small id="examSectionLabel">リーディング</small><strong id="examQuestionNumber">1/35</strong></div><div class="exam-timer" id="examTimer">35:00</div><button id="examExit" type="button">中断</button></div>
+      <div class="study-progress"><span id="examPartLabel">短文空所</span><div><i id="examProgressBar"></i></div></div>
+      <article class="exam-question-card">
+        <div id="examPassage" class="exam-passage hidden"></div>
+        <div id="examFigure" class="exam-figure hidden"></div>
+        <p id="examPrompt" class="exam-prompt"></p>
+        <button id="examPlayAudio" class="study-primary hidden" type="button">🔊 音声を開始（2回）</button>
+        <p id="examAudioStatus" class="exam-audio-status"></p>
+        <div id="examChoices" class="vocab-choices exam-choices"></div>
+      </article>
+      <button id="examNext" class="study-primary" type="button" disabled>次へ</button>
+    </section>
+    <section id="sectionBreak" class="study-screen hidden">
+      <div class="result-emoji">📘</div><h2>リーディング終了</h2><p>ここからリスニング30問です。音声は各問2回流れます。</p><button id="startListening" class="study-primary" type="button">リスニングを始める</button>
+    </section>
+    <section id="examResult" class="study-screen hidden">
+      <div class="result-emoji">🏁</div><h2 id="examResultTitle">本番ドリル完了</h2>
+      <div class="study-metrics"><div><span>リーディング</span><strong id="readingScore">0/35</strong></div><div><span>リスニング</span><strong id="listeningScore">0/30</strong></div><div><span>合計</span><strong id="totalScore">0/65</strong></div></div>
+      <p id="examReadinessResult" class="exam-readiness-result"></p>
+      <details class="exam-review"><summary>間違えた問題と解説</summary><div id="examReviewList"></div></details>
+      <button id="examResultHome" class="study-primary" type="button">模試一覧へ</button>
+    </section>
+  </main>
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js?v=20260805-shared-cloud-v1"></script>
+  <script src="firebase-sync.js?v=20260820-google-login-recovery-v1"></script>
+  <script src="data/eiken-grade4-vocab.js?v=20260815-eiken-study-v1"></script>
+  <script src="data/eiken-grade4-exam.js?v=20260815-eiken-study-v1"></script>
+  <script src="eiken-exam-app.js?v=20260815-eiken-study-v1"></script>
+</body>
+</html>

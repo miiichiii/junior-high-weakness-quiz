@@ -1,0 +1,38 @@
+{
+  "packId": "challenge-science-year2",
+  "reviewedOn": "2026-08-15",
+  "status": "PASS",
+  "questionsReviewed": 240,
+  "reviewedRanges": [
+    { "unitId": "sci2-09", "start": 1, "end": 24 },
+    { "unitId": "sci2-10", "start": 1, "end": 24 },
+    { "unitId": "sci2-11", "start": 1, "end": 24 },
+    { "unitId": "sci2-12", "start": 1, "end": 24 },
+    { "unitId": "sci2-13", "start": 1, "end": 24 },
+    { "unitId": "sci2-14", "start": 1, "end": 24 },
+    { "unitId": "sci2-15", "start": 1, "end": 24 },
+    { "unitId": "sci2-16", "start": 1, "end": 24 },
+    { "unitId": "sci2-17", "start": 1, "end": 24 },
+    { "unitId": "sci2-18", "start": 1, "end": 24 }
+  ],
+  "criteria": {
+    "sourceAccuracy": "Each concept, numerical relation, and experimental condition was checked against the authoritative scanned spread; OCR was used only as a locator.",
+    "curriculumAlignment": "Coverage was cross-checked with the current MEXT junior-high science curriculum commentary.",
+    "ibarakiExamReadiness": "Every unit combines accurate recall with experiment design, evidence interpretation, graph/table reading, calculation, and causal explanation aligned with Ibaraki public-exam analysis.",
+    "calculationAudit": "Ohm's law, electric power and energy, electrolysis ratios, reaction mass ratios, humidity, dew point, and condensation calculations were independently recomputed with units.",
+    "distractorAudit": "Choice distractors are same-domain misconceptions and do not duplicate the correct answer.",
+    "originality": "Prompts, numerical datasets, diagrams, tables, and graphs are original and do not reproduce the textbook exercises or artwork.",
+    "contextCompleteness": "All 240 prompts were checked for dangling references. Every question that depends on a graph, table, diagram, or named sample now displays that source material in the same question.",
+    "mobileAccessibility": "All 35 figure uses have required alternative text and captions and use safe data-driven rendering within a 390px viewBox."
+  },
+  "officialSources": [
+    "https://www.mext.go.jp/content/20210830-mxt_kyoiku01-100002608_05.pdf",
+    "https://kyoiku.pref.ibaraki.jp/post-34983/",
+    "https://kyoiku.pref.ibaraki.jp/wp-content/uploads/2026/05/0410ad7676a75e78278710e65813054d.pdf"
+  ],
+  "unresolvedIssues": [],
+  "limitations": [
+    "This pack completes the scanned second-year science review; third-year science remains separate work.",
+    "Mastery strengthens entrance-exam readiness but cannot guarantee admission; timed mixed-year past-paper practice is still required."
+  ]
+}

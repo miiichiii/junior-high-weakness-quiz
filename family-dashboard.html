@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7fb">
+  <meta name="description" content="子ども別の学習量と進み具合を確認する保護者用管理画面">
+  <title>家族の学習管理</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="family-dashboard.css?v=20260820-family-admin-v1">
+  <script src="public-origin.js?v=20260820-family-admin-v1"></script>
+</head>
+<body>
+  <main class="family-shell">
+    <header class="family-header">
+      <div class="family-header-top">
+        <a class="family-back" href="challenge.html?child=child-1" aria-label="Challenge Baseへ戻る">‹</a>
+        <div class="family-account" id="viewerAccount">未ログイン</div>
+        <button class="family-icon-button hidden" id="refreshButton" type="button" aria-label="最新の記録に更新">↻</button>
+        <button class="family-text-button hidden" id="signOutButton" type="button">ログアウト</button>
+      </div>
+      <div class="family-title-row">
+        <span class="family-title-icon" aria-hidden="true">👨‍👩‍👧‍👦</span>
+        <div>
+          <p>保護者用</p>
+          <h1>家族の学習管理</h1>
+        </div>
+      </div>
+      <p class="family-status" id="dashboardStatus" data-state="idle">Googleでログインすると、子ども別のクラウド記録を確認できます。</p>
+      <button class="family-signin" id="signInButton" type="button">Googleで確認する</button>
+    </header>
+
+    <section class="family-content hidden" id="dashboardContent" aria-live="polite">
+      <div class="family-overview" id="familyOverview" aria-label="家族全体の要約"></div>
+
+      <section aria-labelledby="childrenHeading">
+        <div class="family-section-heading">
+          <div>
+            <p>子ども別</p>
+            <h2 id="childrenHeading">だれが、どのくらい？</h2>
+          </div>
+          <time id="loadedAt"></time>
+        </div>
+        <div class="family-child-tabs" id="childTabs" role="tablist" aria-label="確認する子ども"></div>
+      </section>
+
+      <section class="family-detail" id="childDetail" aria-live="polite"></section>
+
+      <p class="family-footnote">
+        「累計」は繰り返しを含む解答・練習回数です。「着手」は別々の問題に初めて取り組んだ数です。「成功率」は、正解または自力クリアとして記録された回数を累計で割った値です。未採点の記述は含みません。最終学習とクラウド同期は別に表示します。
+      </p>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js?v=20260805-shared-cloud-v1"></script>
+  <script src="firebase-sync.js?v=20260820-google-login-recovery-v1"></script>
+  <script src="challenge-parent-view.js?v=20260814-challenge-parent-v1"></script>
+  <script src="family-dashboard-model.js?v=20260820-eldest-alias-v1"></script>
+  <script src="family-dashboard.js?v=20260820-eldest-alias-v1"></script>
+</body>
+</html>

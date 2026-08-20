@@ -1,0 +1,111 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedInWithEmail() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+
+    function householdMember(householdId) {
+      return signedInWithEmail()
+        && request.auth.token.email in get(/databases/$(database)/documents/households/$(householdId)).data.memberEmails;
+    }
+
+    function pairingPath(householdId, pairingCode) {
+      return /databases/$(database)/documents/households/$(householdId)/pairings/$(pairingCode);
+    }
+
+    function validPairing(householdId, childId) {
+      let code = request.resource.data.pairingCode;
+      let path = pairingPath(householdId, code);
+      let recordPath = /databases/$(database)/documents/households/$(householdId)/children/$(childId)/records/default;
+      return request.auth != null
+        && code is string
+        && exists(path)
+        && get(path).data.active == true
+        && get(path).data.childId == childId
+        && get(path).data.expiresAt > request.time
+        && getAfter(path).data.claimedUid == request.auth.uid
+        && (!exists(recordPath)
+          || !get(recordPath).data.keys().hasAny(['learnerUid'])
+          || get(recordPath).data.learnerUid == request.auth.uid)
+        && request.resource.data.learnerUid == request.auth.uid;
+    }
+
+    function assignedLearner() {
+      return request.auth != null
+        && resource.data.learnerUid == request.auth.uid
+        && request.resource.data.learnerUid == request.auth.uid
+        && request.resource.data.pairingCode == resource.data.pairingCode;
+    }
+
+    function householdLearnerClaim(householdId, childId) {
+      let recordPath = /databases/$(database)/documents/households/$(householdId)/children/$(childId)/records/default;
+      return householdMember(householdId)
+        && request.resource.data.learnerUid == request.auth.uid
+        && (!exists(recordPath)
+          || !get(recordPath).data.keys().hasAny(['learnerUid'])
+          || get(recordPath).data.learnerUid == request.auth.uid);
+    }
+
+    match /users/{userId}/children/{childId}/records/{recordId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId
+        && childId in ['child-1', 'child-2', 'child-3']
+        && recordId == 'default';
+    }
+
+    match /users/{userId}/assignments/{childId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId
+        && childId in ['child-1', 'child-2', 'child-3'];
+    }
+
+    match /households/{householdId} {
+      allow create: if signedInWithEmail()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.memberEmails is list
+        && request.resource.data.memberEmails.size() == 2
+        && request.auth.token.email in request.resource.data.memberEmails;
+      allow read: if signedInWithEmail()
+        && request.auth.token.email in resource.data.memberEmails;
+      allow update, delete: if false;
+
+      match /pairings/{pairingCode} {
+        allow create: if householdMember(householdId)
+          && request.resource.data.childId in ['child-1', 'child-2', 'child-3']
+          && request.resource.data.createdByUid == request.auth.uid
+          && request.resource.data.claimedUid == ''
+          && request.resource.data.active == true
+          && request.resource.data.expiresAt > request.time;
+        allow get: if householdMember(householdId)
+          || (request.auth != null
+            && resource.data.active == true
+            && resource.data.expiresAt > request.time);
+        allow list: if householdMember(householdId);
+        allow update: if (householdMember(householdId) && resource.data.createdByUid == request.auth.uid)
+          || (request.auth != null
+            && resource.data.active == true
+            && resource.data.expiresAt > request.time
+            && resource.data.claimedUid == ''
+            && request.resource.data.claimedUid == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['claimedUid', 'claimedAt']));
+        allow delete: if householdMember(householdId) && resource.data.createdByUid == request.auth.uid;
+      }
+
+      match /children/{childId}/records/{recordId} {
+        allow read: if childId in ['child-1', 'child-2', 'child-3']
+          && recordId == 'default'
+          && (householdMember(householdId)
+            || (request.auth != null && resource.data.learnerUid == request.auth.uid));
+        allow create: if childId in ['child-1', 'child-2', 'child-3']
+          && recordId == 'default'
+          && (householdLearnerClaim(householdId, childId) || validPairing(householdId, childId));
+        allow update: if childId in ['child-1', 'child-2', 'child-3']
+          && recordId == 'default'
+          && (householdLearnerClaim(householdId, childId) || assignedLearner() || validPairing(householdId, childId));
+        allow delete: if false;
+      }
+    }
+  }
+}

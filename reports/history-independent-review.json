@@ -1,0 +1,1085 @@
+{
+  "reviewedAt": "2026-08-04T00:00:00+09:00",
+  "reviewer": "independent-content-review",
+  "benchmark": {
+    "source": "茨城県教育委員会『令和7年度茨城県立高等学校入学者選抜実施状況報告書』社会 p.24 および docs/HISTORY_REVIEW_STANDARD.md",
+    "criteria": [
+      "原画像・根拠との一致",
+      "正答の正確性",
+      "誤答が一意に誤り",
+      "年代・人物・条約・制度・場所の正確性",
+      "説明の妥当性",
+      "答え漏れなし",
+      "教材範囲の重要事項被覆",
+      "年代整序・因果・比較・図表活用の入試有用性"
+    ]
+  },
+  "questionsReviewed": 216,
+  "reviewedQuestionIds": [
+    "challenge-his-13-001",
+    "challenge-his-13-002",
+    "challenge-his-13-003",
+    "challenge-his-13-004",
+    "challenge-his-13-005",
+    "challenge-his-13-006",
+    "challenge-his-13-007",
+    "challenge-his-13-008",
+    "challenge-his-13-009",
+    "challenge-his-13-010",
+    "challenge-his-13-011",
+    "challenge-his-13-012",
+    "challenge-his-13-013",
+    "challenge-his-13-014",
+    "challenge-his-13-015",
+    "challenge-his-13-016",
+    "challenge-his-13-017",
+    "challenge-his-13-018",
+    "challenge-his-13-019",
+    "challenge-his-13-020",
+    "challenge-his-13-021",
+    "challenge-his-13-022",
+    "challenge-his-13-023",
+    "challenge-his-13-024",
+    "challenge-his-14-001",
+    "challenge-his-14-002",
+    "challenge-his-14-003",
+    "challenge-his-14-004",
+    "challenge-his-14-005",
+    "challenge-his-14-006",
+    "challenge-his-14-007",
+    "challenge-his-14-008",
+    "challenge-his-14-009",
+    "challenge-his-14-010",
+    "challenge-his-14-011",
+    "challenge-his-14-012",
+    "challenge-his-14-013",
+    "challenge-his-14-014",
+    "challenge-his-14-015",
+    "challenge-his-14-016",
+    "challenge-his-14-017",
+    "challenge-his-14-018",
+    "challenge-his-14-019",
+    "challenge-his-14-020",
+    "challenge-his-14-021",
+    "challenge-his-14-022",
+    "challenge-his-14-023",
+    "challenge-his-14-024",
+    "challenge-his-15-001",
+    "challenge-his-15-002",
+    "challenge-his-15-003",
+    "challenge-his-15-004",
+    "challenge-his-15-005",
+    "challenge-his-15-006",
+    "challenge-his-15-007",
+    "challenge-his-15-008",
+    "challenge-his-15-009",
+    "challenge-his-15-010",
+    "challenge-his-15-011",
+    "challenge-his-15-012",
+    "challenge-his-15-013",
+    "challenge-his-15-014",
+    "challenge-his-15-015",
+    "challenge-his-15-016",
+    "challenge-his-15-017",
+    "challenge-his-15-018",
+    "challenge-his-15-019",
+    "challenge-his-15-020",
+    "challenge-his-15-021",
+    "challenge-his-15-022",
+    "challenge-his-15-023",
+    "challenge-his-15-024",
+    "challenge-his-16-001",
+    "challenge-his-16-002",
+    "challenge-his-16-003",
+    "challenge-his-16-004",
+    "challenge-his-16-005",
+    "challenge-his-16-006",
+    "challenge-his-16-007",
+    "challenge-his-16-008",
+    "challenge-his-16-009",
+    "challenge-his-16-010",
+    "challenge-his-16-011",
+    "challenge-his-16-012",
+    "challenge-his-16-013",
+    "challenge-his-16-014",
+    "challenge-his-16-015",
+    "challenge-his-16-016",
+    "challenge-his-16-017",
+    "challenge-his-16-018",
+    "challenge-his-16-019",
+    "challenge-his-16-020",
+    "challenge-his-16-021",
+    "challenge-his-16-022",
+    "challenge-his-16-023",
+    "challenge-his-16-024",
+    "challenge-his-17-001",
+    "challenge-his-17-002",
+    "challenge-his-17-003",
+    "challenge-his-17-004",
+    "challenge-his-17-005",
+    "challenge-his-17-006",
+    "challenge-his-17-007",
+    "challenge-his-17-008",
+    "challenge-his-17-009",
+    "challenge-his-17-010",
+    "challenge-his-17-011",
+    "challenge-his-17-012",
+    "challenge-his-17-013",
+    "challenge-his-17-014",
+    "challenge-his-17-015",
+    "challenge-his-17-016",
+    "challenge-his-17-017",
+    "challenge-his-17-018",
+    "challenge-his-17-019",
+    "challenge-his-17-020",
+    "challenge-his-17-021",
+    "challenge-his-17-022",
+    "challenge-his-17-023",
+    "challenge-his-17-024",
+    "challenge-his-18-001",
+    "challenge-his-18-002",
+    "challenge-his-18-003",
+    "challenge-his-18-004",
+    "challenge-his-18-005",
+    "challenge-his-18-006",
+    "challenge-his-18-007",
+    "challenge-his-18-008",
+    "challenge-his-18-009",
+    "challenge-his-18-010",
+    "challenge-his-18-011",
+    "challenge-his-18-012",
+    "challenge-his-18-013",
+    "challenge-his-18-014",
+    "challenge-his-18-015",
+    "challenge-his-18-016",
+    "challenge-his-18-017",
+    "challenge-his-18-018",
+    "challenge-his-18-019",
+    "challenge-his-18-020",
+    "challenge-his-18-021",
+    "challenge-his-18-022",
+    "challenge-his-18-023",
+    "challenge-his-18-024",
+    "challenge-his-19-001",
+    "challenge-his-19-002",
+    "challenge-his-19-003",
+    "challenge-his-19-004",
+    "challenge-his-19-005",
+    "challenge-his-19-006",
+    "challenge-his-19-007",
+    "challenge-his-19-008",
+    "challenge-his-19-009",
+    "challenge-his-19-010",
+    "challenge-his-19-011",
+    "challenge-his-19-012",
+    "challenge-his-19-013",
+    "challenge-his-19-014",
+    "challenge-his-19-015",
+    "challenge-his-19-016",
+    "challenge-his-19-017",
+    "challenge-his-19-018",
+    "challenge-his-19-019",
+    "challenge-his-19-020",
+    "challenge-his-19-021",
+    "challenge-his-19-022",
+    "challenge-his-19-023",
+    "challenge-his-19-024",
+    "challenge-his-20-001",
+    "challenge-his-20-002",
+    "challenge-his-20-003",
+    "challenge-his-20-004",
+    "challenge-his-20-005",
+    "challenge-his-20-006",
+    "challenge-his-20-007",
+    "challenge-his-20-008",
+    "challenge-his-20-009",
+    "challenge-his-20-010",
+    "challenge-his-20-011",
+    "challenge-his-20-012",
+    "challenge-his-20-013",
+    "challenge-his-20-014",
+    "challenge-his-20-015",
+    "challenge-his-20-016",
+    "challenge-his-20-017",
+    "challenge-his-20-018",
+    "challenge-his-20-019",
+    "challenge-his-20-020",
+    "challenge-his-20-021",
+    "challenge-his-20-022",
+    "challenge-his-20-023",
+    "challenge-his-20-024",
+    "challenge-his-21-001",
+    "challenge-his-21-002",
+    "challenge-his-21-003",
+    "challenge-his-21-004",
+    "challenge-his-21-005",
+    "challenge-his-21-006",
+    "challenge-his-21-007",
+    "challenge-his-21-008",
+    "challenge-his-21-009",
+    "challenge-his-21-010",
+    "challenge-his-21-011",
+    "challenge-his-21-012",
+    "challenge-his-21-013",
+    "challenge-his-21-014",
+    "challenge-his-21-015",
+    "challenge-his-21-016",
+    "challenge-his-21-017",
+    "challenge-his-21-018",
+    "challenge-his-21-019",
+    "challenge-his-21-020",
+    "challenge-his-21-021",
+    "challenge-his-21-022",
+    "challenge-his-21-023",
+    "challenge-his-21-024"
+  ],
+  "issuesFixed": [
+    {
+      "questionId": "challenge-his-13-004",
+      "issue": "説明に不整合または不足",
+      "fix": "因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-13-005",
+      "issue": "根拠IDに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-13-007",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-13-008",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-13-011",
+      "issue": "設問・正答・印刷ページ・図・年表・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。factsの左右ページに合わせてpaperRefを修正。誤割当を除去し史実と前後関係が正確な図へ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-13-014",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-13-015",
+      "issue": "設問・正答・印刷ページに不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-13-016",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-13-017",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-13-018",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-13-019",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-13-020",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-13-021",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-13-022",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-13-023",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-13-024",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-14-001",
+      "issue": "根拠IDに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-14-007",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-14-008",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-14-011",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-14-012",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-14-014",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-14-015",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-14-016",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-14-019",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-14-020",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-14-021",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-14-022",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-14-023",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-14-024",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-15-001",
+      "issue": "根拠IDに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-15-004",
+      "issue": "根拠IDに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-15-007",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-15-008",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-15-010",
+      "issue": "図・年表に不整合または不足",
+      "fix": "誤割当を除去し史実と前後関係が正確な図へ修正"
+    },
+    {
+      "questionId": "challenge-his-15-011",
+      "issue": "設問・正答・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-15-013",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-15-014",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-15-015",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-15-016",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-15-017",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-15-020",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-15-022",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-15-023",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-15-024",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-16-003",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-16-004",
+      "issue": "印刷ページ・説明に不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-16-005",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-16-006",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-16-007",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-16-008",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-16-010",
+      "issue": "印刷ページ・説明に不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-16-011",
+      "issue": "図・年表・説明に不整合または不足",
+      "fix": "誤割当を除去し史実と前後関係が正確な図へ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-16-012",
+      "issue": "設問・正答に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正"
+    },
+    {
+      "questionId": "challenge-his-16-013",
+      "issue": "設問・正答・印刷ページ・図・年表に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。factsの左右ページに合わせてpaperRefを修正。誤割当を除去し史実と前後関係が正確な図へ修正"
+    },
+    {
+      "questionId": "challenge-his-16-014",
+      "issue": "印刷ページに不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-16-015",
+      "issue": "根拠ID・印刷ページ・図・年表に不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。誤割当を除去し史実と前後関係が正確な図へ修正"
+    },
+    {
+      "questionId": "challenge-his-16-016",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-16-017",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-16-018",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-16-019",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-16-020",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-16-021",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-16-022",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-16-023",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-16-024",
+      "issue": "根拠ID・説明に不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-17-002",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-17-003",
+      "issue": "根拠ID・説明に不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-17-004",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-17-005",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-17-006",
+      "issue": "根拠IDに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-17-007",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-17-008",
+      "issue": "根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-17-009",
+      "issue": "根拠ID・図・年表・説明に不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。誤割当を除去し史実と前後関係が正確な図へ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-17-010",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-17-011",
+      "issue": "設問・正答・根拠IDに不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-17-012",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-17-013",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-17-014",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-17-015",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-17-016",
+      "issue": "根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-17-017",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-17-018",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-17-019",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-17-020",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-17-021",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-17-022",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-17-023",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-17-024",
+      "issue": "根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-18-001",
+      "issue": "根拠ID・説明に不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-18-002",
+      "issue": "根拠IDに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-18-003",
+      "issue": "根拠IDに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-18-004",
+      "issue": "根拠IDに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-18-005",
+      "issue": "根拠IDに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-18-006",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-18-007",
+      "issue": "根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-18-008",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-18-009",
+      "issue": "根拠IDに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-18-010",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-18-011",
+      "issue": "根拠IDに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-18-012",
+      "issue": "根拠ID・図・年表に不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。誤割当を除去し史実と前後関係が正確な図へ修正"
+    },
+    {
+      "questionId": "challenge-his-18-013",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-18-014",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-18-015",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-18-016",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-18-017",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-18-018",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-18-019",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-18-020",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-18-021",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-18-022",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-18-023",
+      "issue": "設問・正答・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-18-024",
+      "issue": "根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-19-007",
+      "issue": "根拠IDに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-19-010",
+      "issue": "図・年表に不整合または不足",
+      "fix": "誤割当を除去し史実と前後関係が正確な図へ修正"
+    },
+    {
+      "questionId": "challenge-his-19-011",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-19-012",
+      "issue": "設問・正答・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-19-013",
+      "issue": "図・年表に不整合または不足",
+      "fix": "誤割当を除去し史実と前後関係が正確な図へ修正"
+    },
+    {
+      "questionId": "challenge-his-19-014",
+      "issue": "印刷ページ・図・年表に不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正。誤割当を除去し史実と前後関係が正確な図へ修正"
+    },
+    {
+      "questionId": "challenge-his-19-015",
+      "issue": "根拠ID・印刷ページ・図・年表に不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。誤割当を除去し史実と前後関係が正確な図へ修正"
+    },
+    {
+      "questionId": "challenge-his-19-016",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-19-017",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-19-018",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-19-019",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-19-020",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-19-021",
+      "issue": "説明に不整合または不足",
+      "fix": "因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-19-022",
+      "issue": "印刷ページ・説明に不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-19-023",
+      "issue": "印刷ページ・説明に不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-19-024",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-003",
+      "issue": "説明に不整合または不足",
+      "fix": "因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-004",
+      "issue": "説明に不整合または不足",
+      "fix": "因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-006",
+      "issue": "設問・正答・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-008",
+      "issue": "印刷ページ・説明に不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-009",
+      "issue": "説明に不整合または不足",
+      "fix": "因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-010",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-011",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-20-012",
+      "issue": "図・年表に不整合または不足",
+      "fix": "誤割当を除去し史実と前後関係が正確な図へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-013",
+      "issue": "図・年表に不整合または不足",
+      "fix": "誤割当を除去し史実と前後関係が正確な図へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-014",
+      "issue": "根拠ID・印刷ページ・図・年表に不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。誤割当を除去し史実と前後関係が正確な図へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-015",
+      "issue": "根拠ID・印刷ページ・図・年表に不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。誤割当を除去し史実と前後関係が正確な図へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-016",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-20-017",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-018",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-019",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-020",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-021",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-022",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-023",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-20-024",
+      "issue": "印刷ページ・説明に不整合または不足",
+      "fix": "factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-21-004",
+      "issue": "根拠IDに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-21-005",
+      "issue": "設問・正答・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-21-006",
+      "issue": "根拠IDに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-21-007",
+      "issue": "説明に不整合または不足",
+      "fix": "因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-21-008",
+      "issue": "根拠IDに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正"
+    },
+    {
+      "questionId": "challenge-his-21-010",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-21-011",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-21-012",
+      "issue": "図・年表に不整合または不足",
+      "fix": "誤割当を除去し史実と前後関係が正確な図へ修正"
+    },
+    {
+      "questionId": "challenge-his-21-013",
+      "issue": "図・年表に不整合または不足",
+      "fix": "誤割当を除去し史実と前後関係が正確な図へ修正"
+    },
+    {
+      "questionId": "challenge-his-21-014",
+      "issue": "根拠ID・印刷ページ・図・年表に不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。誤割当を除去し史実と前後関係が正確な図へ修正"
+    },
+    {
+      "questionId": "challenge-his-21-015",
+      "issue": "設問・正答・根拠ID・印刷ページ・図・年表・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。誤割当を除去し史実と前後関係が正確な図へ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-21-016",
+      "issue": "根拠ID・印刷ページに不整合または不足",
+      "fix": "設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正"
+    },
+    {
+      "questionId": "challenge-his-21-017",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-21-018",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-21-019",
+      "issue": "設問・正答・根拠ID・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-21-020",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-21-021",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-21-022",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-21-023",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    },
+    {
+      "questionId": "challenge-his-21-024",
+      "issue": "設問・正答・根拠ID・印刷ページ・説明に不整合または不足",
+      "fix": "原画像と一意な正答に合わせて設問・選択肢・入力解を修正。設問内容に対応するsourceFactIdsへ修正。factsの左右ページに合わせてpaperRefを修正。因果・比較・年代が明確になる説明へ修正"
+    }
+  ],
+  "unresolvedIssues": [],
+  "status": "PASS"
+}

@@ -1,0 +1,235 @@
+body {
+  background: linear-gradient(145deg, #f4f6ff, #f8fbff 48%, #fff6fb);
+}
+
+.parent-base-link {
+  display: inline-grid;
+  place-items: center;
+  min-height: 44px;
+  text-decoration: none;
+}
+
+.parent-overview-metrics > div {
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(34, 49, 94, 0.06);
+}
+
+.parent-overview-metrics strong {
+  font-size: clamp(1rem, 3vw, 1.35rem);
+  overflow-wrap: anywhere;
+}
+
+.parent-learner-sync-note {
+  margin: 0;
+  border: 1px solid #efc36b;
+  border-radius: 14px;
+  background: #fff8df;
+  color: #6f4b00;
+  padding: 12px 14px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.65;
+}
+
+.parent-sync-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.parent-sync-details span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  border: 1px solid #dce2f3;
+  border-radius: 12px;
+  background: #f8faff;
+  color: #667085;
+  padding: 9px 10px;
+  font-size: 0.67rem;
+  font-weight: 800;
+}
+
+.parent-sync-details b {
+  overflow-wrap: anywhere;
+  color: #1c2740;
+  font-size: 0.76rem;
+}
+
+.parent-challenge-section {
+  display: grid;
+  gap: 14px;
+  border: 1px solid #cdd4f6;
+  border-radius: 18px;
+  background: linear-gradient(155deg, #f5f4ff, #fff 62%);
+  padding: 16px;
+}
+
+.parent-challenge-courses {
+  display: grid;
+  gap: 10px;
+}
+
+.parent-challenge-course {
+  overflow: hidden;
+  border: 1px solid #d9def0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.parent-challenge-course > summary {
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.parent-challenge-course > summary::-webkit-details-marker {
+  display: none;
+}
+
+.parent-challenge-course > summary::after {
+  content: "＋";
+  color: #5b55c9;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.parent-challenge-course[open] > summary::after {
+  content: "−";
+}
+
+.parent-challenge-course-name {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.parent-challenge-course-name > b {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #eff0ff;
+  font-size: 1.2rem;
+}
+
+.parent-challenge-course-result {
+  margin-left: auto;
+  color: #667085;
+  font-size: 0.76rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.parent-challenge-course-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  border-top: 1px solid #edf0f7;
+  padding: 10px 14px;
+}
+
+.parent-challenge-course-metrics span {
+  color: #667085;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.parent-challenge-course-metrics b {
+  display: block;
+  color: #1c2740;
+}
+
+.parent-challenge-units {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+
+.parent-challenge-unit {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  border: 1px solid #e3e6ef;
+  border-radius: 12px;
+  background: #fbfcff;
+  padding: 11px;
+}
+
+.parent-challenge-unit-heading {
+  min-width: 0;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.parent-challenge-unit-heading > strong {
+  min-width: 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.parent-challenge-unit-heading > strong > span {
+  display: block;
+  margin-bottom: 2px;
+  color: #5b55c9;
+  font-size: 0.64rem;
+}
+
+.parent-challenge-unit-heading .is-review {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #ffe9ee;
+  color: #c73755;
+  padding: 4px 7px;
+  font-size: 0.62rem;
+}
+
+.parent-challenge-unit-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  color: #667085;
+  font-size: 0.67rem;
+}
+
+.parent-challenge-unit-stats b {
+  color: #1c2740;
+}
+
+.parent-challenge-unit > small {
+  color: #80889a;
+  font-size: 0.64rem;
+}
+
+@media (max-width: 620px) {
+  .parent-hero h1 {
+    font-size: 1.75rem;
+  }
+
+  .parent-challenge-section {
+    padding: 12px;
+  }
+
+  .parent-challenge-course-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .parent-challenge-units {
+    grid-template-columns: 1fr;
+  }
+
+  .parent-challenge-course-result {
+    font-size: 0.68rem;
+  }
+}

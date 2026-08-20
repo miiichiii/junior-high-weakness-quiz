@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ja" data-challenge-theme="aurora">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#5a55db">
+  <meta name="description" content="社会と理科のクイズ選択画面">
+  <title>クイズ選択</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="challenge-theme.css?v=20260812-anonymous-cloud-v1">
+  <link rel="stylesheet" href="challenge-portal.css?v=20260815-shared-record-v2">
+  <script src="public-origin.js?v=20260820-family-admin-v1"></script>
+  <script>
+    (function () {
+      try {
+        document.documentElement.setAttribute(
+          "data-challenge-theme",
+          localStorage.getItem("weaknessQuiz:challengeTheme") || "aurora"
+        );
+        document.documentElement.style.setProperty(
+          "--challenge-font-scale",
+          localStorage.getItem("weaknessQuiz:challengeFontScale") || "1"
+        );
+      } catch (_error) {}
+    })();
+  </script>
+</head>
+<body class="challenge-portal-body">
+  <button class="portal-cloud-button" id="portalCloudButton" type="button" aria-label="Googleにログイン">
+    <span aria-hidden="true">G</span>
+    <strong id="portalCloudLabel">ログイン</strong>
+  </button>
+  <a class="portal-parent-button" id="portalParentLink" href="family-dashboard.html">👀 管理</a>
+  <main class="portal-main">
+    <section class="portal-launcher" aria-label="クイズを選ぶ">
+      <div class="portal-toolbar hidden" id="portalToolbar">
+        <button class="portal-back" id="portalBack" type="button" aria-label="一つ前に戻る">‹</button>
+        <strong id="portalToolbarTitle"></strong>
+      </div>
+      <div class="portal-app-grid" id="portalAppGrid"></div>
+      <div class="portal-stats hidden" id="portalStats"></div>
+    </section>
+  </main>
+  <div class="portal-share hidden" id="portalShare" role="dialog" aria-modal="true" aria-labelledby="portalShareTitle">
+    <form class="portal-share-dialog" id="portalShareForm">
+      <strong id="portalShareTitle">記録を共有</strong>
+      <p>最初の1回だけ、もう1人のGoogleメールを入力します。</p>
+      <label for="portalPartnerEmail">共有相手のGoogleメール</label>
+      <input id="portalPartnerEmail" name="partnerEmail" type="email" autocomplete="email" required>
+      <p class="portal-share-error hidden" id="portalShareError" role="alert"></p>
+      <button class="portal-share-primary" type="submit">共有を始める</button>
+      <button class="portal-share-cancel" id="portalShareCancel" type="button">あとで</button>
+    </form>
+  </div>
+  <noscript>クイズを選ぶにはJavaScriptが必要です。</noscript>
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js?v=20260805-shared-cloud-v1"></script>
+  <script src="firebase-sync.js?v=20260820-google-login-recovery-v1"></script>
+  <script src="challenge-theme.js?v=20260812-anonymous-cloud-v1"></script>
+  <script src="challenge-portal.js?v=20260820-eldest-alias-v1"></script>
+</body>
+</html>

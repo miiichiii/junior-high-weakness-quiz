@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>英検4級 単語帳420</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="eiken-study.css?v=20260815-eiken-study-v1">
+</head>
+<body class="eiken-study-page">
+  <header class="study-topbar">
+    <a id="homeLink" class="study-home" href="./?child=child-2">← child2</a>
+    <div><small>28日完成</small><h1>英検4級 単語帳420</h1></div>
+    <span id="syncStatus" class="study-sync" data-state="local">端末保存</span>
+  </header>
+
+  <main class="study-shell">
+    <section id="dashboardScreen" class="study-screen">
+      <div class="study-hero">
+        <div><p class="eyebrow">TODAY'S WORDS</p><h2 id="dayTitle">1日目</h2><p id="dayLead">新しい20語句と、忘れかけた語句を取り戻します。</p></div>
+        <div class="study-ring" id="masteryRing"><strong id="masteredCount">0</strong><span>/420 習得</span></div>
+      </div>
+      <div class="study-metrics">
+        <div><span>学習ずみ</span><strong id="learnedCount">0</strong></div>
+        <div><span>今日の新規</span><strong id="todayNewCount">0/20</strong></div>
+        <div><span>復習待ち</span><strong id="dueCount">0</strong></div>
+        <div><span>連続</span><strong id="streakCount">0日</strong></div>
+      </div>
+      <button id="startStudy" class="study-primary" type="button">今日の単語を始める</button>
+      <div class="study-nav-grid">
+        <button id="reviewOnly" class="study-secondary" type="button">復習だけ</button>
+        <button id="openList" class="study-secondary" type="button">420語句一覧</button>
+        <a class="study-secondary" href="eiken-exam.html?child=child-2">本番ドリル</a>
+      </div>
+      <details class="study-schedule">
+        <summary>28日間の進め方</summary>
+        <div><b>1〜21日目</b><span>新しい20語句＋1・3・7日前の復習</span></div>
+        <div><b>22〜28日目</b><span>新規なし。弱点復習と本番ドリル</span></div>
+        <div><b>23・25・27日目</b><span>第1〜3回の本番ドリル</span></div>
+        <div><b>28日目</b><span>最終復習と「4級準備OK」判定</span></div>
+      </details>
+      <section class="readiness-card">
+        <div><p class="eyebrow">4級準備OK</p><h3 id="readinessLabel">まだ準備中</h3></div>
+        <p id="readinessDetail">420語句のうち378語句以上の習得と、模試2回連続の基準達成が必要です。</p>
+      </section>
+    </section>
+
+    <section id="cardScreen" class="study-screen hidden" aria-live="polite">
+      <div class="study-progress"><span id="queueProgress">1/20</span><div><i id="queueBar"></i></div><button id="leaveStudy" type="button">終了</button></div>
+      <article class="vocab-card" id="vocabCard">
+        <div class="vocab-card-meta"><span id="cardKind">新しい語</span><span id="cardCategory">学校</span></div>
+        <button id="playWord" class="word-audio" type="button" aria-label="英語の発音を聞く">🔊</button>
+        <p id="cardPromptLabel" class="card-prompt-label">英語を見て意味を考えよう</p>
+        <h2 id="cardHeadword">school</h2>
+        <p id="cardPos" class="card-pos">名詞</p>
+        <div id="cardReveal" class="card-reveal hidden">
+          <strong id="cardMeaning">学校</strong>
+          <p id="cardExample" class="card-example">Our school has a large library.</p>
+          <p id="cardExampleJa" class="card-example-ja">私たちの学校には大きな図書館があります。</p>
+          <p id="cardRelated" class="card-related">at school</p>
+        </div>
+        <button id="revealCard" class="study-primary" type="button">意味を見る</button>
+        <div id="answerChoices" class="vocab-choices hidden"></div>
+        <p id="answerFeedback" class="answer-feedback" role="status"></p>
+      </article>
+    </section>
+
+    <section id="resultScreen" class="study-screen hidden">
+      <div class="result-emoji">🌱</div><h2>今日の単語、おつかれさま</h2>
+      <div class="study-metrics"><div><span>正解</span><strong id="resultCorrect">0</strong></div><div><span>もう一度</span><strong id="resultWrong">0</strong></div><div><span>新しく学習</span><strong id="resultNew">0</strong></div></div>
+      <button id="resultHome" class="study-primary" type="button">今日の画面へ</button>
+    </section>
+
+    <section id="listScreen" class="study-screen hidden">
+      <div class="list-heading"><button id="closeList" type="button">← 戻る</button><h2>420語句一覧</h2></div>
+      <input id="wordSearch" class="word-search" type="search" placeholder="英語・日本語で検索">
+      <div id="wordList" class="word-list"></div>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js?v=20260805-shared-cloud-v1"></script>
+  <script src="firebase-sync.js?v=20260820-google-login-recovery-v1"></script>
+  <script src="data/eiken-grade4-vocab.js?v=20260815-eiken-study-v1"></script>
+  <script src="eiken-vocab-app.js?v=20260815-eiken-study-v1"></script>
+</body>
+</html>

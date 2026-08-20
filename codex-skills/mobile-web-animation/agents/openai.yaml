@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mobile Web Animation"
+  short_description: "Lightweight UI motion for old smartphones"
+  default_prompt: "Use $mobile-web-animation to add lightweight 2D animations to this quiz or web app without hurting low-end mobile performance."

@@ -1,0 +1,36 @@
+{
+  "packId": "challenge-science-year1",
+  "reviewedOn": "2026-08-15",
+  "status": "PASS",
+  "questionsReviewed": 192,
+  "reviewedRanges": [
+    { "unitId": "sci1-01", "start": 1, "end": 24 },
+    { "unitId": "sci1-02", "start": 1, "end": 24 },
+    { "unitId": "sci1-03", "start": 1, "end": 24 },
+    { "unitId": "sci1-04", "start": 1, "end": 24 },
+    { "unitId": "sci1-05", "start": 1, "end": 24 },
+    { "unitId": "sci1-06", "start": 1, "end": 24 },
+    { "unitId": "sci1-07", "start": 1, "end": 24 },
+    { "unitId": "sci1-08", "start": 1, "end": 24 }
+  ],
+  "criteria": {
+    "sourceAccuracy": "Each concept, numerical relation, and experimental condition was checked against the authoritative scanned spread; OCR was used only as a locator.",
+    "curriculumAlignment": "Coverage was cross-checked with the current MEXT junior-high science curriculum commentary.",
+    "ibarakiExamReadiness": "Every unit includes foundational recall plus experiment/data/graph/calculation reasoning consistent with the Ibaraki public exam analysis emphasis on using knowledge to solve problems.",
+    "calculationAudit": "Density, concentration, solubility, spring, sound, frequency, and seismic-time calculations were recomputed with units.",
+    "distractorAudit": "Choice distractors are same-domain misconceptions and do not duplicate the correct answer.",
+    "originality": "Prompts, numerical datasets, diagrams, tables, and graphs are original and do not reproduce the textbook exercises or artwork.",
+    "contextCompleteness": "All 192 prompts were checked for dangling references. Every question that depends on a graph, table, diagram, or named sample now displays that source material in the same question.",
+    "mobileAccessibility": "All 33 figure uses have required alt text and captions and use safe data-driven rendering within a 390px viewBox."
+  },
+  "officialSources": [
+    "https://www.mext.go.jp/content/20210830-mxt_kyoiku01-100002608_05.pdf",
+    "https://kyoiku.pref.ibaraki.jp/post-34983/",
+    "https://kyoiku.pref.ibaraki.jp/wp-content/uploads/2026/05/0410ad7676a75e78278710e65813054d.pdf"
+  ],
+  "unresolvedIssues": [],
+  "limitations": [
+    "This pack completes the scanned first-year science review; second- and third-year science remain separate work.",
+    "Mastery of this pack strengthens entrance-exam readiness but cannot by itself guarantee admission; timed mixed-year past-paper practice is still required."
+  ]
+}

@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>長男の学習状況</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css?v=20260723-kanji-fair-review-v1">
+  <link rel="stylesheet" href="parent-dashboard.css?v=20260815-shared-record-v2">
+  <script src="public-origin.js?v=20260820-family-admin-v1"></script>
+</head>
+<body>
+  <main class="parent-shell">
+    <header class="parent-hero">
+      <p class="label">保護者ビュー</p>
+      <h1 id="parentTitle">長男の学習状況</h1>
+      <p class="brand-subtitle" id="parentSubtitle">Challenge社会・理科の進み具合を、単元ごとに確認できます。</p>
+      <div class="parent-actions">
+        <a class="ghost-button" href="family-dashboard.html">← 家族一覧</a>
+        <a class="ghost-button parent-base-link" id="parentBaseLink" href="challenge.html?child=child-1">← Challenge Base</a>
+        <button class="primary-button" id="signInButton" type="button">Googleで確認する</button>
+        <button class="ghost-button hidden" id="refreshButton" type="button">再読み込み</button>
+        <button class="ghost-button hidden" id="signOutButton" type="button">ログアウト</button>
+      </div>
+      <span class="sync-status" id="dashboardStatus" data-status="local">未ログイン</span>
+    </header>
+
+    <section class="parent-grid" id="recordGrid"></section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js?v=20260805-shared-cloud-v1"></script>
+  <script src="firebase-sync.js?v=20260820-google-login-recovery-v1"></script>
+  <script>window.QUIZ_QUESTIONS = window.QUIZ_QUESTIONS || [];</script>
+  <script src="data/social-author-drill-config.js?v=20260723-kanji-fair-review-v1"></script>
+  <script src="data/term-test-2026-07-13-humanities.js?v=20260710-gifted-v4"></script>
+  <script src="data/term-test-2026-07-13-stem.js?v=20260710-gifted-v4"></script>
+  <script src="data/social-author-drill.js?v=20260723-kanji-fair-review-v1"></script>
+  <script src="data/social-author-drill-expanded.js?v=20260723-kanji-fair-review-v1"></script>
+  <script src="data/kanji-summer-2026.js?v=20260716-kanji-v1"></script>
+  <script src="data/eiken-grade4-vocab.js?v=20260815-eiken-study-v1"></script>
+  <script src="challenge-parent-view.js?v=20260814-challenge-parent-v1"></script>
+  <script>
+    (function () {
+      const TERM_PACK_ID = "term-2026-07-13";
+      const TERM_TIER_TOTALS = { core: 80, challenge: 80, final: 40 };
+      const TERM_TIER_LABELS = { core: "基本攻略", challenge: "応用挑戦", final: "最終挑戦" };
+      const SOCIAL_AUTHOR_PACK_ID = "social-author-drill";
+      const requestedChildId = typeof URLSearchParams === "function"
+        ? new URLSearchParams(window.location.search).get("child") || ""
+        : "";
+      const ALL_CHILDREN = [
+        { id: "child-1", fallbackName: "長男" },
+        { id: "child-2", fallbackName: "子供2" },
+        { id: "child-3", fallbackName: "子供3" }
+      ];
+      const CHILDREN = requestedChildId
+        ? ALL_CHILDREN.filter((child) => child.id === requestedChildId)
+        : ALL_CHILDREN;
+      if (requestedChildId === "child-2") {
+        document.title = "子供2・英検4級の学習状況";
+        document.getElementById("parentTitle").textContent = "子供2・英検4級の学習状況";
+        document.getElementById("parentSubtitle").textContent = "基礎100問・単語帳420・本番ドリルの進み具合を確認できます。";
+        const baseLink = document.getElementById("parentBaseLink");
+        baseLink.href = "./?child=child-2";
+        baseLink.textContent = "← child2 トップ";
+      } else if (requestedChildId === "child-3") {
+        document.title = "子供3・漢字と算数の学習状況";
+        document.getElementById("parentTitle").textContent = "子供3・漢字と算数の学習状況";
+        document.getElementById("parentSubtitle").textContent = "漢字と算数の進み具合を確認できます。";
+        const baseLink = document.getElementById("parentBaseLink");
+        baseLink.href = "./?child=child-3";
+        baseLink.textContent = "← child3 トップ";
+      }
+
+      const els = {
+        signIn: document.getElementById("signInButton"),
+        signOut: document.getElementById("signOutButton"),
+        refresh: document.getElementById("refreshButton"),
+        status: document.getElementById("dashboardStatus"),
+        grid: document.getElementById("recordGrid")
+      };
+
+      let activeUser = null;
+
+      function setStatus(text, status = "local") {
+        els.status.textContent = text;
+        els.status.dataset.status = status;
+      }
+
+      async function initializeFirebase() {
+        const cloud = window.WeaknessQuizCloud;
+        const result = cloud?.initParentSession();
+        if (!cloud || !result?.available) {
+          setStatus("Firebase設定を読めませんでした", "error");
+          els.signIn.disabled = true;
+          return false;
+        }
+        try {
+          await result.ready;
+        } catch (error) {
+          console.error("Parent session persistence failed", error);
+        }
+        setStatus("Googleログインで確認できます", "local");
+        return true;
+      }
+
+      async function signIn() {
+        if (!window.WeaknessQuizCloud) return;
+        setStatus("ログイン中", "pending");
+        try {
+          await window.WeaknessQuizCloud.signInParentWithGoogle();
+        } catch (error) {
+          console.error("Parent sign-in failed", error);
+          setStatus("ログインできませんでした", "error");
+        }
+      }
+
+      async function loadRecords() {
+        const user = activeUser;
+        if (!user) return;
+        if (user.isAnonymous) {
+          els.grid.innerHTML = "";
+          renderRecord({ child: CHILDREN[0], data: null, learnerStatus: "anonymous" });
+          setStatus("保護者のGoogleアカウントでログインしてください", "error");
+          return;
+        }
+        setStatus("読み込み中", "pending");
+        els.grid.innerHTML = "";
+        try {
+          const family = await window.WeaknessQuizCloud.getFamilyDashboardRecords(
+            CHILDREN.map((child) => child.id),
+            { serverOnly: true }
+          );
+          const records = CHILDREN.map((child) => {
+            const entry = family.children.find((item) => item.childId === child.id)
+              || { status: family.status || "error", record: null };
+            return {
+              child,
+              data: entry.record,
+              learnerStatus: entry.status,
+              learner: {
+                viewerEmail: family.viewerEmail,
+                learnerEmail: entry.learnerEmail,
+                total: entry.record?.learnerAnsweredTotal
+              }
+            };
+          });
+          records.forEach(renderRecord);
+          setStatus(`${user.email || "Googleアカウント"} でクラウド確認済み`, "online");
+        } catch (error) {
+          console.error("Parent record load failed", error);
+          setStatus("記録を読めませんでした", "error");
+        }
+      }
+
+      function learnerStatusMessage(status) {
+        if (status === "not-signed-in" || status === "anonymous") return "保護者のGoogleアカウントでログインしてください。";
+        if (status === "household-missing") return "家族共有が見つかりません。Challenge Baseで家族共有を設定してください。";
+        if (status === "learner-unregistered") return "長男の端末で、長男のGoogleアカウントのままChallenge Baseを一度開いてください。保存済みの記録を自動で家族共有へ移します。";
+        if (status === "legacy-unverified") return "以前の記録はありますが、子どもの端末とは未連携です。家族管理画面でこの子の接続リンクを作ってください。";
+        if (status === "unlinked") return "この子の端末はまだ家族共有へ接続されていません。家族管理画面で接続リンクを作ってください。";
+        return "クラウド記録を確認できませんでした。再読み込みしてください。";
+      }
+
+      function renderRecord({ child, data, learnerStatus = "legacy", learner = {} }) {
+        const card = document.createElement("article");
+        card.className = "parent-card";
+        if (learnerStatus !== "ready") {
+          card.innerHTML = `
+            <div class="parent-card-heading">
+              <div>
+                <p class="label">${escapeHtml(child.id)}</p>
+                <h2>${escapeHtml(child.fallbackName)}</h2>
+              </div>
+              <span class="sync-status" data-status="error">未反映</span>
+            </div>
+            <p class="parent-learner-sync-note">${escapeHtml(learnerStatusMessage(learnerStatus))}</p>
+            <a class="ghost-button" href="family-dashboard.html">家族管理画面へ</a>
+          `;
+          els.grid.appendChild(card);
+          return;
+        }
+        if (!data) {
+          card.innerHTML = `
+            <div class="parent-card-heading">
+              <div>
+                <p class="label">${escapeHtml(child.id)}</p>
+                <h2>${escapeHtml(child.fallbackName)}</h2>
+              </div>
+              <span class="sync-status" data-status="local">未同期</span>
+            </div>
+            <p>この子のサーバー記録はまだありません。</p>
+          `;
+          els.grid.appendChild(card);
+          return;
+        }
+
+        const summary = data.summary || {};
+        const today = summary.today || {};
+        const week = summary.week || {};
+        const goal = data.goal || {};
+        const childName = child.id === "child-1"
+          ? child.fallbackName
+          : data.learnerChild?.name || data.child?.name || child.fallbackName;
+        const learnerRecordReady = Boolean(data.learnerUid);
+        const challenge = child.id === "child-1"
+          ? window.ChallengeParentView?.summary(data.learnerProgress || {}, data.learnerStats || {})
+          : null;
+        const learnerSyncNotice = child.id === "child-1" && !learnerRecordReady
+          ? `<p class="parent-learner-sync-note">長男のGoogle記録は、まだ家族共有へ移されていません。長男のアカウントでChallenge Baseを一度開くと、個別保存されている理科の結果がここへ反映されます。</p>`
+          : "";
+        const overviewMetrics = challenge
+          ? `
+            <div class="parent-metrics parent-overview-metrics">
+              <div><span>着手</span><strong>${challenge.attempted}/${challenge.total}</strong></div>
+              <div><span>初回正答率</span><strong>${accuracyLabel(challenge.firstCorrect, challenge.graded)}</strong></div>
+              <div><span>今日</span><strong>${challenge.today}問</strong></div>
+              <div><span>直近7日</span><strong>${challenge.week}問</strong></div>
+              <div><span>復習待ち</span><strong>${challenge.review}問</strong></div>
+              <div><span>最終学習</span><strong>${challenge.latestAt ? formatDateTime(challenge.latestAt) : "未着手"}</strong></div>
+            </div>
+          `
+          : `
+            <div class="parent-metrics">
+              <div><span>累計解答</span><strong>${number(summary.answered)}</strong></div>
+              <div><span>累計正答率</span><strong>${number(summary.accuracy)}%</strong></div>
+              <div><span>今日</span><strong>${number(today.answered)}問</strong></div>
+              <div><span>直近7日</span><strong>${number(week.answered)}問</strong></div>
+              <div><span>連続日数</span><strong>${number(summary.streak)}日</strong></div>
+              <div><span>復習待ち</span><strong>${number(summary.review)}</strong></div>
+            </div>
+          `;
+        card.innerHTML = `
+          <div class="parent-card-heading">
+            <div>
+              <p class="label">${escapeHtml(child.id)}</p>
+              <h2>${escapeHtml(childName)}</h2>
+            </div>
+            <span class="sync-status" data-status="online">${formatDateTime(data.learnerUpdatedAtClient || data.updatedAtClient)}</span>
+          </div>
+          ${child.id === "child-1" ? `
+            <div class="parent-sync-details">
+              <span>保護者 <b>${escapeHtml(learner.viewerEmail || "確認中")}</b></span>
+              <span>長男 <b>${escapeHtml(learner.learnerEmail || data.learnerEmail || "確認中")}</b></span>
+              <span>クラウド <b>${number(learner.total || data.learnerAnsweredTotal)}問</b></span>
+              <span>最終同期 <b>${formatDateTime(data.learnerUpdatedAtClient)}</b></span>
+            </div>
+          ` : ""}
+          ${learnerSyncNotice}
+          ${overviewMetrics}
+          ${window.ChallengeParentView?.markup(data.learnerProgress || {}, data.learnerStats || {}, child.id) || ""}
+          ${eikenGrade4Markup(data.eikenVocabulary, data.eikenExam, child.id)}
+          <h3>受験目標</h3>
+          <div class="parent-list">
+            <div><span>志望校</span><strong>${escapeHtml(goal.schoolName || "未設定")}</strong></div>
+            <div><span>目標点</span><strong>${goal.targetScore ? `${number(goal.targetScore)}/500` : "未設定"}</strong></div>
+            <div><span>最新模試</span><strong>${latestMockLabel(goal)}</strong></div>
+          </div>
+          ${termPackMarkup(data.progress, data.stats, child.id)}
+          ${socialAuthorPackMarkup(data.progress, data.stats, child.id)}
+          ${kanjiDeckMarkup(data.kanji, child.id)}
+          ${math4Markup(data.math4, child.id)}
+          ${writtenResponsesMarkup(data.progress)}
+        `;
+        els.grid.appendChild(card);
+      }
+
+      function eikenGrade4Markup(vocabField, examField, childId) {
+        if (childId !== "child-2") return "";
+        const deck = window.EIKEN_VOCAB_DECKS?.["eiken-grade4-vocab"];
+        const items = Array.isArray(deck?.items) ? deck.items : [];
+        const itemById = new Map(items.map((item) => [item.id, item]));
+        const entries = vocabField?.entries && typeof vocabField.entries === "object" ? vocabField.entries : {};
+        const today = (() => {
+          const date = new Date();
+          return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        })();
+        const learned = Object.values(entries).filter((entry) => Number(entry?.attempts) > 0).length;
+        const mastered = Object.values(entries).filter((entry) => entry?.masteredAt).length;
+        const due = Object.entries(entries).filter(([, entry]) => !entry?.masteredAt && entry?.reviewDueAt && entry.reviewDueAt <= today).length;
+        const importantDue = Object.entries(entries).filter(([id, entry]) => (
+          itemById.get(id)?.priority === "S" && !entry?.masteredAt && entry?.reviewDueAt && entry.reviewDueAt <= today
+        )).length;
+        const daily = vocabField?.daily?.[today] || {};
+        const attempts = Object.values(examField?.forms || {}).flatMap((form) => Array.isArray(form?.attempts) ? form.attempts : [])
+          .filter((attempt) => attempt?.completedAt)
+          .sort((a, b) => String(b.completedAt).localeCompare(String(a.completedAt)));
+        const latestByForm = ["e4m-1", "e4m-2", "e4m-3"].map((formId, index) => {
+          const formAttempts = attempts.filter((attempt) => attempt.formId === formId);
+          const latest = formAttempts[0];
+          return latest
+            ? `<article class="parent-pack-tier"><div class="parent-pack-tier-heading"><strong>第${index + 1}回</strong><span>${number(latest.totalScore)}/65</span></div><p>R ${number(latest.readingScore)}/35・L ${number(latest.listeningScore)}/30</p></article>`
+            : `<article class="parent-pack-tier"><div class="parent-pack-tier-heading"><strong>第${index + 1}回</strong><span>未受験</span></div><p>目標 R 28・L 24</p></article>`;
+        }).join("");
+        const lastTwo = attempts.slice(0, 2);
+        const mockReady = lastTwo.length === 2
+          && new Set(lastTwo.map((attempt) => attempt.formId)).size === 2
+          && lastTwo.every((attempt) => number(attempt.readingScore) >= 28 && number(attempt.listeningScore) >= 24);
+        const ready = learned === 420 && mastered >= 378 && importantDue === 0 && mockReady;
+        const lastLearnedAt = [vocabField?.updatedAt, examField?.updatedAt].filter(Boolean).sort().at(-1) || "";
+        return `
+          <section class="parent-pack-section">
+            <div class="parent-pack-title">
+              <div><p class="label">英検4級・28日完成</p><h3>単語帳420＋本番ドリル</h3></div>
+            </div>
+            <div class="parent-metrics parent-pack-metrics">
+              <div><span>学習ずみ</span><strong>${learned}/420</strong></div>
+              <div><span>習得</span><strong>${mastered}/420</strong></div>
+              <div><span>今日</span><strong>新規${number(daily.newLearned)}・復習${number(daily.reviews)}</strong></div>
+              <div><span>復習待ち</span><strong>${due}</strong></div>
+              <div><span>模試完了</span><strong>${new Set(attempts.map((attempt) => attempt.formId)).size}/3</strong></div>
+              <div><span>準備判定</span><strong>${ready ? "OK" : "準備中"}</strong></div>
+            </div>
+            <div class="parent-pack-tiers">${latestByForm}</div>
+            <p class="parent-written-note">準備OKの条件：全420語句に着手、378語句以上習得、重要語の復習残りなし、異なる模試2回連続でR 28/35以上・L 24/30以上。公式の合格保証ではありません。</p>
+            <p class="parent-pack-updated">最終学習：${formatDateTime(lastLearnedAt)}</p>
+          </section>
+        `;
+      }
+
+      window.__PARENT_TEST__ = {
+        kanjiDeckMarkup: (field, childId) => kanjiDeckMarkup(field, childId),
+        math4Markup: (field, childId) => math4Markup(field, childId),
+        eikenGrade4Markup: (vocab, exam, childId) => eikenGrade4Markup(vocab, exam, childId),
+        socialAuthorPackMarkup: (progress, stats, childId) => socialAuthorPackMarkup(progress, stats, childId)
+      };
+
+      function kanjiDeckMarkup(kanjiField, childId) {
+        const deck = (window.KANJI_DECKS || {})["kanji-summer-2026"];
+        if (!deck || !deck.childIds.includes(childId)) return "";
+        const records = (kanjiField && kanjiField.kanji) || {};
+        const today = (() => {
+          const d = new Date();
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        })();
+        const total = deck.kanji.length;
+        let learned = 0;
+        let mastered = 0;
+        let due = 0;
+        deck.kanji.forEach((entry) => {
+          const record = records[entry.char];
+          if (!record) return;
+          learned += 1;
+          if (record.masteredAt) mastered += 1;
+          if (record.reviewDueAt && record.reviewDueAt <= today && record.lastClearDay !== today) due += 1;
+        });
+        const sheetRows = Object.keys(deck.sheets).map((sheetId) => {
+          let coveredPrompts = 0;
+          let totalPrompts = 0;
+          deck.kanji.forEach((entry) => {
+            entry.prompts.forEach((prompt) => {
+              if (String(prompt.sheet) !== String(sheetId)) return;
+              totalPrompts += 1;
+              const record = records[entry.char];
+              if (record && record.memoryClears > 0) coveredPrompts += 1;
+            });
+          });
+          const percent = totalPrompts ? Math.round((coveredPrompts / totalPrompts) * 100) : 0;
+          return `
+            <article class="parent-pack-tier">
+              <div class="parent-pack-tier-heading">
+                <strong>プリント${escapeHtml(String(sheetId))}「${escapeHtml(deck.sheets[sheetId])}」</strong>
+                <span>${coveredPrompts} / ${totalPrompts}</span>
+              </div>
+              <div class="parent-pack-meter" aria-label="プリント${escapeHtml(String(sheetId))} ${coveredPrompts}/${totalPrompts}">
+                <span style="width:${percent}%"></span>
+              </div>
+            </article>
+          `;
+        }).join("");
+        const daily = (kanjiField && kanjiField.daily && kanjiField.daily[today]) || {};
+        const href = `kanji.html?child=${encodeURIComponent(childId)}`;
+        return `
+          <section class="parent-pack-section">
+            <div class="parent-pack-title">
+              <div>
+                <p class="label">夏休み 漢字マスター</p>
+                <h3>小4配当 ${total}字（指がき）</h3>
+              </div>
+              <a class="ghost-button parent-pack-link" href="${href}">学習画面</a>
+            </div>
+            <div class="parent-metrics parent-pack-metrics">
+              <div><span>学習ずみ</span><strong>${learned}/${total}</strong></div>
+              <div><span>マスター</span><strong>${mastered}/${total}</strong></div>
+              <div><span>復習待ち</span><strong>${due}</strong></div>
+              <div><span>今日</span><strong>新規${number(daily.newLearned)}・復習${number(daily.reviewsCleared)}</strong></div>
+            </div>
+            <div class="parent-pack-tiers">${sheetRows}</div>
+            <p class="parent-written-note">「マスター」は別の日に2回、手本なしで正しく書けた字です。まちがえると復習に戻ります。</p>
+          </section>
+        `;
+      }
+
+      const MATH4_CHILD_IDS = ["child-3"];
+      const MATH4_LEVELS = [
+        { id: "mult1", label: "3けた×1けた" },
+        { id: "mult2", label: "3けた×2けた" },
+        { id: "div1", label: "3けた÷1けた" }
+      ];
+      function math4Markup(math4Field, childId) {
+        if (!MATH4_CHILD_IDS.includes(childId)) return "";
+        const facts = (math4Field && math4Field.facts) || {};
+        const mastered = Object.values(facts).filter((entry) => entry && entry.masteredAt).length;
+        const today = (() => {
+          const d = new Date();
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        })();
+        const daily = (math4Field && math4Field.daily && math4Field.daily[today]) || {};
+        const levels = (math4Field && math4Field.levels) || {};
+        const levelRows = MATH4_LEVELS.map((level) => {
+          const rec = levels[level.id] || { solved: 0, clean: 0, streak: 0 };
+          const accuracy = rec.solved ? Math.round((rec.clean / rec.solved) * 100) : 0;
+          return `
+            <article class="parent-pack-tier">
+              <div class="parent-pack-tier-heading">
+                <strong>${escapeHtml(level.label)}</strong>
+                <span>${number(rec.solved)}問</span>
+              </div>
+              <div class="parent-pack-meter" aria-label="${escapeHtml(level.label)} 正答率${accuracy}%">
+                <span style="width:${accuracy}%"></span>
+              </div>
+              <p>ノーミス率 ${accuracy}%・れんぞく ${number(rec.streak)}</p>
+            </article>
+          `;
+        }).join("");
+        const href = `math4.html?child=${encodeURIComponent(childId)}`;
+        return `
+          <section class="parent-pack-section">
+            <div class="parent-pack-title">
+              <div>
+                <p class="label">夏休み 算数マスター</p>
+                <h3>九九81問＋3けたのひっ算</h3>
+              </div>
+              <a class="ghost-button parent-pack-link" href="${href}">学習画面</a>
+            </div>
+            <div class="parent-metrics parent-pack-metrics">
+              <div><span>九九マスター</span><strong>${mastered}/81</strong></div>
+              <div><span>今日の九九</span><strong>新規${number(daily.kukuNew)}・クリア${number(daily.kukuClears)}</strong></div>
+              <div><span>今日のひっ算</span><strong>${number(daily.writtenSolved)}問</strong></div>
+            </div>
+            <div class="parent-pack-tiers">${levelRows}</div>
+            <p class="parent-written-note">「九九マスター」は別の日に2回まちがえずに答えられた九九です。</p>
+          </section>
+        `;
+      }
+
+      function termPackMarkup(progress, stats, childId) {
+        const packQuestions = (window.QUIZ_QUESTIONS || []).filter((question) => question.packId === TERM_PACK_ID);
+        if (!packQuestions.length) return "";
+        const rows = Object.keys(TERM_TIER_TOTALS).map((tier) => {
+          const questions = packQuestions.filter((question) => question.tier === tier);
+          const summary = questions.reduce((result, question) => {
+            const record = progress?.[question.id] || {};
+            const attempted = Boolean(record.packFirstAttemptRecorded || Number(record.packAttempts) > 0);
+            if (!attempted) return result;
+            result.attempted += 1;
+            if (question.answerMode === "rubric-input") {
+              result.written += 1;
+              if (record.packFirstAttemptPendingReview || record.packPendingWritten || record.lastWrittenPendingReview) {
+                result.pending += 1;
+              } else {
+                result.writtenReview += 1;
+              }
+            } else {
+              result.graded += 1;
+              const firstCorrect = record.packFirstAttemptRecorded
+                ? record.packFirstAttemptCorrect === true
+                : Number(record.packWrong || record.wrong || 0) === 0 && Number(record.packCorrect || record.correct || 0) > 0;
+              if (firstCorrect) result.correct += 1;
+            }
+            if (record.needsReview) result.review += 1;
+            if (record.packMastered) result.mastered += 1;
+            return result;
+          }, { attempted: 0, graded: 0, correct: 0, written: 0, pending: 0, writtenReview: 0, review: 0, mastered: 0 });
+          return { tier, total: TERM_TIER_TOTALS[tier], ...summary };
+        });
+        const overall = rows.reduce((result, row) => {
+          Object.keys(result).forEach((key) => { result[key] += row[key] || 0; });
+          return result;
+        }, { attempted: 0, graded: 0, correct: 0, written: 0, pending: 0, writtenReview: 0, review: 0, mastered: 0 });
+        const packStats = stats?.packs?.[TERM_PACK_ID] || {};
+        const tierCards = rows.map((row) => `
+          <article class="parent-pack-tier">
+            <div class="parent-pack-tier-heading">
+              <strong>${escapeHtml(TERM_TIER_LABELS[row.tier])}</strong>
+              <span>${row.attempted} / ${row.total}</span>
+            </div>
+            <div class="parent-pack-meter" aria-label="${escapeHtml(TERM_TIER_LABELS[row.tier])} ${row.attempted}/${row.total}">
+              <span style="width:${Math.min(100, Math.round((row.attempted / row.total) * 100))}%"></span>
+            </div>
+            <p>自動採点 ${row.graded}問・正答率 ${accuracyLabel(row.correct, row.graded)}</p>
+            <p>記述 確認待ち${row.pending} / 見直し${row.writtenReview}　復習待ち${row.review}</p>
+          </article>
+        `).join("");
+        const href = `./?child=${encodeURIComponent(childId)}&pack=${encodeURIComponent(TERM_PACK_ID)}`;
+        return `
+          <section class="parent-pack-section">
+            <div class="parent-pack-title">
+              <div>
+                <p class="label">7月13日 定期テスト</p>
+                <h3>200問チャレンジ</h3>
+              </div>
+              <a class="ghost-button parent-pack-link" href="${href}">学習画面</a>
+            </div>
+            <div class="parent-metrics parent-pack-metrics">
+              <div><span>着手</span><strong>${overall.attempted}/200</strong></div>
+              <div><span>自動採点正答率</span><strong>${accuracyLabel(overall.correct, overall.graded)}</strong></div>
+              <div><span>記述確認待ち</span><strong>${overall.pending}</strong></div>
+              <div><span>復習待ち</span><strong>${overall.review}</strong></div>
+            </div>
+            <div class="parent-pack-tiers">${tierCards}</div>
+            <p class="parent-written-note">記述は正答率とレベル解放に含めません。この画面は閲覧用です。本文を読んで内容を確認してください。</p>
+            ${packStats.lastAnsweredAt ? `<p class="parent-pack-updated">最終学習：${formatDateTime(packStats.lastAnsweredAt)}</p>` : ""}
+          </section>
+        `;
+      }
+
+      function socialAuthorPackMarkup(progress, stats, childId) {
+        if (childId !== "child-1") return "";
+        const packQuestions = (window.QUIZ_QUESTIONS || []).filter((question) => question.packId === SOCIAL_AUTHOR_PACK_ID);
+        if (!packQuestions.length) return "";
+        const packConfig = window.QUIZ_PACKS?.[SOCIAL_AUTHOR_PACK_ID] || {};
+        const corners = Array.isArray(packConfig.corners) ? packConfig.corners : [];
+        const rows = corners.map((corner) => {
+          const questions = packQuestions.filter((question) => question.cornerId === corner.id);
+          const summary = questions.reduce((result, question) => {
+            const record = progress?.[question.id] || {};
+            const attempted = Boolean(record.packFirstAttemptRecorded || Number(record.packAttempts) > 0);
+            if (attempted) {
+              result.attempted += 1;
+              const pending = Boolean(
+                record.packFirstAttemptPendingReview
+                || record.packPendingWritten
+                || record.lastWrittenPendingReview
+              );
+              if (!pending) {
+                result.graded += 1;
+                const firstCorrect = record.packFirstAttemptRecorded
+                  ? record.packFirstAttemptCorrect === true
+                  : Number(record.packWrong || record.wrong || 0) === 0 && Number(record.packCorrect || record.correct || 0) > 0;
+                if (firstCorrect) result.correct += 1;
+              }
+            }
+            if (record.packMastered) result.mastered += 1;
+            if (record.needsReview) result.review += 1;
+            return result;
+          }, { attempted: 0, graded: 0, correct: 0, mastered: 0, review: 0 });
+          return { corner, total: questions.length, ...summary };
+        });
+        const overall = rows.reduce((result, row) => {
+          result.attempted += row.attempted;
+          result.graded += row.graded;
+          result.correct += row.correct;
+          result.mastered += row.mastered;
+          result.review += row.review;
+          return result;
+        }, { attempted: 0, graded: 0, correct: 0, mastered: 0, review: 0 });
+        const cornerCards = rows.map((row) => `
+          <article class="parent-pack-tier">
+            <div class="parent-pack-tier-heading">
+              <strong>${escapeHtml(row.corner.label || row.corner.shortLabel || row.corner.id)}</strong>
+              <span>${row.attempted} / ${row.total}</span>
+            </div>
+            <div class="parent-pack-meter" aria-label="${escapeHtml(row.corner.label || row.corner.id)} ${row.attempted}/${row.total}">
+              <span style="width:${Math.min(100, Math.round((row.attempted / row.total) * 100))}%"></span>
+            </div>
+            <p>初回正答率 ${accuracyLabel(row.correct, row.graded)}・復習待ち ${row.review}</p>
+          </article>
+        `).join("");
+        const packStats = stats?.packs?.[SOCIAL_AUTHOR_PACK_ID] || {};
+        const authorKeys = (packConfig.studyGuide?.items || []).map((item) => item.authorKey).filter(Boolean);
+        const compatibleAuthorMastery = Number(packStats.contentVersion || 1) >= 2
+          ? packStats.authorMastery || {}
+          : {};
+        const masteredAuthors = authorKeys.filter((key) => compatibleAuthorMastery[key]?.mastered).length;
+        const href = `./?child=${encodeURIComponent(childId)}&pack=${encodeURIComponent(SOCIAL_AUTHOR_PACK_ID)}`;
+        return `
+          <section class="parent-pack-section">
+            <div class="parent-pack-title">
+              <div>
+                <p class="label">社会・作家と文学文化</p>
+                <h3>古代〜昭和の80問・4コーナー</h3>
+              </div>
+              <a class="ghost-button parent-pack-link" href="${href}">学習画面</a>
+            </div>
+            <div class="parent-metrics parent-pack-metrics">
+              <div><span>着手</span><strong>${overall.attempted}/${packQuestions.length}</strong></div>
+              <div><span>初回正答率</span><strong>${accuracyLabel(overall.correct, overall.graded)}</strong></div>
+              <div><span>人物克服</span><strong>${masteredAuthors}/${authorKeys.length}</strong></div>
+              <div><span>復習待ち</span><strong>${overall.review}</strong></div>
+            </div>
+            <div class="parent-pack-tiers">${cornerCards}</div>
+            <p class="parent-written-note">人物克服は、別セットで異なる向きの問題に2回正解したかで判定します。近現代コア10人は漢字入力も必要です。</p>
+            ${packStats.lastAnsweredAt ? `<p class="parent-pack-updated">最終学習：${formatDateTime(packStats.lastAnsweredAt)}</p>` : ""}
+          </section>
+        `;
+      }
+
+      function accuracyLabel(correct, graded) {
+        return graded ? `${Math.round((correct / graded) * 100)}%` : "--";
+      }
+
+      function writtenResponsesMarkup(progress) {
+        const responses = Object.values(progress || {})
+          .filter((record) => record && record.lastWrittenResponse)
+          .sort((left, right) => Date.parse(right.lastWrittenAt || "") - Date.parse(left.lastWrittenAt || ""))
+          .slice(0, 8);
+        if (!responses.length) return "";
+        const items = responses.map((record) => {
+          const checks = Array.isArray(record.lastWrittenRubricChecks) && record.lastWrittenRubricChecks.length
+            ? record.lastWrittenRubricChecks.map(escapeHtml).join("・")
+            : "チェックなし";
+          const result = record.lastWrittenPendingReview
+            ? "保護者確認待ち（本人：全観点あり）"
+            : "本人判定：見直し必要";
+          return `
+            <article class="parent-written-item">
+              <div class="parent-written-meta">
+                <span>${escapeHtml(result)}</span>
+                <time>${formatDateTime(record.lastWrittenAt)}</time>
+              </div>
+              <p class="parent-written-prompt">${escapeHtml(record.lastWrittenPrompt || "国語記述")}</p>
+              <blockquote>${escapeHtml(record.lastWrittenResponse)}</blockquote>
+              <p class="parent-written-checks">本人が確認した観点：${checks}</p>
+            </article>
+          `;
+        }).join("");
+        return `
+          <section class="parent-written-responses">
+            <h3>最近の国語記述</h3>
+            <p class="parent-written-note">自動のキーワード採点ではなく、本人が観点と模範例を照合した結果です。</p>
+            <div class="parent-written-list">${items}</div>
+          </section>
+        `;
+      }
+
+      function latestMockLabel(goal) {
+        const scores = Array.isArray(goal.mockScores) ? goal.mockScores : [];
+        if (!scores.length) return "未入力";
+        const latest = scores[scores.length - 1];
+        return `${number(latest.score)}/500 (${escapeHtml(latest.date || "")})`;
+      }
+
+      function number(value) {
+        return Number.isFinite(Number(value)) ? Number(value) : 0;
+      }
+
+      function formatDateTime(value) {
+        if (!value) return "未同期";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "未同期";
+        return date.toLocaleString("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "\"": "&quot;",
+          "'": "&#39;"
+        }[char]));
+      }
+
+      initializeFirebase().then((ready) => {
+        if (!ready) return;
+        window.WeaknessQuizCloud.onAuthStateChanged((user) => {
+          activeUser = user;
+          const signedIn = Boolean(user);
+          const googleSignedIn = Boolean(user && !user.isAnonymous);
+          els.signIn.classList.toggle("hidden", googleSignedIn);
+          els.signIn.textContent = signedIn ? "Googleで家族共有" : "Googleで確認する";
+          els.signOut.classList.toggle("hidden", !googleSignedIn);
+          els.refresh.classList.toggle("hidden", !signedIn);
+          if (signedIn) loadRecords();
+        });
+      });
+
+      els.signIn.addEventListener("click", signIn);
+      els.signOut.addEventListener("click", () => window.WeaknessQuizCloud?.signOut());
+      els.refresh.addEventListener("click", loadRecords);
+    })();
+  </script>
+</body>
+</html>

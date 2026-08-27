@@ -210,7 +210,7 @@ natsuyasumi-checklist/
 ```
 
 - 提出物と課題をチェックすると残り件数と進捗バーが動く
-- チェック状態は端末のlocalStorage（キー `ayame-natsuyasumi-v1`）に保存。クイズ側の `weaknessQuiz:*` とは独立
+- チェック状態は端末のlocalStorage（キー `natsuyasumi-v1`）に保存。クイズ側の `weaknessQuiz:*` とは独立
 - ホーム画面に追加するとアドレスバーなしのアプリとして起動（`manifest.webmanifest`）
 - 昼夜でテーマが変わり、iOSのステータスバー色も追随
 - クイズ本体とはデータもコードも共有しない、依存ライブラリなしの単一HTML

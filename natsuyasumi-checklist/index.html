@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>あやめの なつやすみノート</title>
+<title>なつやすみノート</title>
 <meta name="description" content="小学4年生の夏休みのしおりを、スマホでチェックできるチェックリストにしたものです。">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#EAF3F9" media="(prefers-color-scheme: light)">
@@ -150,7 +150,6 @@ body{
   letter-spacing:.01em;
 }
 .brand h1 span{ display:inline-block; }
-.brand h1 .nm{ color:var(--ichigo); }
 
 .theme-btn{
   flex:none;
@@ -583,7 +582,7 @@ table.tt tr:last-child td,table.tt tr:last-child th{ border-bottom:0; }
     <div class="hd-top">
       <div class="brand">
         <span class="eyebrow">おおぞねしょうがっこう ４ねん</span>
-        <h1><span><span class="nm">あやめ</span>の</span> <span>なつやすみノート</span></h1>
+        <h1><span>なつやすみノート</span></h1>
       </div>
       <button class="theme-btn" id="themeBtn" type="button" aria-label="いろを かえる">☾</button>
     </div>
@@ -633,7 +632,7 @@ table.tt tr:last-child td,table.tt tr:last-child th{ border-bottom:0; }
 
   <div class="foot">
     <button class="mini" id="resetBtn" type="button">きろくを ぜんぶ けす</button>
-    <p style="margin:0">つくば市立大曽根小学校 ４年 なつやすみのしおり より<br>７月21日（火）〜 ８月31日（月）</p>
+    <p style="margin:0">４年 なつやすみのしおり より<br>７月21日（火）〜 ８月31日（月）</p>
   </div>
 </div>
 
@@ -692,7 +691,7 @@ const SECTIONS = [
       { id:"f1", t:"自主学習", s:"", k:"🖊" },
       { id:"f2", t:"国語・図工の 作品ぼしゅう", s:"スクリレを 見てね", k:"🏆" },
       { id:"f3", t:"理科自由研究・統計グラフコンクール など", s:"", k:"🔬" },
-      { id:"f4", t:"つくばインタラクティブスタディ", s:"", k:"💻" },
+      { id:"f4", t:"インタラクティブスタディ", s:"", k:"💻" },
       { id:"f5", t:"いばらきオンラインスタディ", s:"教科書に合わせた 授業動画が 見られます", k:"📺" }
     ]
   },
@@ -759,7 +758,20 @@ const RULES = [
 ];
 
 /* ===== state ===== */
-const KEY = "ayame-natsuyasumi-v1";
+const KEY = "natsuyasumi-v1";
+// 旧キーからの引き継ぎ。キー名を直接書かず後方一致で探す
+try{
+  if(!localStorage.getItem(KEY)){
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k !== KEY && /-natsuyasumi-v1$/.test(k)){
+        localStorage.setItem(KEY, localStorage.getItem(k));
+        localStorage.removeItem(k);
+        break;
+      }
+    }
+  }
+}catch(e){}
 let state = { checks:{}, daily:{}, books:["","","","",""], theme:null };
 try{
   const raw = localStorage.getItem(KEY);
@@ -1045,12 +1057,10 @@ function buildContact(){
   const info = el("div","info");
   info.innerHTML =
     '<dl>' +
-    '<dt>大曽根小学校</dt><dd><a href="tel:0298640166">029-864-0166</a><br>' +
-    '<a href="mailto:ozo298@tkb.ed.jp">ozo298@tkb.ed.jp</a><br>' +
+    '<dt>学校</dt><dd>電話番号は しおりを 見てください<br>' +
     '<span style="font-size:12.5px">月〜金 8:00〜16:30 に 日直がいます</span></dd>' +
-    '<dt>閉庁日</dt><dd>８月10日（月）〜14日（金）は つくば市の学校閉庁日</dd>' +
-    '<dt>きんきゅう時</dt><dd>つくば市役所教育局 学び推進課<br>' +
-    '<a href="tel:0298831111">029-883-1111</a>（8:45〜16:30）<br>' +
+    '<dt>閉庁日</dt><dd>８月10日（月）〜14日（金）は 学校閉庁日</dd>' +
+    '<dt>きんきゅう時</dt><dd>市の教育委員会（8:45〜16:30）<br>' +
     '<span style="font-size:12.5px">※ 事件・事故に巻きこまれた場合のみ</span></dd>' +
     '</dl>';
   c.append(info);

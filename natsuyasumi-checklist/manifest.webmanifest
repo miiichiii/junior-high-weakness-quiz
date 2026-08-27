@@ -1,7 +1,7 @@
 {
-  "name": "あやめの なつやすみノート",
+  "name": "なつやすみノート",
   "short_name": "なつやすみノート",
-  "description": "小学4年生の夏休みのしおりのチェックリスト",
+  "description": "夏休みのしおりのチェックリスト",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

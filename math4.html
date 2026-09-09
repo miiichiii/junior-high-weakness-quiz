@@ -63,7 +63,7 @@ main{width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px}
 .mode-card:active{transform:translateY(1px)}
 
 /* ---- 九九トップ（段えらび） ---- */
-#kuku-home{display:flex;flex-direction:column;gap:10px}
+#kuku-home,#sub-home{display:flex;flex-direction:column;gap:10px}
 .kuku-order-note{font-size:12.5px;font-weight:700;color:#7a8698;text-align:center;padding:2px 0}
 .dan-row{
   position:relative;
@@ -86,6 +86,7 @@ main{width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px}
 .dan-cell.clear{background:#8fd6ae}
 .dan-cell.master{background:#ffc94d}
 .dan-count{font-size:12.5px;font-weight:700;color:#7a8698;min-width:32px;text-align:right}
+#sub-home .dan-name{width:84px;white-space:nowrap}
 .dan-legend{
   display:flex;align-items:center;justify-content:center;gap:6px;
   font-size:11.5px;font-weight:700;color:#7a8698;
@@ -140,6 +141,49 @@ button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
 .kuku-array-row{display:flex;gap:4px}
 .kuku-dot{width:14px;height:14px;border-radius:50%;background:var(--accent)}
 .kuku-choices{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+
+/* ---- くり下がりのひきざん（テンフレーム＋さくらんぼ） ---- */
+.kuku-slot.active{border-color:var(--carry);background:#fff3e0;color:var(--carry)}
+.kuku-slot.sub-slot{font-size:24px;width:1.5em;height:1.2em;border-width:2.5px}
+.sub-visual{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:#f7f9fc;border-radius:14px;padding:10px 12px;
+}
+.sub-visual.hidden{display:none}
+.ten-frame-wrap{display:flex;align-items:flex-start;gap:14px}
+.tf-block{display:flex;flex-direction:column;align-items:center;gap:4px}
+.tf-label{font-size:10.5px;font-weight:700;color:#8a95a5}
+.ten-frame{
+  display:grid;grid-template-columns:repeat(5,18px);gap:3px;
+  padding:5px;background:#fff;border:2px solid var(--guide);border-radius:8px;
+}
+.loose-dots{display:flex;gap:3px;padding:5px;min-height:32px;align-items:center}
+.tf-dot{
+  width:18px;height:18px;border-radius:50%;background:var(--accent);
+  display:inline-block;position:relative;
+}
+.tf-dot.loose{background:var(--good)}
+.tf-dot.taken{background:#e3e9f0}
+.tf-dot.taken::after{
+  content:'';position:absolute;inset:2px;
+  border-top:2.5px solid var(--bad);transform:rotate(45deg);transform-origin:center;
+}
+.sub-visual-note{font-size:12px;font-weight:700;color:#5a6678;text-align:center}
+.sakura{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  background:#fffaf2;border:2px dashed var(--carry);border-radius:14px;padding:10px 14px;width:100%;
+}
+.sakura.hidden{display:none}
+.sakura-split{font-size:13px;font-weight:700;color:#7a6a55}
+.sakura-split b{color:var(--carry);font-size:16px}
+.sakura-line{display:flex;align-items:center;gap:7px;font-size:24px;font-weight:700}
+.sakura-step{font-size:14px;color:var(--carry);font-weight:700}
+.sakura-carry{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:1.5em;height:1.2em;border-radius:10px;
+  background:#f1f4f8;color:#b9c3d0;font-size:24px;
+}
+.sakura-carry.filled{background:#e9fbf1;color:var(--good)}
 
 /* ---- ドラッグの数字タイル ---- */
 .digit-tile{
@@ -260,6 +304,10 @@ button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
     <div id="kuku-home"></div>
   </section>
 
+  <section id="sub-screen" class="hidden">
+    <div id="sub-home"></div>
+  </section>
+
   <section id="session-screen" class="hidden">
     <div id="session-head">
       <h2 id="session-title"></h2>
@@ -307,6 +355,6 @@ button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
 <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js?v=20260805-shared-cloud-v1"></script>
 <script src="firebase-sync.js?v=20260820-google-login-recovery-v1"></script>
-<script src="math4-app.js?v=20260803-math4-dan-v1"></script>
+<script src="math4-app.js?v=20260909-math4-sub-v1"></script>
 </body>
 </html>

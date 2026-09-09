@@ -843,10 +843,11 @@
     }
     if (module.kind === "math4") {
       const record = loadRecord(RECORD_KEYS.math4Progress, childId, null);
-      const mastered = masteredMath4FactCount(record);
+      const mastered = masteredMath4FactCount(record, "facts");
+      const subMastered = masteredMath4FactCount(record, "subFacts");
       const written = Object.values((record && record.levels) || {})
         .reduce((sum, level) => sum + (level && level.solved ? level.solved : 0), 0);
-      return `九九 ${mastered}/81・ひっ算 ${written}問`;
+      return `ひきざん ${subMastered}/36・九九 ${mastered}/81・ひっ算 ${written}問`;
     }
     if (module.kind === "eiken-vocab") {
       const record = loadRecord(RECORD_KEYS.eikenVocabProgress, childId, null);
@@ -876,9 +877,10 @@
     return Object.values(record.kanji).filter((entry) => entry && entry.masteredAt).length;
   }
 
-  function masteredMath4FactCount(record) {
-    if (!record || !record.facts || typeof record.facts !== "object") return 0;
-    return Object.values(record.facts).filter((entry) => entry && entry.masteredAt).length;
+  function masteredMath4FactCount(record, field = "facts") {
+    const map = record && record[field];
+    if (!map || typeof map !== "object") return 0;
+    return Object.values(map).filter((entry) => entry && entry.masteredAt).length;
   }
 
   function statPair(label, value) {
@@ -6937,38 +6939,45 @@
       if (!raw || typeof raw !== "object" || raw.version !== 1) {
         const levels = {};
         MATH4_LEVEL_IDS.forEach((id) => { levels[id] = emptyLevel(); });
-        return { version: 1, facts: {}, levels, daily: {}, updatedAt: "" };
+        return { version: 1, facts: {}, subFacts: {}, levels, daily: {}, updatedAt: "" };
       }
       const levels = raw.levels && typeof raw.levels === "object" ? raw.levels : {};
       MATH4_LEVEL_IDS.forEach((id) => { if (!levels[id]) levels[id] = emptyLevel(); });
       return {
         ...raw,
         facts: raw.facts && typeof raw.facts === "object" ? raw.facts : {},
+        subFacts: raw.subFacts && typeof raw.subFacts === "object" ? raw.subFacts : {},
         levels,
         daily: raw.daily && typeof raw.daily === "object" ? raw.daily : {}
       };
     };
+    const mergeFactMaps = (mapA, mapB) => {
+      const merged = {};
+      Array.from(new Set([...Object.keys(mapA), ...Object.keys(mapB)])).forEach((id) => {
+        const ra = mapA[id];
+        const rb = mapB[id];
+        if (!ra || !rb) { merged[id] = { ...(ra || rb) }; return; }
+        const newer = (rb.lastSeenAt || "") > (ra.lastSeenAt || "") ? rb : ra;
+        merged[id] = {
+          attempts: Math.max(ra.attempts || 0, rb.attempts || 0),
+          correct: Math.max(ra.correct || 0, rb.correct || 0),
+          misses: Math.max(ra.misses || 0, rb.misses || 0),
+          clearDays: newer.clearDays || 0,
+          lastClearDay: newer.lastClearDay || "",
+          stage: newer.stage || 0,
+          reviewDueAt: newer.reviewDueAt || "",
+          masteredAt: newer.masteredAt || "",
+          firstSeenAt: [ra.firstSeenAt, rb.firstSeenAt].filter(Boolean).sort()[0] || "",
+          lastSeenAt: (rb.lastSeenAt || "") > (ra.lastSeenAt || "") ? rb.lastSeenAt : (ra.lastSeenAt || "")
+        };
+      });
+      return merged;
+    };
     const a = normalize(localRaw);
     const b = normalize(remoteRaw);
-    const out = { version: 1, facts: {}, levels: {}, daily: {}, updatedAt: "" };
-    Array.from(new Set([...Object.keys(a.facts), ...Object.keys(b.facts)])).forEach((id) => {
-      const ra = a.facts[id];
-      const rb = b.facts[id];
-      if (!ra || !rb) { out.facts[id] = { ...(ra || rb) }; return; }
-      const newer = (rb.lastSeenAt || "") > (ra.lastSeenAt || "") ? rb : ra;
-      out.facts[id] = {
-        attempts: Math.max(ra.attempts || 0, rb.attempts || 0),
-        correct: Math.max(ra.correct || 0, rb.correct || 0),
-        misses: Math.max(ra.misses || 0, rb.misses || 0),
-        clearDays: newer.clearDays || 0,
-        lastClearDay: newer.lastClearDay || "",
-        stage: newer.stage || 0,
-        reviewDueAt: newer.reviewDueAt || "",
-        masteredAt: newer.masteredAt || "",
-        firstSeenAt: [ra.firstSeenAt, rb.firstSeenAt].filter(Boolean).sort()[0] || "",
-        lastSeenAt: (rb.lastSeenAt || "") > (ra.lastSeenAt || "") ? rb.lastSeenAt : (ra.lastSeenAt || "")
-      };
-    });
+    const out = { version: 1, facts: {}, subFacts: {}, levels: {}, daily: {}, updatedAt: "" };
+    out.facts = mergeFactMaps(a.facts, b.facts);
+    out.subFacts = mergeFactMaps(a.subFacts, b.subFacts);
     MATH4_LEVEL_IDS.forEach((id) => {
       const la = a.levels[id] || emptyLevel();
       const lb = b.levels[id] || emptyLevel();
@@ -6987,6 +6996,8 @@
       out.daily[day] = {
         kukuNew: Math.max(da.kukuNew || 0, db.kukuNew || 0),
         kukuClears: Math.max(da.kukuClears || 0, db.kukuClears || 0),
+        subNew: Math.max(da.subNew || 0, db.subNew || 0),
+        subClears: Math.max(da.subClears || 0, db.subClears || 0),
         writtenSolved: Math.max(da.writtenSolved || 0, db.writtenSolved || 0),
         writtenClean: Math.max(da.writtenClean || 0, db.writtenClean || 0)
       };

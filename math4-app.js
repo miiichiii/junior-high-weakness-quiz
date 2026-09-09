@@ -54,6 +54,34 @@ DAN_ORDER.forEach((a, danIndex) => {
 });
 const KUKU_SCHEDULE = { newPerDay: 9, maxReviewsPerSession: 14, reviewIntervals: [1, 3, 7, 14], masterySessions: 2 };
 
+/* ---------- くり下がりのある ひきざん 出題データ（36問） ---------- */
+// 11-2 〜 18-9 のうち、一の位より引く数が大きい（=くり下がりが必要な）36問。
+// 学校でならう順に「ひく9」から。10のかたまりから引く減加法（さくらんぼ計算）が使いやすい順。
+const SUB_GROUPS = [
+  { id: 'sub9', label: 'ひく9', subtrahends: [9] },
+  { id: 'sub8', label: 'ひく8', subtrahends: [8] },
+  { id: 'sub7', label: 'ひく7', subtrahends: [7] },
+  { id: 'sub6', label: 'ひく6', subtrahends: [6] },
+  { id: 'sub5', label: 'ひく5', subtrahends: [5] },
+  { id: 'sub432', label: 'ひく4・3・2', subtrahends: [4, 3, 2] }
+];
+const SUB_FACTS = [];
+SUB_GROUPS.forEach((group, groupIndex) => {
+  group.subtrahends.forEach((b) => {
+    for (let m = 11; m <= b + 9; m++) {
+      SUB_FACTS.push({
+        id: `${m}-${b}`, m, b, answer: m - b, groupId: group.id,
+        order: groupIndex * 100 + (9 - b) * 10 + (m - 10)
+      });
+    }
+  });
+});
+const SUB_SCHEDULE = { newPerDay: 8, maxReviewsPerSession: 12, reviewIntervals: [1, 3, 7, 14], masterySessions: 2 };
+function subFactsForGroup(groupId) {
+  return SUB_FACTS.filter((f) => f.groupId === groupId);
+}
+function subGroupById(id) { return SUB_GROUPS.find((g) => g.id === id); }
+
 /* ---------- ひっ算レベル定義 ---------- */
 const LEVELS = [
   { id: 'mult1', kind: 'mult', label: '3けた × 1けた', emoji: '✖️', problemsPerSession: 5 },
@@ -66,7 +94,8 @@ function levelById(id) { return LEVELS.find((l) => l.id === id); }
 function emptyProgress() {
   const levels = {};
   LEVELS.forEach((level) => { levels[level.id] = emptyLevelRecord(); });
-  return { version: 1, facts: {}, levels, daily: {}, updatedAt: '' };
+  // subFacts は後から足したフィールド。古い記録（subFacts なし）もそのまま読めるので version は上げない
+  return { version: 1, facts: {}, subFacts: {}, levels, daily: {}, updatedAt: '' };
 }
 function emptyLevelRecord() {
   return { solved: 0, clean: 0, streak: 0, bestStreak: 0, sessionsDone: 0, lastSessionDay: '' };
@@ -74,6 +103,7 @@ function emptyLevelRecord() {
 function migrateProgress(raw) {
   if (!raw || typeof raw !== 'object' || raw.version !== 1) return emptyProgress();
   if (!raw.facts || typeof raw.facts !== 'object') raw.facts = {};
+  if (!raw.subFacts || typeof raw.subFacts !== 'object') raw.subFacts = {};
   if (!raw.daily || typeof raw.daily !== 'object') raw.daily = {};
   if (!raw.levels || typeof raw.levels !== 'object') raw.levels = {};
   LEVELS.forEach((level) => {
@@ -100,13 +130,14 @@ function factsForDan(dan) {
   return KUKU_FACTS.filter((f) => f.a === dan);
 }
 // none=まだ / learn=れんしゅう中 / clear=ノーミスでクリアずみ / master=別の日2回クリア
-function factState(id) {
-  const r = progress.facts[id];
+function recordState(r) {
   if (!r) return 'none';
   if (r.masteredAt) return 'master';
   if ((r.clearDays || 0) >= 1) return 'clear';
   return 'learn';
 }
+function factState(id) { return recordState(progress.facts[id]); }
+function subFactState(id) { return recordState(progress.subFacts[id]); }
 function danSummary(dan) {
   let mastered = 0;
   let cleared = 0;
@@ -131,6 +162,39 @@ function countDueKuku() {
     return r && r.reviewDueAt && r.reviewDueAt <= day && r.lastClearDay !== day;
   }).length;
 }
+function masteredSubCount() {
+  return SUB_FACTS.filter((f) => (progress.subFacts[f.id] || {}).masteredAt).length;
+}
+function subGroupSummary(groupId) {
+  let mastered = 0;
+  let cleared = 0;
+  subFactsForGroup(groupId).forEach((f) => {
+    const st = subFactState(f.id);
+    if (st === 'master') { mastered += 1; cleared += 1; }
+    else if (st === 'clear') cleared += 1;
+  });
+  return { mastered, cleared, total: subFactsForGroup(groupId).length };
+}
+function recommendedSubGroup() {
+  const notCleared = SUB_GROUPS.find((g) => {
+    const s = subGroupSummary(g.id);
+    return s.cleared < s.total;
+  });
+  if (notCleared) return notCleared.id;
+  const notMastered = SUB_GROUPS.find((g) => {
+    const s = subGroupSummary(g.id);
+    return s.mastered < s.total;
+  });
+  return notMastered ? notMastered.id : null;
+}
+function countDueSub() {
+  const day = todayKey();
+  return SUB_FACTS.filter((f) => {
+    const r = progress.subFacts[f.id];
+    return r && r.reviewDueAt && r.reviewDueAt <= day && r.lastClearDay !== day;
+  }).length;
+}
+
 function isLevelUnlocked(levelId) {
   const level = levelById(levelId);
   if (!level.requires) return true;
@@ -159,17 +223,14 @@ const cloud = window.WeaknessQuizCloud;
 let cloudReady = false;
 let cloudTimer = null;
 
-function mergeMath4Progress(local, remote) {
-  const a = migrateProgress(local);
-  const b = migrateProgress(remote);
-  const out = emptyProgress();
-  const facts = new Set([...Object.keys(a.facts), ...Object.keys(b.facts)]);
-  facts.forEach((id) => {
-    const ra = a.facts[id];
-    const rb = b.facts[id];
-    if (!ra || !rb) { out.facts[id] = { ...(ra || rb) }; return; }
+function mergeFactMaps(mapA, mapB) {
+  const out = {};
+  new Set([...Object.keys(mapA), ...Object.keys(mapB)]).forEach((id) => {
+    const ra = mapA[id];
+    const rb = mapB[id];
+    if (!ra || !rb) { out[id] = { ...(ra || rb) }; return; }
     const newer = (rb.lastSeenAt || '') > (ra.lastSeenAt || '') ? rb : ra;
-    out.facts[id] = {
+    out[id] = {
       attempts: Math.max(ra.attempts || 0, rb.attempts || 0),
       correct: Math.max(ra.correct || 0, rb.correct || 0),
       misses: Math.max(ra.misses || 0, rb.misses || 0),
@@ -182,6 +243,15 @@ function mergeMath4Progress(local, remote) {
       lastSeenAt: (rb.lastSeenAt || '') > (ra.lastSeenAt || '') ? rb.lastSeenAt : (ra.lastSeenAt || '')
     };
   });
+  return out;
+}
+
+function mergeMath4Progress(local, remote) {
+  const a = migrateProgress(local);
+  const b = migrateProgress(remote);
+  const out = emptyProgress();
+  out.facts = mergeFactMaps(a.facts, b.facts);
+  out.subFacts = mergeFactMaps(a.subFacts, b.subFacts);
   LEVELS.forEach((level) => {
     const la = a.levels[level.id] || emptyLevelRecord();
     const lb = b.levels[level.id] || emptyLevelRecord();
@@ -201,6 +271,8 @@ function mergeMath4Progress(local, remote) {
     out.daily[day] = {
       kukuNew: Math.max(da.kukuNew || 0, db.kukuNew || 0),
       kukuClears: Math.max(da.kukuClears || 0, db.kukuClears || 0),
+      subNew: Math.max(da.subNew || 0, db.subNew || 0),
+      subClears: Math.max(da.subClears || 0, db.subClears || 0),
       writtenSolved: Math.max(da.writtenSolved || 0, db.writtenSolved || 0),
       writtenClean: Math.max(da.writtenClean || 0, db.writtenClean || 0)
     };
@@ -476,6 +548,7 @@ const $ = (id) => document.getElementById(id);
 const els = {
   modeScreen: $('mode-screen'),
   kukuScreen: $('kuku-screen'),
+  subScreen: $('sub-screen'),
   sessionScreen: $('session-screen'),
   resultScreen: $('result-screen'),
   sessionTitle: $('session-title'),
@@ -498,18 +571,27 @@ const els = {
 };
 els.resultHome.href = `index.html?child=${childId}`;
 
-let currentMode = null; // 'kuku' | 'dan' | 'mult1' | 'mult2' | 'div1'
+let currentMode = null; // 'kuku' | 'dan' | 'sub' | 'sub-group' | 'mult1' | 'mult2' | 'div1'
 let currentDan = null;
+let currentSubGroup = null;
 let session = null; // { queue, qi, results, itemMisses, ... }
 
 function showScreen(name) {
   els.modeScreen.classList.toggle('hidden', name !== 'mode');
   els.kukuScreen.classList.toggle('hidden', name !== 'kuku');
+  els.subScreen.classList.toggle('hidden', name !== 'sub');
   els.sessionScreen.classList.toggle('hidden', name !== 'session');
   els.resultScreen.classList.toggle('hidden', name !== 'result');
 }
 
 function updateHomeChrome() {
+  const subReco = recommendedSubGroup();
+  const subLine = $('sub-progress-line');
+  if (subLine) {
+    subLine.textContent = subReco
+      ? `マスター ${masteredSubCount()}/36・つぎは ${subGroupById(subReco).label}`
+      : 'ぜんぶマスター！ 36/36';
+  }
   const reco = recommendedDan();
   $('kuku-progress-line').textContent = reco
     ? `マスター ${masteredFactCount()}/81・つぎは ${reco}のだん`
@@ -532,6 +614,15 @@ function updateHomeChrome() {
 function buildModeCards() {
   const grid = $('mode-grid');
   grid.innerHTML = '';
+
+  const subCard = document.createElement('button');
+  subCard.type = 'button';
+  subCard.className = 'mode-card';
+  subCard.dataset.level = 'sub';
+  subCard.innerHTML = `<span class="mode-card-emoji">➖</span><div class="mode-card-body"><h3>くり下がりの ひきざん</h3><p class="mode-card-stat" id="sub-progress-line"></p></div>`;
+  subCard.addEventListener('click', () => renderSubHome());
+  grid.appendChild(subCard);
+
   const kukuCard = document.createElement('button');
   kukuCard.type = 'button';
   kukuCard.className = 'mode-card';
@@ -554,6 +645,299 @@ function buildModeCards() {
     grid.appendChild(card);
   });
   updateHomeChrome();
+}
+
+/* =====================================================================
+   くり下がりの ひきざん（36問）
+   10のかたまりから引く「さくらんぼ計算」を、図とドラッグで身につける
+   ===================================================================== */
+function renderSubHome() {
+  currentMode = 'sub-home';
+  showScreen('sub');
+  const wrap = $('sub-home');
+  wrap.innerHTML = '';
+  const due = countDueSub();
+  const reco = recommendedSubGroup();
+
+  const mix = document.createElement('button');
+  mix.type = 'button';
+  mix.className = 'mode-card kuku-mix-card';
+  mix.innerHTML = `<span class="mode-card-emoji">🃏</span><div class="mode-card-body"><h3>きょうの ミックス</h3><p class="mode-card-stat">${due > 0 ? `ふくしゅう ${due}こ + あたらしい ひきざん` : 'あたらしい ひきざんに すすもう'}</p></div>`;
+  mix.addEventListener('click', () => startSubMixSession());
+  wrap.appendChild(mix);
+
+  const note = document.createElement('p');
+  note.className = 'kuku-order-note';
+  note.textContent = `マスター ${masteredSubCount()}/36 ・ 10から ひける じゅんばんに ならんでいるよ`;
+  wrap.appendChild(note);
+
+  SUB_GROUPS.forEach((group) => {
+    const sum = subGroupSummary(group.id);
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'dan-row' + (group.id === reco ? ' recommended' : '');
+    row.dataset.group = group.id;
+    const cells = subFactsForGroup(group.id).map((f) => `<span class="dan-cell ${subFactState(f.id)}"></span>`).join('');
+    row.innerHTML = `${group.id === reco ? '<span class="dan-reco">つぎは ここ！</span>' : ''}<span class="dan-name">${group.label}</span><span class="dan-cells">${cells}</span><span class="dan-count">${sum.mastered}/${sum.total}</span>`;
+    row.addEventListener('click', () => startSubGroupSession(group.id));
+    wrap.appendChild(row);
+  });
+
+  const legend = document.createElement('p');
+  legend.className = 'dan-legend';
+  legend.innerHTML = '<span class="dan-cell learn"></span>れんしゅう中　<span class="dan-cell clear"></span>クリア　<span class="dan-cell master"></span>マスター';
+  wrap.appendChild(legend);
+
+  const back = document.createElement('button');
+  back.type = 'button';
+  back.className = 'act ghost';
+  back.textContent = 'モードえらびへ もどる';
+  back.addEventListener('click', () => { showScreen('mode'); buildModeCards(); });
+  wrap.appendChild(back);
+}
+
+// グループ練習: ①さくらんぼで1問ずつ（図つき）→ ②そのまま答える
+function startSubGroupSession(groupId) {
+  currentMode = 'sub-group';
+  currentSubGroup = groupId;
+  const facts = subFactsForGroup(groupId);
+  session = {
+    queue: [
+      ...facts.map((f) => ({ fact: f, kind: 'sub-group', pass: 'guided' })),
+      ...shuffle(facts).map((f) => ({ fact: f, kind: 'sub-group', pass: 'quick' }))
+    ],
+    qi: 0, results: [], itemMisses: 0, hintUsed: false, steps: [], stepIndex: 0
+  };
+  showScreen('session');
+  els.sessionTitle.textContent = `${subGroupById(groupId).label} マスター`;
+  els.backToModes.textContent = 'ひきざんトップへ';
+  els.backToModes.classList.remove('hidden');
+  renderSubItem();
+}
+
+function composeSubSession() {
+  const day = todayKey();
+  const sched = SUB_SCHEDULE;
+  const due = SUB_FACTS.filter((f) => {
+    const r = progress.subFacts[f.id];
+    return r && r.reviewDueAt && r.reviewDueAt <= day && r.lastClearDay !== day;
+  }).sort((x, y) => {
+    const rx = progress.subFacts[x.id];
+    const ry = progress.subFacts[y.id];
+    if (rx.reviewDueAt !== ry.reviewDueAt) return rx.reviewDueAt < ry.reviewDueAt ? -1 : 1;
+    if ((ry.misses || 0) !== (rx.misses || 0)) return (ry.misses || 0) - (rx.misses || 0);
+    return x.order - y.order;
+  });
+  const reviews = due.slice(0, sched.maxReviewsPerSession);
+  const introducedToday = SUB_FACTS.filter((f) => (progress.subFacts[f.id] || {}).firstSeenAt === day).length;
+  const newCount = Math.max(0, sched.newPerDay - introducedToday);
+  // 新しく出すのは1日1グループまで（「今日は ひく8」とまとまるように）
+  const newPool = SUB_FACTS.filter((f) => !progress.subFacts[f.id]).sort((x, y) => x.order - y.order);
+  const focusGroup = newPool.length ? newPool[0].groupId : null;
+  const newOnes = newPool.filter((f) => f.groupId === focusGroup).slice(0, newCount);
+  const queue = [
+    ...reviews.map((f) => ({ fact: f, kind: 'review', pass: 'quick' })),
+    ...newOnes.map((f) => ({ fact: f, kind: 'new', pass: 'guided' }))
+  ];
+  if (queue.length === 0 && due.length === 0) {
+    const bonus = SUB_FACTS.filter((f) => !(progress.subFacts[f.id] || {}).masteredAt)
+      .sort((x, y) => x.order - y.order).slice(0, 8);
+    return bonus.map((f) => ({ fact: f, kind: 'bonus', pass: 'quick' }));
+  }
+  return queue;
+}
+
+function startSubMixSession() {
+  currentMode = 'sub';
+  session = { queue: composeSubSession(), qi: 0, results: [], itemMisses: 0, hintUsed: false, steps: [], stepIndex: 0 };
+  showScreen('session');
+  els.sessionTitle.textContent = 'ひきざん ミックス';
+  els.backToModes.textContent = 'ひきざんトップへ';
+  els.backToModes.classList.remove('hidden');
+  if (session.queue.length === 0) { finishSession(); return; }
+  renderSubItem();
+}
+
+// 10のかたまり（テンフレーム）+ ばらの●。引く分は10のかたまりから消す
+function tenFrameMarkup(fact, showTaken) {
+  const loose = fact.m - 10;
+  let frame = '';
+  for (let i = 0; i < 10; i++) {
+    frame += `<span class="tf-dot${showTaken && i < fact.b ? ' taken' : ''}"></span>`;
+  }
+  let looseDots = '';
+  for (let i = 0; i < loose; i++) looseDots += '<span class="tf-dot loose"></span>';
+  return `
+    <div class="ten-frame-wrap">
+      <div class="tf-block">
+        <span class="tf-label">10の かたまり</span>
+        <div class="ten-frame">${frame}</div>
+      </div>
+      <div class="tf-block">
+        <span class="tf-label">ばら</span>
+        <div class="loose-dots">${looseDots}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSubItem() {
+  const item = session.queue[session.qi];
+  const fact = item.fact;
+  session.itemMisses = 0;
+  session.hintUsed = false;
+  session.stepIndex = 0;
+  els.sessionProgress.textContent = `${session.qi + 1} / ${session.queue.length}`;
+  els.feedback.textContent = '';
+  els.feedback.className = 'feedback';
+  els.nextBtn.classList.add('hidden');
+  els.hintBtn.classList.remove('hidden');
+
+  const guided = item.pass === 'guided';
+  const badge = item.kind === 'sub-group'
+    ? (guided ? '🍒 さくらんぼで やってみよう' : '⚡ そのまま こたえよう')
+    : item.kind === 'new' ? '🌱 あたらしい' : item.kind === 'bonus' ? '💪 おかわり' : '🔁 ふくしゅう';
+  const loose = fact.m - 10;
+
+  session.steps = guided
+    ? [{ slot: 'sub-slot-a', expected: 10 - fact.b }, { slot: 'sub-slot-b', expected: fact.answer }]
+    : [{ slot: 'sub-slot-main', expected: fact.answer }];
+
+  els.workArea.innerHTML = `
+    <div class="kuku-card">
+      <p class="kuku-kind">${badge}</p>
+      <div class="kuku-equation">
+        <span>${fact.m}</span><span class="kuku-op">−</span><span>${fact.b}</span><span class="kuku-op">=</span>
+        <span class="kuku-slot" id="sub-slot-main"></span>
+      </div>
+      <button type="button" class="ghost-btn" id="sub-visual-toggle">🔲 ずで かくにん</button>
+      <div class="sub-visual hidden" id="sub-visual">
+        ${tenFrameMarkup(fact, true)}
+        <p class="sub-visual-note">10から ${fact.b} を とると ${10 - fact.b}。のこりの ${loose} と あわせるよ。</p>
+      </div>
+      <div class="sakura ${guided ? '' : 'hidden'}" id="sub-sakura">
+        <p class="sakura-split">${fact.m} を <b>10</b> と <b>${loose}</b> に わける</p>
+        <div class="sakura-line">
+          <span class="sakura-step">①</span>
+          <span>10</span><span class="kuku-op">−</span><span>${fact.b}</span><span class="kuku-op">=</span>
+          <span class="kuku-slot sub-slot" id="sub-slot-a"></span>
+        </div>
+        <div class="sakura-line">
+          <span class="sakura-step">②</span>
+          <span class="sakura-carry" id="sub-carry-a">?</span><span class="kuku-op">＋</span><span>${loose}</span><span class="kuku-op">=</span>
+          <span class="kuku-slot sub-slot" id="sub-slot-b"></span>
+        </div>
+      </div>
+    </div>
+  `;
+  $('sub-visual-toggle').addEventListener('click', () => $('sub-visual').classList.toggle('hidden'));
+  if (guided) $('sub-visual').classList.remove('hidden');
+  renderDigitPalette(checkSubDrop);
+  focusSubStep();
+}
+
+function focusSubStep() {
+  document.querySelectorAll('.kuku-slot.active').forEach((el) => el.classList.remove('active'));
+  const step = session.steps[session.stepIndex];
+  if (!step) return;
+  const el = $(step.slot);
+  if (el) el.classList.add('active');
+}
+
+function checkSubDrop(value, dropEl) {
+  const step = session.steps[session.stepIndex];
+  if (!step) return false;
+  const slot = $(step.slot);
+  if (!dropEl || dropEl !== slot) return false;
+  const item = session.queue[session.qi];
+  const fact = item.fact;
+
+  if (Number(value) !== step.expected) {
+    session.itemMisses++;
+    shakeEl(slot);
+    beep([180]); vibe([60, 50, 60]);
+    els.feedback.textContent = 'おしい！もういちど かんがえてみよう。';
+    els.feedback.className = 'feedback bad';
+    if (session.itemMisses === 2) {
+      session.hintUsed = true;
+      $('sub-visual').classList.remove('hidden');
+      $('sub-sakura').classList.remove('hidden');
+      els.feedback.textContent = `ずを みてね。10から ${fact.b} を とって、のこりと あわせよう！`;
+    } else if (session.itemMisses >= 3) {
+      session.hintUsed = true;
+      els.feedback.textContent = `ヒント：こたえは ${step.expected} だよ！`;
+    }
+    return false;
+  }
+
+  slot.textContent = value;
+  slot.classList.remove('active');
+  slot.classList.add('correct');
+  beep([740]); vibe(25);
+  session.stepIndex++;
+  if (session.stepIndex < session.steps.length) {
+    // ①の答えを②の式へ運ぶ
+    const carry = $('sub-carry-a');
+    if (carry) { carry.textContent = value; carry.classList.add('filled'); }
+    els.feedback.textContent = 'いいね！つぎは ②だよ。';
+    els.feedback.className = 'feedback good';
+    focusSubStep();
+    return true;
+  }
+  const main = $('sub-slot-main');
+  if (main && !main.textContent) {
+    main.textContent = fact.answer;
+    main.classList.add('correct');
+  }
+  beep([523, 659, 784]); vibe([30, 40, 60]);
+  concludeSubItem();
+  return true;
+}
+
+function concludeSubItem() {
+  const item = session.queue[session.qi];
+  const fact = item.fact;
+  const day = todayKey();
+  const isFirstEver = !progress.subFacts[fact.id];
+  if (isFirstEver) progress.subFacts[fact.id] = newFactRecord();
+  const rec = progress.subFacts[fact.id];
+  if (!rec.firstSeenAt) rec.firstSeenAt = day;
+  rec.attempts += 1;
+  rec.misses += session.itemMisses;
+  rec.lastSeenAt = nowIso();
+  const wasClean = session.itemMisses === 0;
+  if (wasClean) rec.correct += 1;
+
+  if (item.kind !== 'bonus') {
+    if (!wasClean) {
+      rec.clearDays = 0;
+      rec.stage = 0;
+      rec.masteredAt = '';
+      rec.reviewDueAt = addDays(day, 1);
+    } else if (rec.lastClearDay !== day) {
+      rec.clearDays += 1;
+      rec.lastClearDay = day;
+      const interval = SUB_SCHEDULE.reviewIntervals[Math.min(rec.stage, SUB_SCHEDULE.reviewIntervals.length - 1)];
+      rec.stage += 1;
+      rec.reviewDueAt = addDays(day, interval);
+      if (!rec.masteredAt && rec.clearDays >= SUB_SCHEDULE.masterySessions) rec.masteredAt = nowIso();
+    }
+    const dailyEntry = progress.daily[day] || { kukuNew: 0, kukuClears: 0, subNew: 0, subClears: 0, writtenSolved: 0, writtenClean: 0 };
+    if (isFirstEver) dailyEntry.subNew = (dailyEntry.subNew || 0) + 1;
+    if (wasClean) dailyEntry.subClears = (dailyEntry.subClears || 0) + 1;
+    progress.daily[day] = dailyEntry;
+  }
+  saveProgress();
+  bumpStats(wasClean, false);
+  session.results.push({ label: `${fact.m}−${fact.b}`, clean: wasClean, kind: item.kind });
+
+  els.feedback.textContent = wasClean ? 'せいかい！すごい！' : 'できた！つぎも がんばろう！';
+  els.feedback.className = 'feedback good';
+  celebrate(wasClean ? 2 : 1);
+  els.hintBtn.classList.add('hidden');
+  els.palette.innerHTML = '';
+  els.nextBtn.classList.remove('hidden');
+  els.nextBtn.textContent = session.qi + 1 < session.queue.length ? 'つぎへ →' : 'けっかを みる 🎉';
 }
 
 /* ---------- 九九トップ（段えらび + 81マスの進捗マップ） ---------- */
@@ -914,6 +1298,19 @@ function addRuleLine(wrap, row, cols) {
   wrap.appendChild(rule);
 }
 
+// 0〜9のタイルを並べる（ひきざん・ひっ算で共用）
+function renderDigitPalette(onDrop) {
+  els.palette.innerHTML = '';
+  for (let v = 0; v <= 9; v++) {
+    const tile = document.createElement('button');
+    tile.type = 'button';
+    tile.className = 'digit-tile';
+    tile.textContent = v;
+    tile.addEventListener('pointerdown', (event) => startTileDrag(event, tile, v, onDrop));
+    els.palette.appendChild(tile);
+  }
+}
+
 function renderPalette() {
   els.palette.innerHTML = '';
   const step = session.board.steps[session.activeStepIndex];
@@ -1116,11 +1513,14 @@ function finishSession() {
   showScreen('result');
   const cleanCount = session.results.filter((r) => r.clean).length;
   els.resultTitle.textContent = session.results.length === 0 ? '✨ きょうのぶんは もう おわってるよ！' : '🎉 よくがんばりました！';
-  els.btnResultModes.textContent = isKukuMode() ? '九九の トップへ' : 'モードえらび';
+  els.btnResultModes.textContent = isSubMode() ? 'ひきざんの トップへ' : isKukuMode() ? '九九の トップへ' : 'モードえらび';
+  const masterStat = isSubMode()
+    ? `<div class="stat"><b>${masteredSubCount()}</b><span>ひきざんマスター/36</span></div>`
+    : `<div class="stat"><b>${masteredFactCount()}</b><span>九九マスター/81</span></div>`;
   els.resultSummary.innerHTML = `
     <div class="stat"><b>${session.results.length}</b><span>といた</span></div>
     <div class="stat"><b>${cleanCount}</b><span>ノーミス</span></div>
-    <div class="stat"><b>${masteredFactCount()}</b><span>九九マスター/81</span></div>
+    ${masterStat}
   `;
   const list = $('result-list');
   list.innerHTML = '';
@@ -1136,32 +1536,40 @@ function finishSession() {
 function isKukuMode() {
   return currentMode === 'kuku' || currentMode === 'dan';
 }
+function isSubMode() {
+  return currentMode === 'sub' || currentMode === 'sub-group';
+}
+function backToCurrentHome() {
+  if (isSubMode()) { renderSubHome(); return; }
+  if (isKukuMode()) { renderKukuHome(); return; }
+  showScreen('mode');
+  buildModeCards();
+}
 els.nextBtn.addEventListener('click', () => {
   session.qi += 1;
   if (session.qi < session.queue.length) {
-    if (isKukuMode()) renderKukuItem(); else renderWrittenItem();
+    if (isSubMode()) renderSubItem();
+    else if (isKukuMode()) renderKukuItem();
+    else renderWrittenItem();
   } else {
     finishSession();
   }
 });
 els.hintBtn.addEventListener('click', () => {
-  if (isKukuMode()) {
+  session.hintUsed = true;
+  if (isSubMode()) {
+    $('sub-visual').classList.remove('hidden');
+    $('sub-sakura').classList.remove('hidden');
+  } else if (isKukuMode()) {
     $('kuku-array').classList.remove('hidden');
-    session.hintUsed = true;
   }
 });
-els.backToModes.addEventListener('click', () => {
-  if (isKukuMode()) { renderKukuHome(); return; }
-  showScreen('mode');
-  buildModeCards();
-});
-$('btn-result-modes').addEventListener('click', () => {
-  if (isKukuMode()) { renderKukuHome(); return; }
-  showScreen('mode');
-  buildModeCards();
-});
+els.backToModes.addEventListener('click', backToCurrentHome);
+$('btn-result-modes').addEventListener('click', backToCurrentHome);
 $('btn-result-again').addEventListener('click', () => {
-  if (currentMode === 'dan') startDanSession(currentDan);
+  if (currentMode === 'sub-group') startSubGroupSession(currentSubGroup);
+  else if (currentMode === 'sub') startSubMixSession();
+  else if (currentMode === 'dan') startDanSession(currentDan);
   else if (currentMode === 'kuku') startKukuSession();
   else startWrittenSession(currentMode);
 });
@@ -1238,7 +1646,16 @@ if (DEBUG_DATE) {
     danSummary,
     recommendedDan,
     factState,
-    startDanSession
+    startDanSession,
+    SUB_FACTS,
+    SUB_GROUPS,
+    composeSubSession,
+    subGroupSummary,
+    recommendedSubGroup,
+    subFactState,
+    startSubGroupSession,
+    startSubMixSession,
+    getSubStep: () => session && session.steps && session.steps[session.stepIndex]
   };
 }
 })();

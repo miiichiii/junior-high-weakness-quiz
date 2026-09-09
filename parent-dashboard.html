@@ -404,6 +404,8 @@
         if (!MATH4_CHILD_IDS.includes(childId)) return "";
         const facts = (math4Field && math4Field.facts) || {};
         const mastered = Object.values(facts).filter((entry) => entry && entry.masteredAt).length;
+        const subFacts = (math4Field && math4Field.subFacts) || {};
+        const subMastered = Object.values(subFacts).filter((entry) => entry && entry.masteredAt).length;
         const today = (() => {
           const d = new Date();
           return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -432,17 +434,19 @@
             <div class="parent-pack-title">
               <div>
                 <p class="label">夏休み 算数マスター</p>
-                <h3>九九81問＋3けたのひっ算</h3>
+                <h3>くり下がりのひきざん36問＋九九81問＋3けたのひっ算</h3>
               </div>
               <a class="ghost-button parent-pack-link" href="${href}">学習画面</a>
             </div>
             <div class="parent-metrics parent-pack-metrics">
+              <div><span>ひきざんマスター</span><strong>${subMastered}/36</strong></div>
               <div><span>九九マスター</span><strong>${mastered}/81</strong></div>
+              <div><span>今日のひきざん</span><strong>新規${number(daily.subNew)}・クリア${number(daily.subClears)}</strong></div>
               <div><span>今日の九九</span><strong>新規${number(daily.kukuNew)}・クリア${number(daily.kukuClears)}</strong></div>
               <div><span>今日のひっ算</span><strong>${number(daily.writtenSolved)}問</strong></div>
             </div>
             <div class="parent-pack-tiers">${levelRows}</div>
-            <p class="parent-written-note">「九九マスター」は別の日に2回まちがえずに答えられた九九です。</p>
+            <p class="parent-written-note">「マスター」は別の日に2回まちがえずに答えられた問題です。くり下がりのひきざんは11−2〜18−9の36問。</p>
           </section>
         `;
       }

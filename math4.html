@@ -204,7 +204,6 @@ button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
 
 /* ---- ひっ算ボード ---- */
 .calc-outer{display:flex;justify-content:center;align-items:flex-start}
-.calc-outer.div-outer{gap:0}
 .calc-board{
   display:grid;justify-content:center;gap:2px 0;
   padding:10px 6px;position:relative;
@@ -241,12 +240,12 @@ button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
   transform:translateY(8px);
 }
 .calc-rule{border-top:3px solid var(--ink);height:0;align-self:start;margin-top:-2px}
-.div-bracket{
-  display:flex;align-items:flex-start;justify-content:flex-end;
-  width:34px;height:84px;flex-shrink:0;
-  padding-right:6px;padding-top:12px;font-size:19px;font-weight:700;color:var(--ink);
-  border-right:3px solid var(--ink);border-top:3px solid var(--ink);
-  margin-top:10px;box-sizing:border-box;
+/* 除数は被除数と同じ行。右の縦線が筆算の「)」になる */
+.div-divisor{
+  display:flex;align-items:center;justify-content:flex-end;
+  height:40px;padding-right:7px;
+  font-size:21px;font-weight:700;color:var(--ink);
+  border-right:3px solid var(--ink);
 }
 
 /* ---- らくがきメモ ---- */
@@ -355,6 +354,6 @@ button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
 <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js?v=20260805-shared-cloud-v1"></script>
 <script src="firebase-sync.js?v=20260820-google-login-recovery-v1"></script>
-<script src="math4-app.js?v=20260909-math4-sub-v1"></script>
+<script src="math4-app.js?v=20261103-math4-div-layout-v1"></script>
 </body>
 </html>

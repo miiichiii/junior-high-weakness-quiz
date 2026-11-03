@@ -510,6 +510,9 @@ function buildDivisionBoard(problem) {
     cells.push({ id: uid(), row: 1, col: i, kind: 'given', value: d, sourceIndex: i });
   });
 
+  // 被除数の上の横線（商との境目）。実際の筆算と同じく被除数の幅いっぱいに引く
+  ruleRows.push({ row: 1, fromCol: 0, toCol: cols - 1 });
+
   let row = 2;
   plan.steps.forEach((s, idx) => {
     const productRow = row;
@@ -523,7 +526,8 @@ function buildDivisionBoard(problem) {
       steps.push({ id: stepId, expected: digit });
     }
     const ruleRow = productRow + 1;
-    ruleRows.push(ruleRow);
+    // 引き算の線は、その計算に使った桁の幅だけ（全幅には引かない）
+    ruleRows.push({ row: ruleRow, fromCol: startCol, toCol: s.dividendIndex });
     const remRow = ruleRow + 1;
     const remStepId = `rem-${s.dividendIndex}`;
     cells.push({ id: uid(), row: remRow, col: s.dividendIndex, kind: 'input', value: s.remainder, stepId: remStepId });
@@ -1226,24 +1230,32 @@ function renderWrittenItem() {
   session.board = board;
   els.workArea.innerHTML = '';
   const outer = document.createElement('div');
-  outer.className = problem.kind === 'div' ? 'calc-outer div-outer' : 'calc-outer';
+  outer.className = 'calc-outer';
   const wrap = document.createElement('div');
   wrap.className = problem.kind === 'mult' ? 'calc-board mult-board' : 'calc-board div-board';
   const colWidth = 42;
-  wrap.style.gridTemplateColumns = `repeat(${board.cols}, ${colWidth}px)`;
+  const divisorColWidth = 34;
+  // わり算は左端に除数の列を1つ足す（除数 ) 被除数 の形にするため）
+  wrap.style.gridTemplateColumns = problem.kind === 'div'
+    ? `${divisorColWidth}px repeat(${board.cols}, ${colWidth}px)`
+    : `repeat(${board.cols}, ${colWidth}px)`;
   wrap.style.gridTemplateRows = `repeat(${board.rows}, auto)`;
 
   // かけ算：計算行は「一の位=col0」で作られているので、右づめ表示のため
-  // col を cols-col に変換する。わり算は「左からの位置」でcolを作っているので変換不要。
+  // col を cols-col に変換する。わり算は「左からの位置」でcolを作っているので
+  // 除数の列ぶん（+1）だけずらす。
   const toGridColumn = problem.kind === 'mult'
     ? (col) => board.cols - col
-    : (col) => col + 1;
+    : (col) => col + 2;
 
   if (problem.kind === 'div') {
-    const bracket = document.createElement('div');
-    bracket.className = 'div-bracket';
-    bracket.textContent = problem.divisor;
-    outer.appendChild(bracket);
+    // 除数は被除数と同じ行に置き、右の縦線が「)」の役目をする
+    const divisor = document.createElement('div');
+    divisor.className = 'div-divisor';
+    divisor.textContent = problem.divisor;
+    divisor.style.gridColumn = '1';
+    divisor.style.gridRow = '2';
+    wrap.appendChild(divisor);
   }
 
   board.cells.forEach((cell) => {
@@ -1275,26 +1287,34 @@ function renderWrittenItem() {
     const opEl = document.createElement('div');
     opEl.className = 'calc-op-label';
     opEl.style.gridRow = String(opCell.row + 1);
-    const rowGivenCols = board.cells
-      .filter((c) => c.row === opCell.row && c.kind === 'given')
+    // ×は筆算どおり、数字の左はしに置く（かける数のとなりに浮かせない）
+    const givenCols = board.cells
+      .filter((c) => c.kind === 'given')
       .map((c) => toGridColumn(c.col));
-    opEl.style.gridColumn = String(Math.min(...rowGivenCols));
+    opEl.style.gridColumn = String(Math.min(...givenCols));
     opEl.textContent = opCell.value;
     wrap.appendChild(opEl);
   }
   // 横線（board生成時に決めたruleRowsをそのまま描く）
-  board.ruleRows.forEach((r) => addRuleLine(wrap, r, board.cols));
+  // かけ算は数値（全幅）、わり算は {row, fromCol, toCol}（その計算に使う桁ぶんだけ）
+  board.ruleRows.forEach((rule) => {
+    if (typeof rule === 'number') {
+      addRuleLine(wrap, rule, 1, board.cols);
+      return;
+    }
+    addRuleLine(wrap, rule.row, toGridColumn(rule.fromCol), rule.toCol - rule.fromCol + 1);
+  });
 
   outer.appendChild(wrap);
   els.workArea.appendChild(outer);
   renderPalette();
   focusActiveStep();
 }
-function addRuleLine(wrap, row, cols) {
+function addRuleLine(wrap, row, gridColStart, gridColSpan) {
   const rule = document.createElement('div');
   rule.className = 'calc-rule';
   rule.style.gridRow = String(row + 1);
-  rule.style.gridColumn = `1 / span ${cols}`;
+  rule.style.gridColumn = `${gridColStart} / span ${gridColSpan}`;
   wrap.appendChild(rule);
 }
 
@@ -1642,6 +1662,7 @@ if (DEBUG_DATE) {
     isLevelUnlocked,
     getSession: () => session,
     getActiveStep: () => session && session.board && session.board.steps[session.activeStepIndex],
+    renderWrittenItem,
     DAN_ORDER,
     danSummary,
     recommendedDan,

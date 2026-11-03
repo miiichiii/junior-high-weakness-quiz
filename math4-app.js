@@ -499,12 +499,6 @@ function buildDivisionBoard(problem) {
   const ruleRows = [];
   const cols = digitsMSF.length;
 
-  // 商の行（row 0）
-  plan.steps.forEach((s) => {
-    const stepId = `quot-${s.dividendIndex}`;
-    cells.push({ id: uid(), row: 0, col: s.dividendIndex, kind: 'input', value: s.q, stepId });
-    steps.push({ id: stepId, expected: s.q });
-  });
   // 割られる数の行（row 1、割る数は左のラベルとして別描画）
   digitsMSF.forEach((d, i) => {
     cells.push({ id: uid(), row: 1, col: i, kind: 'given', value: d, sourceIndex: i });
@@ -513,8 +507,14 @@ function buildDivisionBoard(problem) {
   // 被除数の上の横線（商との境目）。実際の筆算と同じく被除数の幅いっぱいに引く
   ruleRows.push({ row: 1, fromCol: 0, toCol: cols - 1 });
 
+  // 手順は実際の筆算と同じ「商を1つ立てる→かける→ひく→つぎの位をおろす」のくり返し。
+  // 商をぜんぶ先に書かせない（それでは答えが分かっていないと先に進めない）
   let row = 2;
   plan.steps.forEach((s, idx) => {
+    const quotStepId = `quot-${s.dividendIndex}`;
+    cells.push({ id: uid(), row: 0, col: s.dividendIndex, kind: 'input', value: s.q, stepId: quotStepId });
+    steps.push({ id: quotStepId, expected: s.q });
+
     const productRow = row;
     const productDigits = digitsLSF(s.product, s.chunkWidth);
     const startCol = s.dividendIndex - (s.chunkWidth - 1);

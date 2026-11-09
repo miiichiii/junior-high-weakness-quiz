@@ -54,28 +54,71 @@ DAN_ORDER.forEach((a, danIndex) => {
 });
 const KUKU_SCHEDULE = { newPerDay: 9, maxReviewsPerSession: 14, reviewIntervals: [1, 3, 7, 14], masterySessions: 2 };
 
-/* ---------- くり下がりのある ひきざん 出題データ（36問） ---------- */
-// 11-2 〜 18-9 のうち、一の位より引く数が大きい（=くり下がりが必要な）36問。
-// 学校でならう順に「ひく9」から。10のかたまりから引く減加法（さくらんぼ計算）が使いやすい順。
-const SUB_GROUPS = [
-  { id: 'sub9', label: 'ひく9', subtrahends: [9] },
-  { id: 'sub8', label: 'ひく8', subtrahends: [8] },
-  { id: 'sub7', label: 'ひく7', subtrahends: [7] },
-  { id: 'sub6', label: 'ひく6', subtrahends: [6] },
-  { id: 'sub5', label: 'ひく5', subtrahends: [5] },
-  { id: 'sub432', label: 'ひく4・3・2', subtrahends: [4, 3, 2] }
+/* ---------- ひきざん 出題データ（基本 → くり下がりなし → くり下がり） ---------- */
+// ①10までのひきざん45問 → ②10をこえるくり下がりなし36問 → ③くり下がり36問 の計117問。
+// ③だけを先にやっても身につかないので、学校の順どおり①から積み上げる。
+// kind: basic=10まで（こたえ1けた） / noborrow=ばらから引く（こたえ2けた） / borrow=10のかたまりをくずす
+const SUB_STAGES = [
+  {
+    id: 'basic', kind: 'basic', label: '① 10までの ひきざん',
+    note: 'ぜんぶの もとになる ひきざん',
+    groups: [
+      { id: 'basic5', label: '2〜5から', minuends: [2, 3, 4, 5] },
+      { id: 'basic6', label: '6から', minuends: [6] },
+      { id: 'basic7', label: '7から', minuends: [7] },
+      { id: 'basic8', label: '8から', minuends: [8] },
+      { id: 'basic9', label: '9から', minuends: [9] },
+      { id: 'basic10', label: '10から', minuends: [10] }
+    ]
+  },
+  {
+    id: 'noborrow', kind: 'noborrow', label: '② 10より 大きい かず',
+    note: '10の かたまりは そのまま。ばらから ひく',
+    groups: [
+      { id: 'nb14', label: '11〜14から', minuends: [11, 12, 13, 14] },
+      { id: 'nb16', label: '15・16から', minuends: [15, 16] },
+      { id: 'nb17', label: '17から', minuends: [17] },
+      { id: 'nb18', label: '18から', minuends: [18] }
+    ]
+  },
+  {
+    id: 'borrow', kind: 'borrow', label: '③ くり下がりの ひきざん',
+    note: '10の かたまりを くずして ひく',
+    groups: [
+      { id: 'sub9', label: 'ひく9', subtrahends: [9] },
+      { id: 'sub8', label: 'ひく8', subtrahends: [8] },
+      { id: 'sub7', label: 'ひく7', subtrahends: [7] },
+      { id: 'sub6', label: 'ひく6', subtrahends: [6] },
+      { id: 'sub5', label: 'ひく5', subtrahends: [5] },
+      { id: 'sub432', label: 'ひく4・3・2', subtrahends: [4, 3, 2] }
+    ]
+  }
 ];
 const SUB_FACTS = [];
-SUB_GROUPS.forEach((group, groupIndex) => {
-  group.subtrahends.forEach((b) => {
-    for (let m = 11; m <= b + 9; m++) {
-      SUB_FACTS.push({
-        id: `${m}-${b}`, m, b, answer: m - b, groupId: group.id,
-        order: groupIndex * 100 + (9 - b) * 10 + (m - 10)
+const SUB_GROUPS = [];
+(function buildSubFacts() {
+  let order = 0;
+  const add = (m, b, kind, groupId) => {
+    SUB_FACTS.push({ id: `${m}-${b}`, m, b, answer: m - b, kind, groupId, order: order++ });
+  };
+  SUB_STAGES.forEach((stage) => {
+    stage.groups.forEach((group) => {
+      SUB_GROUPS.push({ ...group, kind: stage.kind, stageId: stage.id });
+      if (stage.kind === 'borrow') {
+        // 一の位より引く数が大きい = くり下がりが必要
+        group.subtrahends.forEach((b) => {
+          for (let m = 11; m <= b + 9; m++) add(m, b, stage.kind, group.id);
+        });
+        return;
+      }
+      group.minuends.forEach((m) => {
+        // basic: 1〜m-1 を引く / noborrow: ばら（m-10）の分だけ引ける
+        const maxB = stage.kind === 'basic' ? m - 1 : m - 10;
+        for (let b = 1; b <= maxB; b++) add(m, b, stage.kind, group.id);
       });
-    }
+    });
   });
-});
+})();
 const SUB_SCHEDULE = { newPerDay: 8, maxReviewsPerSession: 12, reviewIntervals: [1, 3, 7, 14], masterySessions: 2 };
 function subFactsForGroup(groupId) {
   return SUB_FACTS.filter((f) => f.groupId === groupId);
@@ -672,19 +715,26 @@ function renderSubHome() {
 
   const note = document.createElement('p');
   note.className = 'kuku-order-note';
-  note.textContent = `マスター ${masteredSubCount()}/36 ・ 10から ひける じゅんばんに ならんでいるよ`;
+  note.textContent = `マスター ${masteredSubCount()}/${SUB_FACTS.length} ・ かんたんな じゅんに ならんでいるよ`;
   wrap.appendChild(note);
 
-  SUB_GROUPS.forEach((group) => {
-    const sum = subGroupSummary(group.id);
-    const row = document.createElement('button');
-    row.type = 'button';
-    row.className = 'dan-row' + (group.id === reco ? ' recommended' : '');
-    row.dataset.group = group.id;
-    const cells = subFactsForGroup(group.id).map((f) => `<span class="dan-cell ${subFactState(f.id)}"></span>`).join('');
-    row.innerHTML = `${group.id === reco ? '<span class="dan-reco">つぎは ここ！</span>' : ''}<span class="dan-name">${group.label}</span><span class="dan-cells">${cells}</span><span class="dan-count">${sum.mastered}/${sum.total}</span>`;
-    row.addEventListener('click', () => startSubGroupSession(group.id));
-    wrap.appendChild(row);
+  SUB_STAGES.forEach((stage) => {
+    const head = document.createElement('div');
+    head.className = 'stage-head';
+    head.innerHTML = `<strong>${stage.label}</strong><small>${stage.note}</small>`;
+    wrap.appendChild(head);
+
+    stage.groups.forEach((group) => {
+      const sum = subGroupSummary(group.id);
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'dan-row' + (group.id === reco ? ' recommended' : '');
+      row.dataset.group = group.id;
+      const cells = subFactsForGroup(group.id).map((f) => `<span class="dan-cell ${subFactState(f.id)}"></span>`).join('');
+      row.innerHTML = `${group.id === reco ? '<span class="dan-reco">つぎは ここ！</span>' : ''}<span class="dan-name">${group.label}</span><span class="dan-cells">${cells}</span><span class="dan-count">${sum.mastered}/${sum.total}</span>`;
+      row.addEventListener('click', () => startSubGroupSession(group.id));
+      wrap.appendChild(row);
+    });
   });
 
   const legend = document.createElement('p');
@@ -763,6 +813,34 @@ function startSubMixSession() {
 }
 
 // 10のかたまり（テンフレーム）+ ばらの●。引く分は10のかたまりから消す
+// 10までのひきざん: ●のかたまりから とる図
+function basicStageMarkup(fact) {
+  let dots = '';
+  for (let i = 0; i < fact.m; i++) dots += `<span class="tf-dot" style="--d:${i * 50}ms"></span>`;
+  return `
+    <div class="sub-stage basic-stage" id="sub-stage" data-phase="before">
+      <div class="tf-group" id="tf-ten"><div class="${fact.m === 10 ? 'ten-frame' : 'dot-row'}">${dots}</div></div>
+    </div>
+  `;
+}
+
+// 10をこえるひきざん（くり下がりなし）: 10のかたまりはそのまま、ばらから とる図
+function noBorrowStageMarkup(fact) {
+  const loose = fact.m - 10;
+  let frame = '';
+  for (let i = 0; i < 10; i++) frame += '<span class="tf-dot"></span>';
+  let looseDots = '';
+  for (let i = 0; i < loose; i++) looseDots += `<span class="tf-dot loose" style="--d:${i * 50}ms"></span>`;
+  return `
+    <div class="sub-stage" id="sub-stage" data-phase="tens">
+      <span class="cherry-num" id="cherry-ten">10</span>
+      <span class="cherry-num" id="cherry-loose">${loose}</span>
+      <div class="tf-group" id="tf-ten"><div class="ten-frame">${frame}</div></div>
+      <div class="tf-group" id="tf-loose"><div class="loose-dots">${looseDots}</div></div>
+    </div>
+  `;
+}
+
 // 10のかたまり（テンフレーム）と ばらの●。上にさくらんぼの枝をつけて、
 // 「10」はテンフレームの真上、「ばら」はばらの●の真上に来るように並べる
 function subStageMarkup(fact) {
@@ -787,19 +865,54 @@ function subStageMarkup(fact) {
   `;
 }
 
-// 図を手順に合わせて動かす。split=まだとっていない / taken=10からとった / joined=あわせた
+// 図を手順に合わせて動かす。
+// basic:    before → after
+// noborrow: tens（10のかたまりを数える）→ ones（ばらから ひく）→ done
+// borrow:   split（まだ とっていない）→ taken（10から とった）→ joined（あわせた）
 function setSubPhase(phase) {
   const stage = $('sub-stage');
   if (!stage) return;
   const fact = session.queue[session.qi].fact;
+  const say = $('sub-say');
+  stage.dataset.phase = phase;
+
+  if (fact.kind === 'basic') {
+    stage.querySelectorAll('.tf-dot').forEach((dot, i) => {
+      dot.classList.toggle('taken', phase === 'after' && i >= fact.m - fact.b);
+      dot.classList.toggle('keep', phase === 'after' && i < fact.m - fact.b);
+    });
+    if (say) {
+      say.innerHTML = phase === 'before'
+        ? `●が <b>${fact.m}こ</b>。そこから <b>${fact.b}こ</b> とると のこりは？`
+        : `のこりは <b>${fact.answer}こ</b>！`;
+    }
+    return;
+  }
+
+  if (fact.kind === 'noborrow') {
+    const loose = fact.m - 10;
+    stage.querySelectorAll('#tf-loose .tf-dot').forEach((dot, i) => {
+      dot.classList.toggle('taken', phase !== 'tens' && i >= loose - fact.b);
+      dot.classList.toggle('keep', phase !== 'tens' && i < loose - fact.b);
+    });
+    if (say) {
+      if (phase === 'tens') {
+        say.innerHTML = `10の かたまりは くずさないよ。<br>かたまりは <b>いくつ</b> のこる？`;
+      } else if (phase === 'ones') {
+        say.innerHTML = `ばらの <b>${loose}こ</b> から <b>${fact.b}こ</b> とると？`;
+      } else {
+        say.innerHTML = `10が 1つ と ばら <b>${loose - fact.b}</b> で <b>${fact.answer}</b>！`;
+      }
+    }
+    return;
+  }
+
   const loose = fact.m - 10;
   const left = 10 - fact.b;
-  stage.dataset.phase = phase;
   stage.querySelectorAll('#tf-ten .tf-dot').forEach((dot, i) => {
     dot.classList.toggle('taken', phase !== 'split' && i < fact.b);
     dot.classList.toggle('keep', phase !== 'split' && i >= fact.b);
   });
-  const say = $('sub-say');
   if (!say) return;
   if (phase === 'split') {
     say.innerHTML = `${fact.b}こ とりたいけど、ばらは <b>${loose}こ</b> しかない。<br>だから <b>10の かたまり</b> から とろう！`;
@@ -823,27 +936,43 @@ function renderSubItem() {
   els.hintBtn.classList.remove('hidden');
 
   const guided = item.pass === 'guided';
+  const badgeByKind = {
+    basic: guided ? '🔵 ●を かぞえて やってみよう' : '⚡ そのまま こたえよう',
+    noborrow: guided ? '📦 10の かたまりは そのまま' : '⚡ そのまま こたえよう',
+    borrow: guided ? '🍒 さくらんぼで やってみよう' : '⚡ そのまま こたえよう'
+  };
   const badge = item.kind === 'sub-group'
-    ? (guided ? '🍒 さくらんぼで やってみよう' : '⚡ そのまま こたえよう')
+    ? badgeByKind[fact.kind]
     : item.kind === 'new' ? '🌱 あたらしい' : item.kind === 'bonus' ? '💪 おかわり' : '🔁 ふくしゅう';
-  const loose = fact.m - 10;
 
-  session.steps = guided
-    ? [{ slot: 'sub-slot-a', expected: 10 - fact.b }, { slot: 'sub-slot-b', expected: fact.answer }]
-    : [{ slot: 'sub-slot-main', expected: fact.answer }];
-
-  els.workArea.innerHTML = `
-    <div class="kuku-card">
-      <p class="kuku-kind">${badge}</p>
-      <div class="kuku-equation">
-        <span>${fact.m}</span><span class="kuku-op">−</span><span>${fact.b}</span><span class="kuku-op">=</span>
-        <span class="kuku-slot" id="sub-slot-main"></span>
-      </div>
-      <button type="button" class="ghost-btn${guided ? ' hidden' : ''}" id="sub-visual-toggle">🔲 ずで かくにん</button>
-      <div class="sub-visual${guided ? '' : ' hidden'}" id="sub-visual">
-        <p class="sub-say" id="sub-say"></p>
-        ${subStageMarkup(fact)}
-      </div>
+  // こたえの入れ物と手順は種類ごとに変わる
+  let answerSlots;
+  let extraBlock = '';
+  let stageMarkup;
+  let firstPhase;
+  if (fact.kind === 'basic') {
+    answerSlots = '<span class="kuku-slot" id="sub-slot-main"></span>';
+    session.steps = [{ slot: 'sub-slot-main', expected: fact.answer }];
+    stageMarkup = basicStageMarkup(fact);
+    firstPhase = 'before';
+  } else if (fact.kind === 'noborrow') {
+    // こたえが2けたなので「10のかたまり」と「ばら」を1マスずつ置く
+    answerSlots = '<span class="kuku-slot ans-digit" id="sub-slot-tens"></span><span class="kuku-slot ans-digit" id="sub-slot-ones"></span>';
+    session.steps = [
+      { slot: 'sub-slot-tens', expected: 1 },
+      { slot: 'sub-slot-ones', expected: fact.answer % 10 }
+    ];
+    stageMarkup = noBorrowStageMarkup(fact);
+    firstPhase = 'tens';
+  } else {
+    const loose = fact.m - 10;
+    answerSlots = '<span class="kuku-slot" id="sub-slot-main"></span>';
+    session.steps = guided
+      ? [{ slot: 'sub-slot-a', expected: 10 - fact.b }, { slot: 'sub-slot-b', expected: fact.answer }]
+      : [{ slot: 'sub-slot-main', expected: fact.answer }];
+    stageMarkup = subStageMarkup(fact);
+    firstPhase = 'split';
+    extraBlock = `
       <div class="sakura${guided ? '' : ' hidden'}" id="sub-sakura">
         <div class="sakura-block">
           <p class="sakura-note">① 10の かたまりから ひく</p>
@@ -859,11 +988,26 @@ function renderSubItem() {
             <span class="kuku-slot sub-slot" id="sub-slot-b"></span>
           </div>
         </div>
+      </div>`;
+  }
+
+  els.workArea.innerHTML = `
+    <div class="kuku-card">
+      <p class="kuku-kind">${badge}</p>
+      <div class="kuku-equation">
+        <span>${fact.m}</span><span class="kuku-op">−</span><span>${fact.b}</span><span class="kuku-op">=</span>
+        ${answerSlots}
       </div>
+      <button type="button" class="ghost-btn${guided ? ' hidden' : ''}" id="sub-visual-toggle">🔲 ずで かくにん</button>
+      <div class="sub-visual${guided ? '' : ' hidden'}" id="sub-visual">
+        <p class="sub-say" id="sub-say"></p>
+        ${stageMarkup}
+      </div>
+      ${extraBlock}
     </div>
   `;
   $('sub-visual-toggle').addEventListener('click', () => $('sub-visual').classList.toggle('hidden'));
-  setSubPhase('split');
+  setSubPhase(firstPhase);
   renderDigitPalette(checkSubDrop);
   focusSubStep();
 }
@@ -890,16 +1034,21 @@ function checkSubDrop(value, dropEl) {
     beep([180]); vibe([60, 50, 60]);
     els.feedback.textContent = 'おしい！もういちど かんがえてみよう。';
     els.feedback.className = 'feedback bad';
+    const hintPhases = { basic: ['before', 'after'], noborrow: ['tens', 'ones'], borrow: ['split', 'taken'] };
+    const phases = hintPhases[fact.kind];
     if (session.itemMisses === 2) {
       session.hintUsed = true;
       $('sub-visual').classList.remove('hidden');
-      $('sub-sakura').classList.remove('hidden');
-      setSubPhase('split');
-      els.feedback.textContent = 'ずを みてね。ばらだけでは とれないよ。';
+      if ($('sub-sakura')) $('sub-sakura').classList.remove('hidden');
+      // まだ答えは出さず、「どう考えるか」の図から見せる
+      setSubPhase(fact.kind === 'noborrow' && session.stepIndex > 0 ? phases[1] : phases[0]);
+      els.feedback.textContent = fact.kind === 'borrow'
+        ? 'ずを みてね。ばらだけでは とれないよ。'
+        : 'ずを みて、かぞえてみよう。';
     } else if (session.itemMisses >= 3) {
       session.hintUsed = true;
       $('sub-visual').classList.remove('hidden');
-      setSubPhase('taken');
+      setSubPhase(phases[1]);
       els.feedback.textContent = `ヒント：こたえは ${step.expected} だよ！`;
     }
     return false;
@@ -911,11 +1060,15 @@ function checkSubDrop(value, dropEl) {
   beep([740]); vibe(25);
   session.stepIndex++;
   if (session.stepIndex < session.steps.length) {
-    // ①の答えを②の式へ運び、図からも9こ とりのぞく
-    const carry = $('sub-carry-a');
-    if (carry) { carry.textContent = value; carry.classList.add('filled'); }
-    setSubPhase('taken');
-    els.feedback.textContent = 'いいね！つぎは ②だよ。';
+    if (fact.kind === 'noborrow') {
+      setSubPhase('ones');
+    } else {
+      // ①の答えを②の式へ運び、図からも引いた分を とりのぞく
+      const carry = $('sub-carry-a');
+      if (carry) { carry.textContent = value; carry.classList.add('filled'); }
+      setSubPhase('taken');
+    }
+    els.feedback.textContent = 'いいね！つぎだよ。';
     els.feedback.className = 'feedback good';
     focusSubStep();
     return true;
@@ -925,7 +1078,7 @@ function checkSubDrop(value, dropEl) {
     main.textContent = fact.answer;
     main.classList.add('correct');
   }
-  setSubPhase('joined');
+  setSubPhase(fact.kind === 'basic' ? 'after' : fact.kind === 'noborrow' ? 'done' : 'joined');
   beep([523, 659, 784]); vibe([30, 40, 60]);
   concludeSubItem();
   return true;
@@ -1612,7 +1765,7 @@ els.hintBtn.addEventListener('click', () => {
   session.hintUsed = true;
   if (isSubMode()) {
     $('sub-visual').classList.remove('hidden');
-    $('sub-sakura').classList.remove('hidden');
+    if ($('sub-sakura')) $('sub-sakura').classList.remove('hidden');
   } else if (isKukuMode()) {
     $('kuku-array').classList.remove('hidden');
   }
@@ -1703,6 +1856,7 @@ if (DEBUG_DATE) {
     startDanSession,
     SUB_FACTS,
     SUB_GROUPS,
+    SUB_STAGES,
     composeSubSession,
     subGroupSummary,
     recommendedSubGroup,

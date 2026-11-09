@@ -763,26 +763,51 @@ function startSubMixSession() {
 }
 
 // 10のかたまり（テンフレーム）+ ばらの●。引く分は10のかたまりから消す
-function tenFrameMarkup(fact, showTaken) {
+// 10のかたまり（テンフレーム）と ばらの●。上にさくらんぼの枝をつけて、
+// 「10」はテンフレームの真上、「ばら」はばらの●の真上に来るように並べる
+function subStageMarkup(fact) {
   const loose = fact.m - 10;
   let frame = '';
   for (let i = 0; i < 10; i++) {
-    frame += `<span class="tf-dot${showTaken && i < fact.b ? ' taken' : ''}"></span>`;
+    frame += `<span class="tf-dot" style="--d:${i * 50}ms"></span>`;
   }
   let looseDots = '';
   for (let i = 0; i < loose; i++) looseDots += '<span class="tf-dot loose"></span>';
   return `
-    <div class="ten-frame-wrap">
-      <div class="tf-block">
-        <span class="tf-label">10の かたまり</span>
-        <div class="ten-frame">${frame}</div>
-      </div>
-      <div class="tf-block">
-        <span class="tf-label">ばら</span>
-        <div class="loose-dots">${looseDots}</div>
-      </div>
+    <div class="sub-stage" id="sub-stage" data-phase="split">
+      <span class="cherry-top">${fact.m}</span>
+      <svg class="cherry-branch" viewBox="0 0 246 24" aria-hidden="true">
+        <path d="M123 1 L59 23"/><path d="M123 1 L187 23"/>
+      </svg>
+      <span class="cherry-num" id="cherry-ten">10</span>
+      <span class="cherry-num" id="cherry-loose">${loose}</span>
+      <div class="tf-group" id="tf-ten"><div class="ten-frame">${frame}</div></div>
+      <div class="tf-group" id="tf-loose"><div class="loose-dots">${looseDots}</div></div>
     </div>
   `;
+}
+
+// 図を手順に合わせて動かす。split=まだとっていない / taken=10からとった / joined=あわせた
+function setSubPhase(phase) {
+  const stage = $('sub-stage');
+  if (!stage) return;
+  const fact = session.queue[session.qi].fact;
+  const loose = fact.m - 10;
+  const left = 10 - fact.b;
+  stage.dataset.phase = phase;
+  stage.querySelectorAll('#tf-ten .tf-dot').forEach((dot, i) => {
+    dot.classList.toggle('taken', phase !== 'split' && i < fact.b);
+    dot.classList.toggle('keep', phase !== 'split' && i >= fact.b);
+  });
+  const say = $('sub-say');
+  if (!say) return;
+  if (phase === 'split') {
+    say.innerHTML = `${fact.b}こ とりたいけど、ばらは <b>${loose}こ</b> しかない。<br>だから <b>10の かたまり</b> から とろう！`;
+  } else if (phase === 'taken') {
+    say.innerHTML = `10から ${fact.b}こ とって のこり <b>${left}</b>。<br>ばらの <b>${loose}</b> と あわせよう！`;
+  } else {
+    say.innerHTML = `<b>${left}</b> と <b>${loose}</b> で <b>${fact.answer}</b>！`;
+  }
 }
 
 function renderSubItem() {
@@ -814,28 +839,31 @@ function renderSubItem() {
         <span>${fact.m}</span><span class="kuku-op">−</span><span>${fact.b}</span><span class="kuku-op">=</span>
         <span class="kuku-slot" id="sub-slot-main"></span>
       </div>
-      <button type="button" class="ghost-btn" id="sub-visual-toggle">🔲 ずで かくにん</button>
-      <div class="sub-visual hidden" id="sub-visual">
-        ${tenFrameMarkup(fact, true)}
-        <p class="sub-visual-note">10から ${fact.b} を とると ${10 - fact.b}。のこりの ${loose} と あわせるよ。</p>
+      <button type="button" class="ghost-btn${guided ? ' hidden' : ''}" id="sub-visual-toggle">🔲 ずで かくにん</button>
+      <div class="sub-visual${guided ? '' : ' hidden'}" id="sub-visual">
+        <p class="sub-say" id="sub-say"></p>
+        ${subStageMarkup(fact)}
       </div>
-      <div class="sakura ${guided ? '' : 'hidden'}" id="sub-sakura">
-        <p class="sakura-split">${fact.m} を <b>10</b> と <b>${loose}</b> に わける</p>
-        <div class="sakura-line">
-          <span class="sakura-step">①</span>
-          <span>10</span><span class="kuku-op">−</span><span>${fact.b}</span><span class="kuku-op">=</span>
-          <span class="kuku-slot sub-slot" id="sub-slot-a"></span>
+      <div class="sakura${guided ? '' : ' hidden'}" id="sub-sakura">
+        <div class="sakura-block">
+          <p class="sakura-note">① 10の かたまりから ひく</p>
+          <div class="sakura-line">
+            <span>10</span><span class="kuku-op">−</span><span>${fact.b}</span><span class="kuku-op">=</span>
+            <span class="kuku-slot sub-slot" id="sub-slot-a"></span>
+          </div>
         </div>
-        <div class="sakura-line">
-          <span class="sakura-step">②</span>
-          <span class="sakura-carry" id="sub-carry-a">?</span><span class="kuku-op">＋</span><span>${loose}</span><span class="kuku-op">=</span>
-          <span class="kuku-slot sub-slot" id="sub-slot-b"></span>
+        <div class="sakura-block">
+          <p class="sakura-note">② のこりと ばらを あわせる</p>
+          <div class="sakura-line">
+            <span class="sakura-carry" id="sub-carry-a">?</span><span class="kuku-op">＋</span><span>${loose}</span><span class="kuku-op">=</span>
+            <span class="kuku-slot sub-slot" id="sub-slot-b"></span>
+          </div>
         </div>
       </div>
     </div>
   `;
   $('sub-visual-toggle').addEventListener('click', () => $('sub-visual').classList.toggle('hidden'));
-  if (guided) $('sub-visual').classList.remove('hidden');
+  setSubPhase('split');
   renderDigitPalette(checkSubDrop);
   focusSubStep();
 }
@@ -866,9 +894,12 @@ function checkSubDrop(value, dropEl) {
       session.hintUsed = true;
       $('sub-visual').classList.remove('hidden');
       $('sub-sakura').classList.remove('hidden');
-      els.feedback.textContent = `ずを みてね。10から ${fact.b} を とって、のこりと あわせよう！`;
+      setSubPhase('split');
+      els.feedback.textContent = 'ずを みてね。ばらだけでは とれないよ。';
     } else if (session.itemMisses >= 3) {
       session.hintUsed = true;
+      $('sub-visual').classList.remove('hidden');
+      setSubPhase('taken');
       els.feedback.textContent = `ヒント：こたえは ${step.expected} だよ！`;
     }
     return false;
@@ -880,9 +911,10 @@ function checkSubDrop(value, dropEl) {
   beep([740]); vibe(25);
   session.stepIndex++;
   if (session.stepIndex < session.steps.length) {
-    // ①の答えを②の式へ運ぶ
+    // ①の答えを②の式へ運び、図からも9こ とりのぞく
     const carry = $('sub-carry-a');
     if (carry) { carry.textContent = value; carry.classList.add('filled'); }
+    setSubPhase('taken');
     els.feedback.textContent = 'いいね！つぎは ②だよ。';
     els.feedback.className = 'feedback good';
     focusSubStep();
@@ -893,6 +925,7 @@ function checkSubDrop(value, dropEl) {
     main.textContent = fact.answer;
     main.classList.add('correct');
   }
+  setSubPhase('joined');
   beep([523, 659, 784]); vibe([30, 40, 60]);
   concludeSubItem();
   return true;
@@ -1676,6 +1709,7 @@ if (DEBUG_DATE) {
     subFactState,
     startSubGroupSession,
     startSubMixSession,
+    renderSubItem,
     getSubStep: () => session && session.steps && session.steps[session.stepIndex]
   };
 }

@@ -86,7 +86,13 @@ main{width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px}
 .dan-cell.clear{background:#8fd6ae}
 .dan-cell.master{background:#ffc94d}
 .dan-count{font-size:12.5px;font-weight:700;color:#7a8698;min-width:32px;text-align:right}
-#sub-home .dan-name{width:84px;white-space:nowrap}
+#sub-home .dan-name{width:104px;font-size:13.5px;white-space:nowrap}
+#sub-home .dan-cells{flex-wrap:wrap;max-width:190px;gap:3px}
+.stage-head{
+  display:flex;flex-direction:column;gap:1px;padding:10px 4px 0;
+}
+.stage-head strong{font-size:14px;color:var(--ink)}
+.stage-head small{font-size:11.5px;color:#8a95a5;font-weight:700}
 .dan-legend{
   display:flex;align-items:center;justify-content:center;gap:6px;
   font-size:11.5px;font-weight:700;color:#7a8698;
@@ -188,20 +194,35 @@ button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
   transition-delay:var(--d,0ms);
 }
 .tf-dot.loose{background:var(--good)}
-.tf-dot.taken{background:#e3e9f0;opacity:.6;transform:scale(.84)}
+.tf-dot.taken{background:#cfd8e3;opacity:.95;transform:scale(.86)}
 .tf-dot::after{
   content:'';position:absolute;inset:2px;opacity:0;
   border-top:2.5px solid var(--bad);transform:rotate(45deg);transform-origin:center;
   transition:opacity .25s;transition-delay:var(--d,0ms);
 }
 .tf-dot.taken::after{opacity:1}
-.tf-dot.keep{box-shadow:0 0 0 3px rgba(58,168,255,.35)}
+.tf-dot.keep{box-shadow:0 0 0 3px rgba(27,42,74,.22)}
 /* まだ とっていないとき: ばらが足りないことに目を向ける */
 .sub-stage[data-phase="split"] #tf-loose{animation:tf-pulse 1.4s ease-in-out infinite}
 @keyframes tf-pulse{0%,100%{background:transparent}50%{background:rgba(46,184,114,.18)}}
 /* あわせるとき: のこりとばらを一緒に光らせる */
 .sub-stage[data-phase="joined"] #tf-ten,
 .sub-stage[data-phase="joined"] #tf-loose{background:rgba(46,184,114,.16)}
+/* 10までのひきざん: ●をそのまま並べて かぞえる */
+.basic-stage{grid-template-columns:auto}
+.basic-stage #tf-ten{grid-column:1}
+.dot-row{
+  display:grid;grid-template-columns:repeat(5,22px);gap:5px;
+  padding:6px;justify-content:center;
+}
+.dot-row .tf-dot{width:22px;height:22px}
+.basic-stage[data-phase="after"] #tf-ten{background:rgba(46,184,114,.16)}
+/* くり下がりなし: 10のかたまりは手つかず、ばらだけ減る */
+.sub-stage[data-phase="tens"] #tf-ten{animation:tf-pulse 1.4s ease-in-out infinite}
+.sub-stage[data-phase="ones"] #tf-loose{animation:tf-pulse 1.4s ease-in-out infinite}
+.sub-stage[data-phase="done"] #tf-ten,
+.sub-stage[data-phase="done"] #tf-loose{background:rgba(46,184,114,.16)}
+.kuku-slot.ans-digit{width:1.1em;margin-right:2px}
 .sakura{
   display:flex;flex-direction:column;align-items:center;gap:10px;
   background:#fffaf2;border:2px dashed var(--carry);border-radius:14px;padding:10px 14px;width:100%;
@@ -386,6 +407,6 @@ button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
 <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js?v=20260805-shared-cloud-v1"></script>
 <script src="firebase-sync.js?v=20260820-google-login-recovery-v1"></script>
-<script src="math4-app.js?v=20261109-math4-sub-visual-v1"></script>
+<script src="math4-app.js?v=20261109-math4-sub-basics-v1"></script>
 </body>
 </html>

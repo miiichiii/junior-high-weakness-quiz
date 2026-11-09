@@ -847,7 +847,7 @@
       const subMastered = masteredMath4FactCount(record, "subFacts");
       const written = Object.values((record && record.levels) || {})
         .reduce((sum, level) => sum + (level && level.solved ? level.solved : 0), 0);
-      return `ひきざん ${subMastered}/36・九九 ${mastered}/81・ひっ算 ${written}問`;
+      return `ひきざん ${subMastered}/117・九九 ${mastered}/81・ひっ算 ${written}問`;
     }
     if (module.kind === "eiken-vocab") {
       const record = loadRecord(RECORD_KEYS.eikenVocabProgress, childId, null);

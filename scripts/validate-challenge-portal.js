@@ -79,7 +79,7 @@ assert(portalStyles.includes("prefers-reduced-motion"), "reduced-motion support 
 
 assert(index.includes("challenge-theme.css?v=20260804-quiz-focus-v1"), "quiz page does not load shared theme styles");
 assert(index.includes("challenge-theme.js?v=20260804-quiz-focus-v1"), "quiz page does not load the theme switcher");
-assert(index.includes("app.js?v=20260820-eldest-alias-v1") && index.includes("styles.css?v=20260820-eldest-alias-v1"), "quiz cache keys are stale");
+assert(index.includes("app.js?v=20261109-math4-fun-nav-v1") && index.includes("styles.css?v=20261109-math4-fun-nav-v1"), "quiz cache keys are stale");
 for (const id of ["quizOnlyHeader", "quizOnlyHome", "quizOnlyUnitNumber", "quizOnlyUnitTitle", "quizOnlyTier", "quizOnlyRetry", "quizOnlyAdvance"]) {
   assert(index.includes(`id="${id}"`), `focused quiz is missing ${id}`);
 }

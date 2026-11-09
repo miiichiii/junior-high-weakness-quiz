@@ -750,6 +750,8 @@
       link.className = "child-select-card";
       link.href = childPageUrl(child.id);
       link.dataset.childId = child.id;
+      // 漢字・算数マスターの「← ホーム」は index.html#child-<id> に戻り、このカードを表示する
+      link.id = `child-${child.id}`;
       link.addEventListener("click", (event) => {
         event.preventDefault();
         openChildPage(child.id);
@@ -6929,8 +6931,8 @@
     return out;
   }
 
-  // かけ算・わり算モジュール（math4-app.js）の進捗マージ。
-  // ロジックは math4-app.js の mergeMath4Progress と同一に保つこと。
+  // 算数マスター（math4.html）の進捗マージ。
+  // math4-core.js の mergeProgress と同じ結果を返すこと（scripts/validate-math4.js で突き合わせている）。
   const MATH4_LEVEL_IDS = ["mult1", "mult2", "div1"];
   function mergeMath4Progress(localRaw, remoteRaw) {
     if (!localRaw && !remoteRaw) return null;
@@ -6968,7 +6970,8 @@
           reviewDueAt: newer.reviewDueAt || "",
           masteredAt: newer.masteredAt || "",
           firstSeenAt: [ra.firstSeenAt, rb.firstSeenAt].filter(Boolean).sort()[0] || "",
-          lastSeenAt: (rb.lastSeenAt || "") > (ra.lastSeenAt || "") ? rb.lastSeenAt : (ra.lastSeenAt || "")
+          lastSeenAt: (rb.lastSeenAt || "") > (ra.lastSeenAt || "") ? rb.lastSeenAt : (ra.lastSeenAt || ""),
+          lastPracticedDay: [ra.lastPracticedDay, rb.lastPracticedDay].filter(Boolean).sort().slice(-1)[0] || ""
         };
       });
       return merged;
@@ -7434,5 +7437,13 @@
     openChildPage(state.activeChildId, false);
   } else {
     showHomeScreen(false);
+    scrollToChildCardFromHash();
+  }
+
+  // カードはJSで描くので、#child-<id> へのブラウザ標準のスクロールが効かない。描いたあとで合わせる
+  function scrollToChildCardFromHash() {
+    const match = /^#(child-[\w-]+)$/.exec(window.location.hash || "");
+    const card = match && document.getElementById(match[1]);
+    if (card) card.scrollIntoView({ block: "start" });
   }
 })();

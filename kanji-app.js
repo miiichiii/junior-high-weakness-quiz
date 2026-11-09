@@ -21,8 +21,8 @@ const params = new URLSearchParams(location.search);
 const childId = deck.childIds.includes(params.get('child')) ? params.get('child') : deck.childIds[0];
 const DEBUG_DATE = /^\d{4}-\d{2}-\d{2}$/.test(params.get('date') || '') ? params.get('date') : null;
 
-document.getElementById('back-link').href = `index.html?child=${childId}`;
-document.getElementById('result-home').href = `index.html?child=${childId}`;
+document.getElementById('back-link').href = `index.html#child-${childId}`;
+document.getElementById('result-home').href = `index.html#child-${childId}`;
 document.getElementById('sync-chip').href = `index.html?child=${childId}`;
 
 /* 指で連続して画を書くと「ダブルタップ」とみなされ、iOSなどで拡大や

@@ -200,6 +200,9 @@ const child3Record = {
       "2x1": { attempts: 2, correct: 1, reviewDueAt: "2026-08-20", lastClearDay: "2026-08-19", lastSeenAt: localIso(2026, 8, 19, 18) },
       "2x2": { attempts: 1, correct: 1, masteredAt: localIso(2026, 8, 18, 18), lastSeenAt: localIso(2026, 8, 18, 18) }
     },
+    subFacts: {
+      "13-8": { attempts: 1, correct: 1, reviewDueAt: "2026-08-21", lastClearDay: "2026-08-20", lastSeenAt: localIso(2026, 8, 20, 9) }
+    },
     levels: {
       mult1: { solved: 2, clean: 1, lastSessionDay: "2026-08-20" }
     },
@@ -214,8 +217,8 @@ const child3 = model.buildChildSummary("child-3", child3Record, now);
 assert(JSON.stringify(child3Record) === child3Before, "child-3 input was mutated");
 assertEqual([child3.today, child3.week, child3.total, child3.accuracy, child3.review], [5, 8, 8, 75, 2], "child-3 headline metrics");
 assert(child3.modules.length === 2, "child-3 must have kanji and math modules");
-assertEqual(child3.modules.map((row) => row.total), [3, 5], "child-3 module totals");
-assertEqual(child3.modules.map((row) => row.progressLabel), ["2/76字学習・1字マスター", "九九1/81・ひっ算2問"], "child-3 module progress");
+assertEqual(child3.modules.map((row) => row.total), [3, 6], "child-3 module totals");
+assertEqual(child3.modules.map((row) => row.progressLabel), ["2/76字学習・1字マスター", "ひきざん0/117・九九1/81・ひっ算2問"], "child-3 module progress");
 assertEqual(child3.daily7.map((row) => row.answered), [0, 0, 3, 0, 0, 0, 5], "child-3 daily values");
 
 for (const childId of ["child-1", "child-2", "child-3"]) {
@@ -251,7 +254,7 @@ const redirect = fs.readFileSync(path.join(ROOT, "public-origin.js"), "utf8");
 for (const id of ["viewerAccount", "refreshButton", "signOutButton", "signInButton", "dashboardContent", "familyOverview", "childTabs", "childDetail"]) {
   assert(html.includes(`id="${id}"`), `family dashboard is missing ${id}`);
 }
-assert(html.includes("family-dashboard-model.js?v=20260820-eldest-alias-v1") && html.includes("family-dashboard.js?v=20260820-eldest-alias-v1"), "family dashboard cache wiring is stale");
+assert(html.includes("family-dashboard-model.js?v=20261109-math4-fun-nav-v1") && html.includes("family-dashboard.js?v=20260820-eldest-alias-v1"), "family dashboard cache wiring is stale");
 assert(app.includes('id: "child-1"') && app.includes('id: "child-2"') && app.includes('id: "child-3"'), "family dashboard must always list all three children");
 assert(app.includes("getFamilyDashboardRecords") && !app.includes("getRecord("), "family dashboard must use only the shared family-record API");
 assert(app.includes("未連携") && app.includes("読込失敗") && app.includes("0問という意味ではありません"), "zero, unlinked, and read errors are not distinguished");

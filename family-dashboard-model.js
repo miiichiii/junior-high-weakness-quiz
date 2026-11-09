@@ -430,7 +430,10 @@
 
   function mathProgress(field, today) {
     const math = object(field);
-    const facts = Object.entries(object(math.facts));
+    const kukuFacts = Object.entries(object(math.facts));
+    const subFacts = Object.entries(object(math.subFacts));
+    // 九九（facts）とひきざん（subFacts）は同じ形の記録なので、回数・復習はまとめて数える
+    const facts = [...kukuFacts, ...subFacts];
     const levels = Object.values(object(math.levels));
     const factAnswered = facts.reduce((sum, [, row]) => sum + number(row?.attempts), 0);
     const factCorrect = facts.reduce((sum, [, row]) => sum + number(row?.correct), 0);
@@ -438,7 +441,7 @@
     const writtenCorrect = levels.reduce((sum, row) => sum + number(row?.clean), 0);
     const answered = factAnswered + writtenAnswered;
     const correct = factCorrect + writtenCorrect;
-    const mastered = facts.filter(([, row]) => Boolean(row?.masteredAt)).length;
+    const masteredIn = (rows) => rows.filter(([, row]) => Boolean(row?.masteredAt)).length;
     const review = facts.filter(([, row]) => (
       row?.reviewDueAt && String(row.reviewDueAt) <= today && row?.lastClearDay !== today
     )).length;
@@ -450,7 +453,7 @@
         id: CHILD3_MODULES[1][0],
         label: CHILD3_MODULES[1][1],
         emoji: CHILD3_MODULES[1][2],
-        progressLabel: `九九${mastered}/81・ひっ算${writtenAnswered}問`,
+        progressLabel: `ひきざん${masteredIn(subFacts)}/117・九九${masteredIn(kukuFacts)}/81・ひっ算${writtenAnswered}問`,
         total: answered,
         accuracy: percent(correct, answered),
         review,

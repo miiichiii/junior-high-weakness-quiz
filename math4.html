@@ -7,6 +7,7 @@
 <style>
 :root{
   --ink:#1b2a4a;
+  --muted:#7a8698;
   --paper:#ffffff;
   --bg:#fdf6ec;
   --accent:#3aa8ff;
@@ -15,109 +16,201 @@
   --bad:#e8505b;
   --carry:#ff9f43;
   --guide:#dfe6ee;
+  --gold:#ffc94d;
   --radius:18px;
+  /* モードごとの色（ひきざん・九九・かけ算・わり算） */
+  --sub:#ff7a6b;--sub-soft:#fff0ee;
+  --kuku:#3aa8ff;--kuku-soft:#eaf5ff;
+  --mult:#2eb872;--mult-soft:#e9fbf1;
+  --div:#8a6cff;--div-soft:#f1edff;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
+html,body{min-height:100%}
 body{
   font-family:"Hiragino Maru Gothic ProN","BIZ UDGothic","Yu Gothic",system-ui,sans-serif;
   background:var(--bg);
+  background-image:radial-gradient(circle at 12% 8%,#fff3d6 0,transparent 32%),radial-gradient(circle at 92% 30%,#e7f4ff 0,transparent 30%);
   color:var(--ink);
   overscroll-behavior:none;
   display:flex;flex-direction:column;align-items:center;
-  padding:10px 12px 24px;
+  padding:10px 16px 28px;
 }
 .hidden{display:none !important}
+button{font-family:inherit}
+
+/* ---- ヘッダー: 戻るは左上の1つだけ。行き先の名前を書く ---- */
 header.topbar{
   width:100%;max-width:480px;
-  display:flex;align-items:center;justify-content:space-between;gap:8px;
-  padding:4px 2px 10px;
+  display:flex;align-items:center;gap:8px;
+  padding:2px 0 12px;
 }
-header.topbar h1{font-size:16.5px;letter-spacing:.04em;flex:1;text-align:center}
 #back-link{
-  font-size:13px;font-weight:700;color:#7a8698;text-decoration:none;
-  background:#fff;border-radius:999px;padding:8px 12px;
+  font-size:14px;font-weight:700;color:var(--ink);text-decoration:none;
+  background:#fff;border-radius:999px;padding:9px 14px;
+  box-shadow:0 2px 6px rgba(27,42,74,.12);white-space:nowrap;
+  max-width:44%;overflow:hidden;text-overflow:ellipsis;
+}
+#back-link:active{transform:translateY(1px)}
+.topbar-title{flex:1;min-width:0;text-align:center;font-size:15px;font-weight:700;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#star-chip{
+  display:inline-flex;align-items:center;gap:3px;
+  background:#fff;border-radius:999px;padding:7px 11px;
+  font-size:14px;font-weight:700;color:#b07a00;
   box-shadow:0 2px 6px rgba(27,42,74,.12);white-space:nowrap;
 }
+#star-chip.bump{animation:bump .5s}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.3)}100%{transform:scale(1)}}
 #sound-btn{
   border:none;background:#fff;border-radius:50%;
-  width:38px;height:38px;font-size:18px;
+  width:38px;height:38px;font-size:17px;
   box-shadow:0 2px 6px rgba(27,42,74,.12);cursor:pointer;flex-shrink:0;
 }
 main{width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px}
 
-/* ---- モード選択 ---- */
-#mode-grid{display:flex;flex-direction:column;gap:10px}
-.mode-card{
-  background:var(--paper);border:none;border-radius:var(--radius);
-  box-shadow:0 3px 10px rgba(27,42,74,.08);
-  padding:14px 16px;text-align:left;cursor:pointer;
-  display:flex;align-items:center;gap:12px;
-  font-family:inherit;
+/* ---- ねこ先生（ふきだし） ---- */
+.buddy{display:flex;align-items:flex-end;gap:8px}
+.buddy-face{font-size:40px;line-height:1;flex-shrink:0;transition:transform .2s}
+.buddy-face.hop{animation:hop .5s}
+@keyframes hop{0%,100%{transform:translateY(0)}40%{transform:translateY(-10px) rotate(-6deg)}}
+.buddy-say{
+  position:relative;flex:1;min-height:44px;
+  background:#fff;border-radius:16px;padding:10px 14px;
+  font-size:15px;font-weight:700;line-height:1.5;
+  box-shadow:0 2px 8px rgba(27,42,74,.08);
 }
-.mode-card-emoji{font-size:28px;flex-shrink:0}
-.mode-card-body{display:flex;flex-direction:column;gap:2px;min-width:0}
-.mode-card h3{font-size:16.5px}
-.mode-card-stat{font-size:12.5px;color:#7a8698;font-weight:700}
-.mode-card.locked{opacity:.55}
-.mode-card:active{transform:translateY(1px)}
+.buddy-say::before{
+  content:'';position:absolute;left:-7px;bottom:12px;
+  border:7px solid transparent;border-right-color:#fff;border-left:0;
+}
+.buddy-say.good{color:#1f8a55}
+.buddy-say.bad{color:#c2410c}
+.buddy-say.wow{color:#b07a00}
+.buddy-say small{display:block;font-size:12.5px;color:var(--muted);font-weight:700}
 
-/* ---- 九九トップ（段えらび） ---- */
-#kuku-home,#sub-home{display:flex;flex-direction:column;gap:10px}
-.kuku-order-note{font-size:12.5px;font-weight:700;color:#7a8698;text-align:center;padding:2px 0}
+/* ---- メニュー ---- */
+#menu-screen{display:flex;flex-direction:column;gap:14px}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.menu-section-title{font-size:13px;font-weight:700;color:var(--muted);padding:4px 2px 0}
+.mode-tile{
+  --c:var(--accent);--soft:var(--kuku-soft);
+  position:relative;
+  display:flex;flex-direction:column;align-items:flex-start;gap:6px;
+  background:var(--paper);border:none;border-radius:var(--radius);
+  box-shadow:0 4px 0 var(--soft),0 6px 16px rgba(27,42,74,.08);
+  padding:14px 14px 12px;text-align:left;cursor:pointer;min-width:0;
+}
+.mode-tile:active{transform:translateY(2px);box-shadow:0 2px 0 var(--soft),0 3px 8px rgba(27,42,74,.08)}
+.mode-tile[data-color="sub"]{--c:var(--sub);--soft:var(--sub-soft)}
+.mode-tile[data-color="kuku"]{--c:var(--kuku);--soft:var(--kuku-soft)}
+.mode-tile[data-color="mult"]{--c:var(--mult);--soft:var(--mult-soft)}
+.mode-tile[data-color="div"]{--c:var(--div);--soft:var(--div-soft)}
+.mode-glyph{
+  width:48px;height:48px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--c);color:#fff;font-size:30px;font-weight:700;line-height:1;
+}
+.mode-tile h3{font-size:17px;line-height:1.25}
+.mode-tile .mode-sub{font-size:12px;font-weight:700;color:var(--muted);line-height:1.35}
+.mode-bar{width:100%;height:9px;border-radius:999px;background:#eef2f6;overflow:hidden;display:flex}
+.mode-bar i{display:block;height:100%}
+.mode-bar .bar-master{background:var(--gold)}
+.mode-bar .bar-clear{background:var(--c);opacity:.75}
+.mode-badge{
+  position:absolute;top:-8px;right:10px;
+  font-size:11.5px;font-weight:700;color:#fff;background:var(--bad);
+  border-radius:999px;padding:3px 9px;box-shadow:0 2px 6px rgba(232,80,91,.35);
+}
+.mode-badge.next{background:var(--c);box-shadow:none}
+.menu-grid.small .mode-tile{padding:12px 10px 10px;gap:5px}
+.menu-grid.small{grid-template-columns:repeat(3,1fr);gap:10px}
+.menu-grid.small .mode-glyph{width:40px;height:40px;font-size:24px;border-radius:12px}
+.menu-grid.small h3{font-size:14px}
+.mode-tile.locked{opacity:.6}
+.mode-tile.locked .mode-glyph{background:#c7cfda}
+
+/* ---- ひきざん・九九の一覧 ---- */
+#drill-screen{display:flex;flex-direction:column;gap:10px}
+#drill-screen[data-drill="sub"]{--c:var(--sub);--soft:var(--sub-soft)}
+#drill-screen[data-drill="kuku"]{--c:var(--kuku);--soft:var(--kuku-soft)}
+.drill-hero{
+  display:flex;align-items:center;gap:12px;
+  background:var(--paper);border-radius:var(--radius);padding:14px;
+  box-shadow:0 3px 10px rgba(27,42,74,.08);
+}
+.drill-hero .mode-glyph{background:var(--c);flex-shrink:0}
+.drill-hero-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.drill-hero h2{font-size:19px}
+.drill-hero .mode-bar .bar-clear{background:var(--c)}
+.drill-hero p{font-size:12.5px;font-weight:700;color:var(--muted)}
+.big-btn{
+  width:100%;border:none;border-radius:var(--radius);cursor:pointer;
+  background:var(--c,var(--accent));color:#fff;
+  padding:15px 16px;font-size:18px;font-weight:700;
+  box-shadow:0 4px 0 rgba(0,0,0,.14);
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.big-btn small{font-size:12.5px;font-weight:700;opacity:.92}
+.big-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.14)}
+.order-note{font-size:12.5px;font-weight:700;color:var(--muted);text-align:center;padding:2px 0}
 .dan-row{
   position:relative;
   display:flex;align-items:center;gap:10px;
   background:var(--paper);border:none;border-radius:14px;
-  padding:12px 14px;cursor:pointer;font-family:inherit;
+  padding:12px 14px;cursor:pointer;
   box-shadow:0 2px 8px rgba(27,42,74,.08);
 }
 .dan-row:active{transform:translateY(1px)}
-.dan-row.recommended{outline:3px solid var(--accent);background:#f4faff}
+.dan-row.recommended{outline:3px solid var(--c);background:var(--soft)}
+.dan-row.done .dan-name::after{content:' 🏅'}
 .dan-reco{
   position:absolute;top:-9px;right:12px;
   font-size:11px;font-weight:700;color:#fff;
-  background:var(--accent);border-radius:999px;padding:2px 10px;
+  background:var(--c);border-radius:999px;padding:2px 10px;
 }
-.dan-name{font-size:15px;font-weight:700;color:var(--ink);width:64px;text-align:left;flex-shrink:0}
-.dan-cells{display:flex;gap:3px;flex:1}
+.dan-name{font-size:15px;font-weight:700;color:var(--ink);width:96px;text-align:left;flex-shrink:0;white-space:nowrap}
+.dan-cells{display:flex;flex-wrap:wrap;gap:3px;flex:1;max-width:190px}
 .dan-cell{width:13px;height:13px;border-radius:4px;background:#e8edf3;display:inline-block}
 .dan-cell.learn{background:#bcd5ff}
 .dan-cell.clear{background:#8fd6ae}
-.dan-cell.master{background:#ffc94d}
-.dan-count{font-size:12.5px;font-weight:700;color:#7a8698;min-width:32px;text-align:right}
-#sub-home .dan-name{width:104px;font-size:13.5px;white-space:nowrap}
-#sub-home .dan-cells{flex-wrap:wrap;max-width:190px;gap:3px}
-.stage-head{
-  display:flex;flex-direction:column;gap:1px;padding:10px 4px 0;
-}
-.stage-head strong{font-size:14px;color:var(--ink)}
+.dan-cell.master{background:var(--gold)}
+.dan-count{font-size:12.5px;font-weight:700;color:var(--muted);min-width:36px;text-align:right;margin-left:auto}
+.stage-head{display:flex;flex-direction:column;gap:1px;padding:10px 4px 0}
+.stage-head strong{font-size:14.5px;color:var(--ink)}
 .stage-head small{font-size:11.5px;color:#8a95a5;font-weight:700}
 .dan-legend{
-  display:flex;align-items:center;justify-content:center;gap:6px;
-  font-size:11.5px;font-weight:700;color:#7a8698;
+  display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;
+  font-size:11.5px;font-weight:700;color:var(--muted);padding-top:4px;
 }
 
-/* ---- セッション共通 ---- */
-#session-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:2px 4px;
+/* ---- もんだい画面 ---- */
+#session-head{display:flex;flex-direction:column;gap:6px;padding:0 2px}
+.sess-line{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#session-title{font-size:16px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sess-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+#session-progress{font-size:13px;font-weight:700;color:var(--muted)}
+#combo{
+  font-size:12.5px;font-weight:700;color:#fff;background:#ff8a3d;
+  border-radius:999px;padding:3px 9px;
 }
-#session-head h2{font-size:16px}
-#session-progress{font-size:13px;font-weight:700;color:#7a8698}
+#combo.pop{animation:bump .45s}
+.sess-bar{height:12px;border-radius:999px;background:#fff;box-shadow:inset 0 0 0 2px #eef2f6;overflow:hidden}
+#sess-fill{
+  height:100%;width:0;border-radius:999px;
+  background:linear-gradient(90deg,var(--c,var(--accent)),#ffd166);
+  transition:width .45s ease;
+}
+#session-screen[data-color="sub"]{--c:var(--sub)}
+#session-screen[data-color="kuku"]{--c:var(--kuku)}
+#session-screen[data-color="mult"]{--c:var(--mult)}
+#session-screen[data-color="div"]{--c:var(--div)}
 .card{
   background:var(--paper);border-radius:var(--radius);
   box-shadow:0 3px 10px rgba(27,42,74,.08);
   padding:14px;position:relative;
 }
-#feedback{
-  min-height:30px;text-align:center;font-size:14.5px;font-weight:700;
-}
-.feedback.good{color:var(--good)}
-.feedback.bad{color:var(--bad)}
 #controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 button.act{
-  font-family:inherit;font-size:15px;font-weight:700;
+  font-size:15px;font-weight:700;
   padding:11px 18px;border-radius:999px;border:none;cursor:pointer;
   box-shadow:0 3px 0 rgba(27,42,74,.15);
 }
@@ -125,22 +218,23 @@ button.act:active{transform:translateY(2px);box-shadow:none}
 button.primary{background:var(--accent);color:#fff}
 button.success{background:var(--good);color:#fff}
 button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
+#btn-next{font-size:18px;padding:13px 30px}
 .ghost-btn{
-  font-family:inherit;font-size:13px;font-weight:700;color:var(--accent-deep);
+  font-size:13px;font-weight:700;color:var(--accent-deep);
   background:#eaf5ff;border:none;border-radius:999px;padding:7px 14px;cursor:pointer;
 }
 
 /* ---- 九九カード ---- */
 .kuku-card{display:flex;flex-direction:column;align-items:center;gap:12px}
 .kuku-kind{font-size:12px;font-weight:700;color:#7a8698}
-.kuku-equation{display:flex;align-items:center;gap:10px;font-size:34px;font-weight:700}
+.kuku-equation{display:flex;align-items:center;gap:10px;font-size:38px;font-weight:700}
 .kuku-op{color:#9aa5b5;font-size:26px}
 .kuku-slot{
   width:1.6em;height:1.15em;display:inline-flex;align-items:center;justify-content:center;
   border:3px dashed var(--accent);border-radius:12px;color:var(--accent-deep);
   background:#eaf5ff;font-size:.85em;
 }
-.kuku-slot.correct{border-style:solid;border-color:var(--good);background:#e9fbf1;color:var(--good)}
+.kuku-slot.correct{border-style:solid;border-color:var(--good);background:#e9fbf1;color:var(--good);animation:pop-flash .32s}
 .kuku-slot.drop-hover{background:#d8ecff}
 .kuku-array{display:flex;flex-direction:column;gap:4px;padding:8px;background:#f7f9fc;border-radius:12px}
 .kuku-array.hidden{display:none}
@@ -240,18 +334,20 @@ button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
 
 /* ---- ドラッグの数字タイル ---- */
 .digit-tile{
-  width:44px;height:44px;border-radius:12px;border:none;
-  background:#fff;box-shadow:0 2px 6px rgba(27,42,74,.15);
-  font-size:19px;font-weight:700;color:var(--ink);cursor:grab;
+  width:52px;height:52px;border-radius:14px;border:none;
+  background:#fff;box-shadow:0 3px 0 #d5dde8,0 4px 10px rgba(27,42,74,.10);
+  font-size:23px;font-weight:700;color:var(--ink);cursor:grab;
   touch-action:none;font-family:inherit;
 }
 .digit-tile:active{cursor:grabbing}
-#digit-palette{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:6px 0}
+#digit-palette{display:grid;grid-template-columns:repeat(5,52px);gap:10px;justify-content:center;padding:4px 0}
+#digit-palette:empty{display:none}
+#digit-palette .palette-hint{grid-column:1/-1}
 .palette-hint{font-size:13px;font-weight:700;color:var(--accent-deep);text-align:center}
 .digit-drag-ghost{
   position:fixed;z-index:80;pointer-events:none;
-  width:46px;height:46px;border-radius:12px;background:var(--accent);color:#fff;
-  display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;
+  width:54px;height:54px;border-radius:14px;background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;
   transform:translate(-50%,-50%);box-shadow:0 4px 10px rgba(27,42,74,.3);
 }
 
@@ -281,6 +377,7 @@ button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
 .calc-cell.correct-flash{animation:pop-flash .32s}
 @keyframes pop-flash{0%{transform:scale(1.3)}100%{transform:scale(1)}}
 .calc-cell.shake{animation:shake .35s}
+.shake{animation:shake .35s}
 @keyframes shake{
   0%,100%{transform:translateX(0)}
   25%{transform:translateX(-6px)}
@@ -309,27 +406,31 @@ button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
 }
 #scratch-actions{display:flex;justify-content:flex-end}
 
-/* ---- 結果画面 ---- */
-#result-screen.show,#result-screen:not(.hidden){display:flex}
-#result-screen{
-  flex-direction:column;align-items:center;justify-content:center;
-  gap:12px;padding:20px 0;
-}
-#result-screen h2{font-size:22px;text-align:center}
-#result-summary{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+/* ---- けっか ---- */
+#result-screen{display:flex;flex-direction:column;align-items:center;gap:14px;padding:6px 0}
+.result-face{font-size:72px;line-height:1;animation:hop .8s ease 2}
+#result-title{font-size:24px;text-align:center}
+#result-sub{font-size:14px;font-weight:700;color:var(--muted);text-align:center}
+.result-stars{font-size:30px;letter-spacing:4px}
+#result-summary{display:flex;gap:8px;justify-content:center;width:100%;max-width:380px}
 #result-summary .stat{
-  background:#fff;border-radius:14px;padding:10px 16px;text-align:center;
-  box-shadow:0 2px 8px rgba(27,42,74,.08);min-width:80px;
+  flex:1 1 0;min-width:0;
+  background:#fff;border-radius:14px;padding:10px 4px;text-align:center;
+  box-shadow:0 2px 8px rgba(27,42,74,.08);
 }
-#result-summary .stat b{display:block;font-size:22px;color:var(--accent-deep)}
-#result-summary .stat span{font-size:12px;color:#7a8698;font-weight:700}
-#result-list{display:flex;flex-direction:column;gap:6px;max-width:320px;width:100%}
-#result-list .row{
-  background:#fff;border-radius:14px;padding:8px 16px;
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
-  box-shadow:0 2px 8px rgba(27,42,74,.08);font-size:15px;font-weight:700;
+#result-summary .stat b{display:block;font-size:21px;color:var(--accent-deep);white-space:nowrap}
+#result-summary .stat span{font-size:11.5px;color:var(--muted);font-weight:700;white-space:nowrap}
+#result-mastered{
+  background:#fff8e1;border:2px solid var(--gold);border-radius:14px;
+  padding:10px 14px;font-size:14px;font-weight:700;text-align:center;line-height:1.6;max-width:340px;
 }
-#result-list .row .st{font-size:13px;letter-spacing:1px}
+#result-list{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:360px}
+#result-list .chip{
+  background:#fff;border-radius:999px;padding:5px 11px;font-size:13.5px;font-weight:700;
+  box-shadow:0 2px 6px rgba(27,42,74,.08);
+}
+#result-list .chip.miss{background:#fff1ec;color:#c2410c}
+.result-actions{display:flex;flex-direction:column;gap:8px;width:100%;max-width:340px}
 
 #celebrate{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:50}
 #celebrate span{position:absolute;font-size:26px;animation:pop 1.1s ease-out forwards}
@@ -338,32 +439,34 @@ button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
   15%{opacity:1}
   100%{transform:translateY(-130px) scale(1.25) rotate(25deg);opacity:0}
 }
+@media (prefers-reduced-motion: reduce){
+  *{animation:none !important;transition:none !important}
+}
 </style>
 </head>
 <body>
 <header class="topbar">
-  <a id="back-link" href="index.html?child=child-3">← もどる</a>
-  <h1>🔢 夏休み 算数マスター</h1>
+  <a id="back-link" href="index.html#child-child-3">← ホーム</a>
+  <span class="topbar-title" id="topbar-title">🔢 算数マスター</span>
+  <span id="star-chip" title="ノーミスで とけた かず">⭐ <b id="star-count">0</b></span>
   <button id="sound-btn" aria-label="おと">🔊</button>
 </header>
 
 <main>
-  <section id="mode-screen">
-    <div id="mode-grid"></div>
-  </section>
+  <section id="menu-screen" class="hidden"></section>
 
-  <section id="kuku-screen" class="hidden">
-    <div id="kuku-home"></div>
-  </section>
-
-  <section id="sub-screen" class="hidden">
-    <div id="sub-home"></div>
-  </section>
+  <section id="drill-screen" class="hidden"></section>
 
   <section id="session-screen" class="hidden">
     <div id="session-head">
-      <h2 id="session-title"></h2>
-      <span id="session-progress"></span>
+      <div class="sess-line">
+        <h2 id="session-title"></h2>
+        <div class="sess-right">
+          <span id="combo" class="hidden"></span>
+          <span id="session-progress"></span>
+        </div>
+      </div>
+      <div class="sess-bar"><div id="sess-fill"></div></div>
     </div>
 
     <div class="card" id="work-card">
@@ -371,13 +474,16 @@ button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
     </div>
 
     <div id="digit-palette"></div>
-    <div id="feedback" class="feedback"></div>
+
+    <div class="buddy" id="buddy">
+      <span class="buddy-face" id="buddy-face">😺</span>
+      <p class="buddy-say" id="buddy-say"></p>
+    </div>
 
     <div id="controls">
       <button class="act ghost" id="btn-scratch">✏️ らくがき</button>
       <button class="act ghost hidden" id="btn-hint">💡 ヒント</button>
       <button class="act success hidden" id="btn-next">つぎへ →</button>
-      <button class="act ghost hidden" id="btn-back-modes">モードえらび</button>
     </div>
 
     <div class="card hidden" id="scratch-panel">
@@ -389,13 +495,16 @@ button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
   </section>
 
   <section id="result-screen" class="hidden">
+    <div class="result-face" id="result-face">😻</div>
     <h2 id="result-title"></h2>
+    <p id="result-sub"></p>
+    <div class="result-stars" id="result-stars"></div>
     <div id="result-summary"></div>
+    <div id="result-mastered" class="hidden"></div>
     <div id="result-list"></div>
-    <div id="controls">
-      <button class="act primary" id="btn-result-again">もういちど</button>
-      <button class="act ghost" id="btn-result-modes">モードえらび</button>
-      <a id="result-home" href="index.html?child=child-3"><button class="act ghost">ホームへ もどる</button></a>
+    <div class="result-actions">
+      <button class="big-btn" id="btn-result-next"></button>
+      <button class="act ghost" id="btn-result-again">もういちど おなじ れんしゅう</button>
     </div>
   </section>
 </main>
@@ -407,6 +516,7 @@ button.ghost{background:#fff;color:#5a6678;border:2px solid var(--guide)}
 <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js?v=20260805-shared-cloud-v1"></script>
 <script src="firebase-sync.js?v=20260820-google-login-recovery-v1"></script>
-<script src="math4-app.js?v=20261109-math4-sub-basics-v1"></script>
+<script src="math4-core.js?v=20261109-math4-fun-nav-v1"></script>
+<script src="math4-app.js?v=20261109-math4-fun-nav-v1"></script>
 </body>
 </html>

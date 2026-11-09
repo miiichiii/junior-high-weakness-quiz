@@ -2,33 +2,26 @@
 'use strict';
 
 /* =====================================================================
-   夏休み 算数マスター（4年生）
-   - 九九81問は kanji-app.js と同じ間隔反復（別の日に2回クリアでマスター）
-   - 3桁×1桁／3桁×2桁のかけ算ひっ算、3桁÷1桁のわり算ひっ算は
-     問題をその場で生成し、桁ごとにドラッグで数字・くり上がりを置いていく
-   - 記録: localStorage weaknessQuiz:<child>:math4Progress + 既存statsに加算
+   夏休み 算数マスター（4年生）の画面
+   - 出題表・採点・復習スケジュール・ひっ算の盤面は math4-core.js（Math4Core）
+   - ここは「画面の切りかえ」「1問ずつの操作（ドラッグ）」「演出」「保存・同期」だけ
+   画面のつながり（戻るボタンとスマホの「戻る」は同じ動きをする）:
+     メニュー ─┬─ ひきざん／九九の いちらん ── もんだい ── けっか
+               └─ ひっ算（かけ算・わり算） ── もんだい ── けっか
    ===================================================================== */
+
+const Core = window.Math4Core;
+const { DRILLS, LEVELS } = Core;
 
 const CHILD_IDS = ['child-3'];
 const params = new URLSearchParams(location.search);
 const childId = CHILD_IDS.includes(params.get('child')) ? params.get('child') : CHILD_IDS[0];
 const DEBUG_DATE = /^\d{4}-\d{2}-\d{2}$/.test(params.get('date') || '') ? params.get('date') : null;
+// ホームの子どもカード（漢字マスターとならんで このモジュールへのリンクがある所）
+const HOME_URL = `index.html#child-${childId}`;
 
-document.getElementById('back-link').href = `index.html?child=${childId}`;
-
-/* ---------- 日付・保存ユーティリティ（kanji-app.jsと同じ考え方） ---------- */
-function todayKey(date) {
-  if (DEBUG_DATE && !date) return DEBUG_DATE;
-  const d = date || new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-function addDays(dayKey, days) {
-  const [y, m, d] = dayKey.split('-').map(Number);
-  return todayKey(new Date(y, m - 1, d + days));
-}
+/* ---------- 日付・保存 ---------- */
+function todayKey() { return DEBUG_DATE || Core.dayKey(new Date()); }
 function nowIso() { return new Date().toISOString(); }
 function recordKey(name) { return `weaknessQuiz:${childId}:${name}`; }
 function readJson(key, fallback) {
@@ -43,209 +36,14 @@ function writeJson(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
 }
 
-/* ---------- 九九 出題データ ---------- */
-// 学校でならう定番の順（やさしい段から）。1の段は最後にかるく確認する
-const DAN_ORDER = [2, 5, 3, 4, 6, 7, 8, 9, 1];
-const KUKU_FACTS = [];
-DAN_ORDER.forEach((a, danIndex) => {
-  for (let b = 1; b <= 9; b++) {
-    KUKU_FACTS.push({ id: `${a}x${b}`, a, b, product: a * b, order: danIndex * 9 + (b - 1) });
-  }
-});
-const KUKU_SCHEDULE = { newPerDay: 9, maxReviewsPerSession: 14, reviewIntervals: [1, 3, 7, 14], masterySessions: 2 };
-
-/* ---------- ひきざん 出題データ（基本 → くり下がりなし → くり下がり） ---------- */
-// ①10までのひきざん45問 → ②10をこえるくり下がりなし36問 → ③くり下がり36問 の計117問。
-// ③だけを先にやっても身につかないので、学校の順どおり①から積み上げる。
-// kind: basic=10まで（こたえ1けた） / noborrow=ばらから引く（こたえ2けた） / borrow=10のかたまりをくずす
-const SUB_STAGES = [
-  {
-    id: 'basic', kind: 'basic', label: '① 10までの ひきざん',
-    note: 'ぜんぶの もとになる ひきざん',
-    groups: [
-      { id: 'basic5', label: '2〜5から', minuends: [2, 3, 4, 5] },
-      { id: 'basic6', label: '6から', minuends: [6] },
-      { id: 'basic7', label: '7から', minuends: [7] },
-      { id: 'basic8', label: '8から', minuends: [8] },
-      { id: 'basic9', label: '9から', minuends: [9] },
-      { id: 'basic10', label: '10から', minuends: [10] }
-    ]
-  },
-  {
-    id: 'noborrow', kind: 'noborrow', label: '② 10より 大きい かず',
-    note: '10の かたまりは そのまま。ばらから ひく',
-    groups: [
-      { id: 'nb14', label: '11〜14から', minuends: [11, 12, 13, 14] },
-      { id: 'nb16', label: '15・16から', minuends: [15, 16] },
-      { id: 'nb17', label: '17から', minuends: [17] },
-      { id: 'nb18', label: '18から', minuends: [18] }
-    ]
-  },
-  {
-    id: 'borrow', kind: 'borrow', label: '③ くり下がりの ひきざん',
-    note: '10の かたまりを くずして ひく',
-    groups: [
-      { id: 'sub9', label: 'ひく9', subtrahends: [9] },
-      { id: 'sub8', label: 'ひく8', subtrahends: [8] },
-      { id: 'sub7', label: 'ひく7', subtrahends: [7] },
-      { id: 'sub6', label: 'ひく6', subtrahends: [6] },
-      { id: 'sub5', label: 'ひく5', subtrahends: [5] },
-      { id: 'sub432', label: 'ひく4・3・2', subtrahends: [4, 3, 2] }
-    ]
-  }
-];
-const SUB_FACTS = [];
-const SUB_GROUPS = [];
-(function buildSubFacts() {
-  let order = 0;
-  const add = (m, b, kind, groupId) => {
-    SUB_FACTS.push({ id: `${m}-${b}`, m, b, answer: m - b, kind, groupId, order: order++ });
-  };
-  SUB_STAGES.forEach((stage) => {
-    stage.groups.forEach((group) => {
-      SUB_GROUPS.push({ ...group, kind: stage.kind, stageId: stage.id });
-      if (stage.kind === 'borrow') {
-        // 一の位より引く数が大きい = くり下がりが必要
-        group.subtrahends.forEach((b) => {
-          for (let m = 11; m <= b + 9; m++) add(m, b, stage.kind, group.id);
-        });
-        return;
-      }
-      group.minuends.forEach((m) => {
-        // basic: 1〜m-1 を引く / noborrow: ばら（m-10）の分だけ引ける
-        const maxB = stage.kind === 'basic' ? m - 1 : m - 10;
-        for (let b = 1; b <= maxB; b++) add(m, b, stage.kind, group.id);
-      });
-    });
-  });
-})();
-const SUB_SCHEDULE = { newPerDay: 8, maxReviewsPerSession: 12, reviewIntervals: [1, 3, 7, 14], masterySessions: 2 };
-function subFactsForGroup(groupId) {
-  return SUB_FACTS.filter((f) => f.groupId === groupId);
-}
-function subGroupById(id) { return SUB_GROUPS.find((g) => g.id === id); }
-
-/* ---------- ひっ算レベル定義 ---------- */
-const LEVELS = [
-  { id: 'mult1', kind: 'mult', label: '3けた × 1けた', emoji: '✖️', problemsPerSession: 5 },
-  { id: 'mult2', kind: 'mult', label: '3けた × 2けた', emoji: '✖️', problemsPerSession: 4, requires: 'mult1' },
-  { id: 'div1', kind: 'div', label: '3けた ÷ 1けた', emoji: '➗', problemsPerSession: 5 }
-];
-function levelById(id) { return LEVELS.find((l) => l.id === id); }
-
-/* ---------- 進捗レコード ---------- */
-function emptyProgress() {
-  const levels = {};
-  LEVELS.forEach((level) => { levels[level.id] = emptyLevelRecord(); });
-  // subFacts は後から足したフィールド。古い記録（subFacts なし）もそのまま読めるので version は上げない
-  return { version: 1, facts: {}, subFacts: {}, levels, daily: {}, updatedAt: '' };
-}
-function emptyLevelRecord() {
-  return { solved: 0, clean: 0, streak: 0, bestStreak: 0, sessionsDone: 0, lastSessionDay: '' };
-}
-function migrateProgress(raw) {
-  if (!raw || typeof raw !== 'object' || raw.version !== 1) return emptyProgress();
-  if (!raw.facts || typeof raw.facts !== 'object') raw.facts = {};
-  if (!raw.subFacts || typeof raw.subFacts !== 'object') raw.subFacts = {};
-  if (!raw.daily || typeof raw.daily !== 'object') raw.daily = {};
-  if (!raw.levels || typeof raw.levels !== 'object') raw.levels = {};
-  LEVELS.forEach((level) => {
-    if (!raw.levels[level.id]) raw.levels[level.id] = emptyLevelRecord();
-  });
-  return raw;
-}
-let progress = migrateProgress(readJson(recordKey('math4Progress'), null));
+let progress = Core.migrateProgress(readJson(recordKey('math4Progress'), null));
 function saveProgress() {
   progress.updatedAt = nowIso();
   writeJson(recordKey('math4Progress'), progress);
   scheduleCloudSave();
 }
-function newFactRecord() {
-  return {
-    attempts: 0, correct: 0, misses: 0, clearDays: 0, lastClearDay: '', stage: 0,
-    reviewDueAt: '', masteredAt: '', firstSeenAt: '', lastSeenAt: ''
-  };
-}
-function masteredFactCount() {
-  return KUKU_FACTS.filter((f) => (progress.facts[f.id] || {}).masteredAt).length;
-}
-function factsForDan(dan) {
-  return KUKU_FACTS.filter((f) => f.a === dan);
-}
-// none=まだ / learn=れんしゅう中 / clear=ノーミスでクリアずみ / master=別の日2回クリア
-function recordState(r) {
-  if (!r) return 'none';
-  if (r.masteredAt) return 'master';
-  if ((r.clearDays || 0) >= 1) return 'clear';
-  return 'learn';
-}
-function factState(id) { return recordState(progress.facts[id]); }
-function subFactState(id) { return recordState(progress.subFacts[id]); }
-function danSummary(dan) {
-  let mastered = 0;
-  let cleared = 0;
-  let touched = 0;
-  factsForDan(dan).forEach((f) => {
-    const st = factState(f.id);
-    if (st !== 'none') touched += 1;
-    if (st === 'master') { mastered += 1; cleared += 1; }
-    else if (st === 'clear') cleared += 1;
-  });
-  return { mastered, cleared, touched };
-}
-function recommendedDan() {
-  const notCleared = DAN_ORDER.find((dan) => danSummary(dan).cleared < 9);
-  if (notCleared) return notCleared;
-  return DAN_ORDER.find((dan) => danSummary(dan).mastered < 9) || null;
-}
-function countDueKuku() {
-  const day = todayKey();
-  return KUKU_FACTS.filter((f) => {
-    const r = progress.facts[f.id];
-    return r && r.reviewDueAt && r.reviewDueAt <= day && r.lastClearDay !== day;
-  }).length;
-}
-function masteredSubCount() {
-  return SUB_FACTS.filter((f) => (progress.subFacts[f.id] || {}).masteredAt).length;
-}
-function subGroupSummary(groupId) {
-  let mastered = 0;
-  let cleared = 0;
-  subFactsForGroup(groupId).forEach((f) => {
-    const st = subFactState(f.id);
-    if (st === 'master') { mastered += 1; cleared += 1; }
-    else if (st === 'clear') cleared += 1;
-  });
-  return { mastered, cleared, total: subFactsForGroup(groupId).length };
-}
-function recommendedSubGroup() {
-  const notCleared = SUB_GROUPS.find((g) => {
-    const s = subGroupSummary(g.id);
-    return s.cleared < s.total;
-  });
-  if (notCleared) return notCleared.id;
-  const notMastered = SUB_GROUPS.find((g) => {
-    const s = subGroupSummary(g.id);
-    return s.mastered < s.total;
-  });
-  return notMastered ? notMastered.id : null;
-}
-function countDueSub() {
-  const day = todayKey();
-  return SUB_FACTS.filter((f) => {
-    const r = progress.subFacts[f.id];
-    return r && r.reviewDueAt && r.reviewDueAt <= day && r.lastClearDay !== day;
-  }).length;
-}
 
-function isLevelUnlocked(levelId) {
-  const level = levelById(levelId);
-  if (!level.requires) return true;
-  const req = progress.levels[level.requires];
-  return req && req.solved >= 8 && req.solved > 0 && req.clean / req.solved >= 0.6;
-}
-
-/* 既存アプリの stats（累計・連続日数）へ橋渡し */
+/* 既存アプリの stats（トップ画面の累計・連続日数）へ橋渡し */
 function bumpStats(clean, addSession) {
   const key = recordKey('stats');
   const stats = readJson(key, { daily: {} });
@@ -261,78 +59,16 @@ function bumpStats(clean, addSession) {
   writeJson(key, stats);
 }
 
-/* ---------- クラウド同期（既存 records/default に相乗り） ---------- */
+/* ---------- クラウド同期（既存 records/default の math4 フィールドに相乗り） ---------- */
 const cloud = window.WeaknessQuizCloud;
 let cloudReady = false;
 let cloudTimer = null;
-
-function mergeFactMaps(mapA, mapB) {
-  const out = {};
-  new Set([...Object.keys(mapA), ...Object.keys(mapB)]).forEach((id) => {
-    const ra = mapA[id];
-    const rb = mapB[id];
-    if (!ra || !rb) { out[id] = { ...(ra || rb) }; return; }
-    const newer = (rb.lastSeenAt || '') > (ra.lastSeenAt || '') ? rb : ra;
-    out[id] = {
-      attempts: Math.max(ra.attempts || 0, rb.attempts || 0),
-      correct: Math.max(ra.correct || 0, rb.correct || 0),
-      misses: Math.max(ra.misses || 0, rb.misses || 0),
-      clearDays: newer.clearDays || 0,
-      lastClearDay: newer.lastClearDay || '',
-      stage: newer.stage || 0,
-      reviewDueAt: newer.reviewDueAt || '',
-      masteredAt: newer.masteredAt || '',
-      firstSeenAt: [ra.firstSeenAt, rb.firstSeenAt].filter(Boolean).sort()[0] || '',
-      lastSeenAt: (rb.lastSeenAt || '') > (ra.lastSeenAt || '') ? rb.lastSeenAt : (ra.lastSeenAt || '')
-    };
-  });
-  return out;
-}
-
-function mergeMath4Progress(local, remote) {
-  const a = migrateProgress(local);
-  const b = migrateProgress(remote);
-  const out = emptyProgress();
-  out.facts = mergeFactMaps(a.facts, b.facts);
-  out.subFacts = mergeFactMaps(a.subFacts, b.subFacts);
-  LEVELS.forEach((level) => {
-    const la = a.levels[level.id] || emptyLevelRecord();
-    const lb = b.levels[level.id] || emptyLevelRecord();
-    out.levels[level.id] = {
-      solved: Math.max(la.solved || 0, lb.solved || 0),
-      clean: Math.max(la.clean || 0, lb.clean || 0),
-      streak: Math.max(la.streak || 0, lb.streak || 0),
-      bestStreak: Math.max(la.bestStreak || 0, lb.bestStreak || 0),
-      sessionsDone: Math.max(la.sessionsDone || 0, lb.sessionsDone || 0),
-      lastSessionDay: [la.lastSessionDay, lb.lastSessionDay].filter(Boolean).sort().slice(-1)[0] || ''
-    };
-  });
-  const days = new Set([...Object.keys(a.daily), ...Object.keys(b.daily)]);
-  days.forEach((day) => {
-    const da = a.daily[day] || {};
-    const db = b.daily[day] || {};
-    out.daily[day] = {
-      kukuNew: Math.max(da.kukuNew || 0, db.kukuNew || 0),
-      kukuClears: Math.max(da.kukuClears || 0, db.kukuClears || 0),
-      subNew: Math.max(da.subNew || 0, db.subNew || 0),
-      subClears: Math.max(da.subClears || 0, db.subClears || 0),
-      writtenSolved: Math.max(da.writtenSolved || 0, db.writtenSolved || 0),
-      writtenClean: Math.max(da.writtenClean || 0, db.writtenClean || 0)
-    };
-  });
-  out.updatedAt = (b.updatedAt || '') > (a.updatedAt || '') ? b.updatedAt : (a.updatedAt || '');
-  return out;
-}
-
 function scheduleCloudSave() {
   if (!cloudReady) return;
   clearTimeout(cloudTimer);
   cloudTimer = setTimeout(() => {
     try {
-      cloud.saveRecord(childId, {
-        math4: progress,
-        stats: readJson(recordKey('stats'), { daily: {} })
-      }).catch(() => {});
+      cloud.saveRecord(childId, { math4: progress, stats: readJson(recordKey('stats'), { daily: {} }) }).catch(() => {});
     } catch (e) {}
   }, 1200);
 }
@@ -340,11 +76,11 @@ async function pullCloud() {
   try {
     const remote = await cloud.getRecord(childId);
     if (!remote || !remote.math4) return;
-    const merged = mergeMath4Progress(progress, remote.math4);
+    const merged = Core.mergeProgress(progress, remote.math4);
     if (JSON.stringify(merged) === JSON.stringify(progress)) return;
     progress = merged;
     writeJson(recordKey('math4Progress'), progress);
-    updateHomeChrome();
+    refreshListScreens();
   } catch (e) {}
 }
 function initCloud() {
@@ -360,459 +96,421 @@ function initCloud() {
 }
 
 /* =====================================================================
-   算数エンジン：くり上がり・くり下がりの手順を列にする
-   （かけ算の各行・足し算の答え行はすべて同じ「桁の処理」で作れる）
-   ===================================================================== */
-function digitsLSF(n, width) {
-  const out = [];
-  let x = n;
-  for (let i = 0; i < width; i++) { out.push(x % 10); x = Math.floor(x / 10); }
-  return out;
-}
-function numberFromLSF(arr) {
-  let n = 0;
-  for (let i = arr.length - 1; i >= 0; i--) n = n * 10 + (arr[i] || 0);
-  return n;
-}
-function buildColumnSteps(contributionFn, maxCol) {
-  const digits = [];
-  const carryIntoNext = [];
-  const steps = [];
-  let carryIn = 0;
-  let col = 0;
-  while (col <= maxCol || carryIn > 0) {
-    const contribution = col <= maxCol ? contributionFn(col) : 0;
-    const value = contribution + carryIn;
-    const digit = value % 10;
-    const carryOut = Math.floor(value / 10);
-    digits[col] = digit;
-    steps.push({ kind: 'digit', col, value: digit });
-    if (carryOut > 0) {
-      carryIntoNext[col] = carryOut;
-      steps.push({ kind: 'carry', col: col + 1, value: carryOut });
-    }
-    carryIn = carryOut;
-    col++;
-  }
-  return { digits, carryIntoNext, steps, width: col };
-}
-function buildMultiplyRow(multiplicandLSF, multiplierDigit) {
-  return buildColumnSteps((col) => (multiplicandLSF[col] || 0) * multiplierDigit, multiplicandLSF.length - 1);
-}
-function buildSumRow(rowsWithShift, maxCol) {
-  return buildColumnSteps((col) => {
-    let sum = 0;
-    rowsWithShift.forEach(({ digits, shift }) => {
-      const idx = col - shift;
-      if (idx >= 0 && digits[idx] !== undefined) sum += digits[idx];
-    });
-    return sum;
-  }, maxCol);
-}
-function longDivisionSteps(dividendDigitsMSF, divisor) {
-  const steps = [];
-  const quotientDigits = [];
-  let remainder = 0;
-  let started = false;
-  for (let i = 0; i < dividendDigitsMSF.length; i++) {
-    const remainderBefore = remainder;
-    const chunk = remainder * 10 + dividendDigitsMSF[i];
-    const q = Math.floor(chunk / divisor);
-    if (!started && q === 0 && i < dividendDigitsMSF.length - 1) {
-      quotientDigits.push(null);
-      remainder = chunk;
-      continue;
-    }
-    started = true;
-    const chunkWidth = remainderBefore > 0 ? 2 : 1;
-    quotientDigits.push(q);
-    const product = q * divisor;
-    const rem = chunk - product;
-    steps.push({ dividendIndex: i, chunk, q, product, remainder: rem, chunkWidth });
-    remainder = rem;
-  }
-  return { quotientDigits, steps, remainder };
-}
-
-/* ---------- 問題生成 ---------- */
-function randInt(min, max) { return min + Math.floor(Math.random() * (max - min + 1)); }
-function generateMult1Problem() {
-  const multiplicand = randInt(102, 989);
-  const multiplierDigit = randInt(2, 9);
-  return { kind: 'mult', multiplicand, multiplier: multiplierDigit, twoDigit: false };
-}
-function generateMult2Problem() {
-  const multiplicand = randInt(102, 897);
-  const multiplier = randInt(12, 89);
-  return { kind: 'mult', multiplicand, multiplier, twoDigit: true };
-}
-function generateDiv1Problem() {
-  const divisor = randInt(2, 9);
-  // 割り切れる問題とあまりが出る問題を半々に。割られる数は必ず3桁にする
-  if (Math.random() < 0.5) {
-    const quotient = randInt(Math.ceil(100 / divisor), Math.floor(999 / divisor));
-    return { kind: 'div', dividend: quotient * divisor, divisor };
-  }
-  return { kind: 'div', dividend: randInt(100, 999), divisor };
-}
-function generateProblem(levelId) {
-  if (levelId === 'mult1') return generateMult1Problem();
-  if (levelId === 'mult2') return generateMult2Problem();
-  return generateDiv1Problem();
-}
-
-/* ---------- 盤面モデル（グリッド + ステップ列）を作る ---------- */
-let uidCounter = 0;
-function uid() { return `c${uidCounter++}`; }
-
-function pushRowSteps(cells, ordered, rowSteps, row, prefix, colOffset) {
-  rowSteps.forEach((s) => {
-    const col = s.col + (colOffset || 0);
-    if (s.kind === 'carry') {
-      const stepId = `${prefix}-carry-${col}`;
-      cells.push({ id: uid(), row: row.carry, col, kind: 'carry-input', value: s.value, stepId });
-      ordered.push({ id: stepId, expected: s.value });
-    } else {
-      const stepId = `${prefix}-digit-${col}`;
-      cells.push({ id: uid(), row: row.digit, col, kind: 'input', value: s.value, stepId });
-      ordered.push({ id: stepId, expected: s.value });
-    }
-  });
-}
-
-function buildMultiplyBoard(problem) {
-  const multiplicandLSF = digitsLSF(problem.multiplicand, 3);
-  const cells = [];
-  const ordered = [];
-  const ruleRows = [];
-
-  // col は一の位=0からの「位」で統一する（かけ算の各行と同じ向き）。
-  // 見た目の右づめは描画側で cols - col に変換して行う。
-  const addGivenRow = (row, digitsMSFText, opPrefix) => {
-    const text = String(digitsMSFText);
-    for (let i = 0; i < text.length; i++) {
-      cells.push({ id: uid(), row, col: text.length - 1 - i, kind: 'given', value: Number(text[i]) });
-    }
-    if (opPrefix) cells.push({ id: uid(), row, col: -1, kind: 'op', value: opPrefix });
-  };
-  addGivenRow(0, problem.multiplicand);
-
-  if (!problem.twoDigit) {
-    addGivenRow(1, problem.multiplier, '×');
-    ruleRows.push(2);
-    const product = buildMultiplyRow(multiplicandLSF, problem.multiplier);
-    pushRowSteps(cells, ordered, product.steps, { carry: 3, digit: 4 }, 'p');
-    return {
-      cols: Math.max(product.width, 3),
-      rows: 5,
-      cells,
-      steps: ordered,
-      ruleRows,
-      resultLabel: numberFromLSF(product.digits)
-    };
-  }
-
-  // 2桁のかけ算：部分積2行 + 合計行
-  const onesDigit = problem.multiplier % 10;
-  const tensDigit = Math.floor(problem.multiplier / 10);
-  addGivenRow(1, String(problem.multiplier).padStart(2, '0'), '×');
-  ruleRows.push(2);
-  const p1 = buildMultiplyRow(multiplicandLSF, onesDigit);
-  const p2 = buildMultiplyRow(multiplicandLSF, tensDigit);
-
-  pushRowSteps(cells, ordered, p1.steps, { carry: 3, digit: 4 }, 'p1', 0);
-  pushRowSteps(cells, ordered, p2.steps, { carry: 5, digit: 6 }, 'p2', 1);
-  // 十の位の積は一の位が空欄マス（くり上げなし、書かない習慣を示す）
-  cells.push({ id: uid(), row: 6, col: 0, kind: 'blank', value: null });
-  ruleRows.push(7);
-
-  const sumMaxCol = Math.max(p1.width - 1, p2.width);
-  const sum = buildSumRow([{ digits: p1.digits, shift: 0 }, { digits: p2.digits, shift: 1 }], sumMaxCol);
-  pushRowSteps(cells, ordered, sum.steps, { carry: 8, digit: 9 }, 'sum');
-
-  const totalCols = Math.max(3, sum.width, p2.width + 1);
-  return { cols: totalCols, rows: 10, cells, steps: ordered, ruleRows, resultLabel: numberFromLSF(sum.digits) };
-}
-
-function buildDivisionBoard(problem) {
-  const digitsMSF = String(problem.dividend).split('').map(Number);
-  const plan = longDivisionSteps(digitsMSF, problem.divisor);
-  const cells = [];
-  const steps = [];
-  const ruleRows = [];
-  const cols = digitsMSF.length;
-
-  // 割られる数の行（row 1、割る数は左のラベルとして別描画）
-  digitsMSF.forEach((d, i) => {
-    cells.push({ id: uid(), row: 1, col: i, kind: 'given', value: d, sourceIndex: i });
-  });
-
-  // 被除数の上の横線（商との境目）。実際の筆算と同じく被除数の幅いっぱいに引く
-  ruleRows.push({ row: 1, fromCol: 0, toCol: cols - 1 });
-
-  // 手順は実際の筆算と同じ「商を1つ立てる→かける→ひく→つぎの位をおろす」のくり返し。
-  // 商をぜんぶ先に書かせない（それでは答えが分かっていないと先に進めない）
-  let row = 2;
-  plan.steps.forEach((s, idx) => {
-    const quotStepId = `quot-${s.dividendIndex}`;
-    cells.push({ id: uid(), row: 0, col: s.dividendIndex, kind: 'input', value: s.q, stepId: quotStepId });
-    steps.push({ id: quotStepId, expected: s.q });
-
-    const productRow = row;
-    const productDigits = digitsLSF(s.product, s.chunkWidth);
-    const startCol = s.dividendIndex - (s.chunkWidth - 1);
-    for (let c = 0; c < s.chunkWidth; c++) {
-      const col = startCol + c;
-      const digit = productDigits[s.chunkWidth - 1 - c];
-      const stepId = `prod-${s.dividendIndex}-${col}`;
-      cells.push({ id: uid(), row: productRow, col, kind: 'input', value: digit, stepId });
-      steps.push({ id: stepId, expected: digit });
-    }
-    const ruleRow = productRow + 1;
-    // 引き算の線は、その計算に使った桁の幅だけ（全幅には引かない）
-    ruleRows.push({ row: ruleRow, fromCol: startCol, toCol: s.dividendIndex });
-    const remRow = ruleRow + 1;
-    const remStepId = `rem-${s.dividendIndex}`;
-    cells.push({ id: uid(), row: remRow, col: s.dividendIndex, kind: 'input', value: s.remainder, stepId: remStepId });
-    steps.push({ id: remStepId, expected: s.remainder });
-    const hasNext = idx < plan.steps.length - 1;
-    if (hasNext) {
-      const nextIndex = plan.steps[idx + 1].dividendIndex;
-      const bringStepId = `bring-${nextIndex}`;
-      cells.push({ id: uid(), row: remRow, col: nextIndex, kind: 'bringdown', value: digitsMSF[nextIndex], stepId: bringStepId, sourceIndex: nextIndex });
-      steps.push({ id: bringStepId, expected: digitsMSF[nextIndex], isBringDown: true, sourceIndex: nextIndex });
-    }
-    row = remRow + 1;
-  });
-
-  return { cols, rows: row, cells, steps, ruleRows, quotient: Number(plan.quotientDigits.filter((d) => d !== null).join('')), remainder: plan.remainder };
-}
-
-/* =====================================================================
-   画面制御
+   画面の切りかえ（history に積むので、スマホの「戻る」でも同じ所へ戻る）
+   state: {screen:'menu'} / {screen:'drill', drill} /
+          {screen:'session'|'result', parent, token}
    ===================================================================== */
 const $ = (id) => document.getElementById(id);
 const els = {
-  modeScreen: $('mode-screen'),
-  kukuScreen: $('kuku-screen'),
-  subScreen: $('sub-screen'),
-  sessionScreen: $('session-screen'),
-  resultScreen: $('result-screen'),
+  back: $('back-link'),
+  topTitle: $('topbar-title'),
+  starChip: $('star-chip'),
+  starCount: $('star-count'),
+  menu: $('menu-screen'),
+  drill: $('drill-screen'),
+  session: $('session-screen'),
+  result: $('result-screen'),
   sessionTitle: $('session-title'),
   sessionProgress: $('session-progress'),
+  sessFill: $('sess-fill'),
+  combo: $('combo'),
   workArea: $('work-area'),
   palette: $('digit-palette'),
-  feedback: $('feedback'),
+  buddyFace: $('buddy-face'),
+  buddySay: $('buddy-say'),
   nextBtn: $('btn-next'),
   hintBtn: $('btn-hint'),
-  backToModes: $('btn-back-modes'),
   scratchToggle: $('btn-scratch'),
   scratchPanel: $('scratch-panel'),
   scratchCanvas: $('scratch-canvas'),
-  scratchClear: $('btn-scratch-clear'),
-  resultTitle: $('result-title'),
-  resultSummary: $('result-summary'),
-  resultHome: $('result-home'),
-  btnResultAgain: $('btn-result-again'),
-  btnResultModes: $('btn-result-modes')
+  scratchClear: $('btn-scratch-clear')
 };
-els.resultHome.href = `index.html?child=${childId}`;
 
-let currentMode = null; // 'kuku' | 'dan' | 'sub' | 'sub-group' | 'mult1' | 'mult2' | 'div1'
-let currentDan = null;
-let currentSubGroup = null;
-let session = null; // { queue, qi, results, itemMisses, ... }
+const MENU = { screen: 'menu' };
+let current = MENU;
+let session = null;
+let lastResult = null;
+let tokenCounter = 0;
 
-function showScreen(name) {
-  els.modeScreen.classList.toggle('hidden', name !== 'mode');
-  els.kukuScreen.classList.toggle('hidden', name !== 'kuku');
-  els.subScreen.classList.toggle('hidden', name !== 'sub');
-  els.sessionScreen.classList.toggle('hidden', name !== 'session');
-  els.resultScreen.classList.toggle('hidden', name !== 'result');
+function urlFor(state) {
+  const base = `${location.pathname}${location.search}`;
+  if (state.screen === 'drill') return `${base}#${state.drill}`;
+  if (state.parent && state.parent.screen === 'drill') return `${base}#${state.parent.drill}`;
+  return base;
+}
+function navigate(state, replace) {
+  history[replace ? 'replaceState' : 'pushState'](state, '', urlFor(state));
+  render(state);
+}
+function parentOf(state) {
+  return state.parent || MENU;
+}
+function drillColor(drillId) { return drillId === 'sub' ? 'sub' : 'kuku'; }
+function backLabel(state) {
+  if (state.screen === 'menu') return '← ホーム';
+  const parent = state.screen === 'drill' ? MENU : parentOf(state);
+  return parent.screen === 'drill' ? `← ${DRILLS[parent.drill].title}` : '← メニュー';
 }
 
-function updateHomeChrome() {
-  const subReco = recommendedSubGroup();
-  const subLine = $('sub-progress-line');
-  if (subLine) {
-    subLine.textContent = subReco
-      ? `マスター ${masteredSubCount()}/36・つぎは ${subGroupById(subReco).label}`
-      : 'ぜんぶマスター！ 36/36';
+function render(state) {
+  // もんだい・けっかは画面の中身を作り直せないので、別の問題の続きなら親の画面を出す
+  if (state.screen === 'session' && !(session && session.token === state.token && !session.finished)) {
+    navigate(parentOf(state), true);
+    return;
   }
-  const reco = recommendedDan();
-  $('kuku-progress-line').textContent = reco
-    ? `マスター ${masteredFactCount()}/81・つぎは ${reco}のだん`
-    : 'ぜんぶマスター！ 81/81';
-  LEVELS.forEach((level) => {
-    const card = document.querySelector(`.mode-card[data-level="${level.id}"]`);
-    if (!card) return;
-    const rec = progress.levels[level.id];
-    const unlocked = isLevelUnlocked(level.id);
-    card.classList.toggle('locked', !unlocked);
-    const stat = card.querySelector('.mode-card-stat');
-    if (stat) {
-      stat.textContent = unlocked
-        ? `${rec.solved}問 とけた・れんぞく${rec.streak}`
-        : 'まず 3けた×1けたを クリアしよう';
-    }
-  });
+  if (state.screen === 'result' && !(lastResult && lastResult.token === state.token)) {
+    navigate(parentOf(state), true);
+    return;
+  }
+  current = state;
+  ['menu', 'drill', 'session', 'result'].forEach((name) => els[name].classList.toggle('hidden', state.screen !== name));
+  els.back.textContent = backLabel(state);
+  els.back.href = state.screen === 'menu' ? HOME_URL : '#';
+  if (state.screen === 'menu') renderMenu();
+  if (state.screen === 'drill') renderDrillHome(state.drill);
+  if (state.screen === 'session') renderSessionTitle();
+  if (state.screen === 'result') renderResult();
+  els.topTitle.textContent = state.screen === 'menu' ? '🔢 算数マスター' : '';
+  updateStars(false);
+  window.scrollTo(0, 0);
+}
+function refreshListScreens() {
+  if (current.screen === 'menu') renderMenu();
+  if (current.screen === 'drill') renderDrillHome(current.drill);
+  updateStars(false);
 }
 
-function buildModeCards() {
-  const grid = $('mode-grid');
-  grid.innerHTML = '';
+els.back.addEventListener('click', (event) => {
+  if (current.screen === 'menu') return; // ホームへは ふつうのリンクで移動
+  event.preventDefault();
+  history.back();
+});
+window.addEventListener('popstate', (event) => render(event.state && event.state.screen ? event.state : MENU));
 
-  const subCard = document.createElement('button');
-  subCard.type = 'button';
-  subCard.className = 'mode-card';
-  subCard.dataset.level = 'sub';
-  subCard.innerHTML = `<span class="mode-card-emoji">➖</span><div class="mode-card-body"><h3>くり下がりの ひきざん</h3><p class="mode-card-stat" id="sub-progress-line"></p></div>`;
-  subCard.addEventListener('click', () => renderSubHome());
-  grid.appendChild(subCard);
-
-  const kukuCard = document.createElement('button');
-  kukuCard.type = 'button';
-  kukuCard.className = 'mode-card';
-  kukuCard.dataset.level = 'kuku';
-  kukuCard.innerHTML = `<span class="mode-card-emoji">🔢</span><div class="mode-card-body"><h3>九九マスター</h3><p class="mode-card-stat" id="kuku-progress-line"></p></div>`;
-  kukuCard.addEventListener('click', () => renderKukuHome());
-  grid.appendChild(kukuCard);
-
-  LEVELS.forEach((level) => {
-    const card = document.createElement('button');
-    card.type = 'button';
-    card.className = 'mode-card';
-    card.dataset.level = level.id;
-    const rec = progress.levels[level.id];
-    card.innerHTML = `<span class="mode-card-emoji">${level.emoji}</span><div class="mode-card-body"><h3>${level.label}</h3><p class="mode-card-stat">${rec.solved}問 とけた・れんぞく${rec.streak}</p></div>`;
-    card.addEventListener('click', () => {
-      if (!isLevelUnlocked(level.id)) return;
-      startWrittenSession(level.id);
-    });
-    grid.appendChild(card);
-  });
-  updateHomeChrome();
+let shownStars = null;
+function updateStars(animate) {
+  const n = Core.starCount(progress);
+  els.starCount.textContent = n;
+  if (animate && shownStars !== null && n > shownStars) {
+    els.starChip.classList.remove('bump');
+    void els.starChip.offsetWidth;
+    els.starChip.classList.add('bump');
+  }
+  shownStars = n;
 }
 
 /* =====================================================================
-   くり下がりの ひきざん（36問）
-   10のかたまりから引く「さくらんぼ計算」を、図とドラッグで身につける
+   メニュー
    ===================================================================== */
-function renderSubHome() {
-  currentMode = 'sub-home';
-  showScreen('sub');
-  const wrap = $('sub-home');
-  wrap.innerHTML = '';
-  const due = countDueSub();
-  const reco = recommendedSubGroup();
+function barMarkup(summary) {
+  const pct = (n) => (summary.total ? (n / summary.total) * 100 : 0);
+  return `<span class="mode-bar"><i class="bar-master" style="width:${pct(summary.mastered)}%"></i><i class="bar-clear" style="width:${pct(summary.cleared - summary.mastered)}%"></i></span>`;
+}
+function tileMarkup({ glyph, title, sub, bar, badge, badgeNext }) {
+  return `${badge ? `<span class="mode-badge${badgeNext ? ' next' : ''}">${badge}</span>` : ''}
+    <span class="mode-glyph">${glyph}</span>
+    <h3>${title}</h3>
+    ${bar || ''}
+    <span class="mode-sub">${sub}</span>`;
+}
 
-  const mix = document.createElement('button');
-  mix.type = 'button';
-  mix.className = 'mode-card kuku-mix-card';
-  mix.innerHTML = `<span class="mode-card-emoji">🃏</span><div class="mode-card-body"><h3>きょうの ミックス</h3><p class="mode-card-stat">${due > 0 ? `ふくしゅう ${due}こ + あたらしい ひきざん` : 'あたらしい ひきざんに すすもう'}</p></div>`;
-  mix.addEventListener('click', () => startSubMixSession());
-  wrap.appendChild(mix);
+// つぎにやるとよいこと（ひきざん→九九→ひっ算の順に、まだ終わっていない所）
+function suggestion() {
+  const day = todayKey();
+  for (const drill of [DRILLS.sub, DRILLS.kuku]) {
+    if (Core.dueCount(drill, progress, day) > 0) return { mode: drill.id, text: `${drill.title}の ふくしゅうが まってるよ！` };
+  }
+  for (const drill of [DRILLS.sub, DRILLS.kuku]) {
+    const gid = Core.recommendedGroup(drill, progress);
+    const s = gid && Core.groupSummary(drill, progress, gid);
+    if (s && s.cleared < s.total) return { mode: drill.id, text: `つぎは ${drill.title}の「${Core.groupById(drill, gid).label}」だよ！` };
+  }
+  return { mode: 'mult1', text: 'ひっ算に チャレンジしてみよう！' };
+}
 
-  const note = document.createElement('p');
-  note.className = 'kuku-order-note';
-  note.textContent = `マスター ${masteredSubCount()}/${SUB_FACTS.length} ・ かんたんな じゅんに ならんでいるよ`;
-  wrap.appendChild(note);
+function renderMenu() {
+  const day = todayKey();
+  const sug = suggestion();
+  const totalToday = (() => {
+    const d = progress.daily[day] || {};
+    return (d.subClears || 0) + (d.kukuClears || 0) + (d.writtenSolved || 0);
+  })();
+  const greet = totalToday > 0 ? `きょうは もう ${totalToday}もん できたね！` : 'きょうも いっしょに がんばろう！';
+  els.menu.innerHTML = `
+    <div class="buddy"><span class="buddy-face">😺</span><p class="buddy-say">${greet}<small>${sug.text}</small></p></div>
+    <div class="menu-grid" id="menu-drills"></div>
+    <p class="menu-section-title">ひっ算（ますに 1つずつ 数字を おくよ）</p>
+    <div class="menu-grid small" id="menu-written"></div>
+  `;
+  const drillWrap = $('menu-drills');
+  [DRILLS.sub, DRILLS.kuku].forEach((drill) => {
+    const summary = Core.drillSummary(drill, progress);
+    const due = Core.dueCount(drill, progress, day);
+    const tile = document.createElement('button');
+    tile.type = 'button';
+    tile.className = 'mode-tile';
+    tile.dataset.mode = drill.id;
+    tile.dataset.color = drillColor(drill.id);
+    tile.innerHTML = tileMarkup({
+      glyph: drill.id === 'sub' ? '−' : '×',
+      title: drill.id === 'sub' ? 'ひきざん' : '九九',
+      bar: barMarkup(summary),
+      sub: `マスター ${summary.mastered}/${summary.total}`,
+      badge: due > 0 ? `ふくしゅう ${due}` : (sug.mode === drill.id ? 'つぎは ここ' : ''),
+      badgeNext: !(due > 0)
+    });
+    tile.addEventListener('click', () => navigate({ screen: 'drill', drill: drill.id }));
+    drillWrap.appendChild(tile);
+  });
 
-  SUB_STAGES.forEach((stage) => {
-    const head = document.createElement('div');
-    head.className = 'stage-head';
-    head.innerHTML = `<strong>${stage.label}</strong><small>${stage.note}</small>`;
-    wrap.appendChild(head);
+  const writtenWrap = $('menu-written');
+  LEVELS.forEach((level) => {
+    const rec = progress.levels[level.id];
+    const unlocked = Core.isLevelUnlocked(progress, level.id);
+    const tile = document.createElement('button');
+    tile.type = 'button';
+    tile.className = 'mode-tile' + (unlocked ? '' : ' locked');
+    tile.dataset.mode = level.id;
+    tile.dataset.color = level.kind;
+    tile.innerHTML = tileMarkup({
+      glyph: unlocked ? (level.kind === 'mult' ? '×' : '÷') : '🔒',
+      title: level.label.replace(/ /g, ''),
+      sub: unlocked ? `${rec.solved}もん とけた${rec.streak >= 2 ? `<br>🔥${rec.streak}れんぞく` : ''}` : '3けた×1けたを 8もん とくと ひらくよ'
+    });
+    tile.addEventListener('click', () => {
+      if (!unlocked) {
+        tile.classList.remove('shake');
+        void tile.offsetWidth;
+        tile.classList.add('shake');
+        return;
+      }
+      startWrittenSession(level.id, MENU, false);
+    });
+    writtenWrap.appendChild(tile);
+  });
+}
 
-    stage.groups.forEach((group) => {
-      const sum = subGroupSummary(group.id);
+/* =====================================================================
+   ひきざん・九九の いちらん（グループごとの進みぐあいマップ）
+   ===================================================================== */
+function renderDrillHome(drillId) {
+  const drill = DRILLS[drillId];
+  const day = todayKey();
+  const summary = Core.drillSummary(drill, progress);
+  const due = Core.dueCount(drill, progress, day);
+  const reco = Core.recommendedGroup(drill, progress);
+  const unit = drill.id === 'sub' ? 'ひきざん' : '九九';
+  els.drill.dataset.drill = drill.id;
+  els.drill.innerHTML = `
+    <div class="drill-hero">
+      <span class="mode-glyph">${drill.id === 'sub' ? '−' : '×'}</span>
+      <div class="drill-hero-body">
+        <h2>${unit}</h2>
+        ${barMarkup(summary)}
+        <p>マスター ${summary.mastered}/${summary.total}・クリア ${summary.cleared}/${summary.total}</p>
+      </div>
+    </div>
+    <button type="button" class="big-btn" id="btn-mix">▶ きょうの ミックス<small>${due > 0 ? `ふくしゅう ${due}こ ＋ あたらしい ${unit}` : `あたらしい ${unit}に すすもう`}</small></button>
+    <p class="order-note">したの グループから えらんでも いいよ（かんたんな じゅん）</p>
+    <div id="drill-groups"></div>
+    <p class="dan-legend"><span class="dan-cell learn"></span>れんしゅう中　<span class="dan-cell clear"></span>クリア　<span class="dan-cell master"></span>マスター</p>
+  `;
+  $('btn-mix').addEventListener('click', () => startDrillSession(drill.id, null, false));
+  const groupsWrap = $('drill-groups');
+  groupsWrap.style.display = 'flex';
+  groupsWrap.style.flexDirection = 'column';
+  groupsWrap.style.gap = '10px';
+  const store = progress[drill.store] || {};
+  drill.stages.forEach((stage) => {
+    if (stage.label) {
+      const head = document.createElement('div');
+      head.className = 'stage-head';
+      head.innerHTML = `<strong>${stage.label}</strong><small>${stage.note}</small>`;
+      groupsWrap.appendChild(head);
+    }
+    drill.groups.filter((g) => g.stageId === stage.id).forEach((group) => {
+      const sum = Core.groupSummary(drill, progress, group.id);
       const row = document.createElement('button');
       row.type = 'button';
-      row.className = 'dan-row' + (group.id === reco ? ' recommended' : '');
+      row.className = 'dan-row' + (group.id === reco ? ' recommended' : '') + (sum.mastered === sum.total ? ' done' : '');
       row.dataset.group = group.id;
-      const cells = subFactsForGroup(group.id).map((f) => `<span class="dan-cell ${subFactState(f.id)}"></span>`).join('');
+      const cells = Core.factsOfGroup(drill, group.id).map((f) => `<span class="dan-cell ${Core.recordState(store[f.id])}"></span>`).join('');
       row.innerHTML = `${group.id === reco ? '<span class="dan-reco">つぎは ここ！</span>' : ''}<span class="dan-name">${group.label}</span><span class="dan-cells">${cells}</span><span class="dan-count">${sum.mastered}/${sum.total}</span>`;
-      row.addEventListener('click', () => startSubGroupSession(group.id));
-      wrap.appendChild(row);
+      row.addEventListener('click', () => startDrillSession(drill.id, group.id, false));
+      groupsWrap.appendChild(row);
     });
   });
-
-  const legend = document.createElement('p');
-  legend.className = 'dan-legend';
-  legend.innerHTML = '<span class="dan-cell learn"></span>れんしゅう中　<span class="dan-cell clear"></span>クリア　<span class="dan-cell master"></span>マスター';
-  wrap.appendChild(legend);
-
-  const back = document.createElement('button');
-  back.type = 'button';
-  back.className = 'act ghost';
-  back.textContent = 'モードえらびへ もどる';
-  back.addEventListener('click', () => { showScreen('mode'); buildModeCards(); });
-  wrap.appendChild(back);
 }
 
-// グループ練習: ①さくらんぼで1問ずつ（図つき）→ ②そのまま答える
-function startSubGroupSession(groupId) {
-  currentMode = 'sub-group';
-  currentSubGroup = groupId;
-  const facts = subFactsForGroup(groupId);
-  session = {
-    queue: [
-      ...facts.map((f) => ({ fact: f, kind: 'sub-group', pass: 'guided' })),
-      ...shuffle(facts).map((f) => ({ fact: f, kind: 'sub-group', pass: 'quick' }))
-    ],
-    qi: 0, results: [], itemMisses: 0, hintUsed: false, steps: [], stepIndex: 0
+/* =====================================================================
+   もんだい（共通）
+   ===================================================================== */
+function newSession(fields) {
+  return {
+    token: ++tokenCounter, qi: 0, results: [], itemMisses: 0, hintUsed: false,
+    combo: 0, bestCombo: 0, starsEarned: 0, masteredNow: [], finished: false,
+    steps: [], stepIndex: 0, board: null, activeStepIndex: 0,
+    ...fields
   };
-  showScreen('session');
-  els.sessionTitle.textContent = `${subGroupById(groupId).label} マスター`;
-  els.backToModes.textContent = 'ひきざんトップへ';
-  els.backToModes.classList.remove('hidden');
-  renderSubItem();
+}
+function sessionState(parent) {
+  return { screen: 'session', parent, token: session.token };
+}
+// replace=true は けっか画面からの「つぎへ」「もういちど」（けっかを もんだいで置きかえる）
+function startDrillSession(drillId, groupId, replace) {
+  const drill = DRILLS[drillId];
+  const queue = groupId ? Core.composeGroupSession(drill, groupId) : Core.composeMix(drill, progress, todayKey());
+  const title = groupId ? `${Core.groupById(drill, groupId).label} れんしゅう` : `${drill.title} ミックス`;
+  session = newSession({ type: 'drill', drillId, groupId, queue, title, color: drillColor(drillId) });
+  navigate(sessionState({ screen: 'drill', drill: drillId }), replace);
+  renderItem();
+}
+function startWrittenSession(levelId, parent, replace) {
+  const level = Core.levelById(levelId);
+  const queue = [];
+  for (let i = 0; i < level.problemsPerSession; i++) queue.push(Core.generateProblem(levelId));
+  session = newSession({ type: 'written', levelId, queue, title: level.label, color: level.kind });
+  navigate(sessionState(parent), replace);
+  renderItem();
+}
+function modeKey() {
+  // その日はじめて終えた練習だけ stats の sessions を+1する（以前のキーをそのまま使う）
+  if (session.type === 'written') return session.levelId;
+  if (session.drillId === 'sub') return session.groupId ? 'sub-group' : 'sub';
+  return session.groupId ? 'dan' : 'kuku';
 }
 
-function composeSubSession() {
-  const day = todayKey();
-  const sched = SUB_SCHEDULE;
-  const due = SUB_FACTS.filter((f) => {
-    const r = progress.subFacts[f.id];
-    return r && r.reviewDueAt && r.reviewDueAt <= day && r.lastClearDay !== day;
-  }).sort((x, y) => {
-    const rx = progress.subFacts[x.id];
-    const ry = progress.subFacts[y.id];
-    if (rx.reviewDueAt !== ry.reviewDueAt) return rx.reviewDueAt < ry.reviewDueAt ? -1 : 1;
-    if ((ry.misses || 0) !== (rx.misses || 0)) return (ry.misses || 0) - (rx.misses || 0);
-    return x.order - y.order;
-  });
-  const reviews = due.slice(0, sched.maxReviewsPerSession);
-  const introducedToday = SUB_FACTS.filter((f) => (progress.subFacts[f.id] || {}).firstSeenAt === day).length;
-  const newCount = Math.max(0, sched.newPerDay - introducedToday);
-  // 新しく出すのは1日1グループまで（「今日は ひく8」とまとまるように）
-  const newPool = SUB_FACTS.filter((f) => !progress.subFacts[f.id]).sort((x, y) => x.order - y.order);
-  const focusGroup = newPool.length ? newPool[0].groupId : null;
-  const newOnes = newPool.filter((f) => f.groupId === focusGroup).slice(0, newCount);
-  const queue = [
-    ...reviews.map((f) => ({ fact: f, kind: 'review', pass: 'quick' })),
-    ...newOnes.map((f) => ({ fact: f, kind: 'new', pass: 'guided' }))
-  ];
-  if (queue.length === 0 && due.length === 0) {
-    const bonus = SUB_FACTS.filter((f) => !(progress.subFacts[f.id] || {}).masteredAt)
-      .sort((x, y) => x.order - y.order).slice(0, 8);
-    return bonus.map((f) => ({ fact: f, kind: 'bonus', pass: 'quick' }));
+function renderSessionTitle() {
+  els.session.dataset.color = session.color;
+  els.sessionTitle.textContent = session.title;
+}
+function renderSessionHead() {
+  const total = session.queue.length;
+  els.sessionProgress.textContent = `${Math.min(session.qi + 1, total)} / ${total}`;
+  els.sessFill.style.width = `${(session.qi / total) * 100}%`;
+}
+function renderCombo() {
+  const show = session.combo >= 2;
+  els.combo.classList.toggle('hidden', !show);
+  if (show) {
+    els.combo.textContent = `🔥 ${session.combo}れんぞく`;
+    els.combo.classList.remove('pop');
+    void els.combo.offsetWidth;
+    els.combo.classList.add('pop');
   }
-  return queue;
 }
 
-function startSubMixSession() {
-  currentMode = 'sub';
-  session = { queue: composeSubSession(), qi: 0, results: [], itemMisses: 0, hintUsed: false, steps: [], stepIndex: 0 };
-  showScreen('session');
-  els.sessionTitle.textContent = 'ひきざん ミックス';
-  els.backToModes.textContent = 'ひきざんトップへ';
-  els.backToModes.classList.remove('hidden');
-  if (session.queue.length === 0) { finishSession(); return; }
-  renderSubItem();
+/* ---------- ねこ先生のふきだし ---------- */
+const FACES = { idle: '😺', good: '😸', wow: '😻', bad: '😺', think: '🐱' };
+function say(text, mood) {
+  els.buddySay.innerHTML = text;
+  els.buddySay.className = `buddy-say ${mood || ''}`;
+  els.buddyFace.textContent = FACES[mood] || FACES.idle;
+  if (mood === 'good' || mood === 'wow') {
+    els.buddyFace.classList.remove('hop');
+    void els.buddyFace.offsetWidth;
+    els.buddyFace.classList.add('hop');
+  }
+}
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
+const PRAISE = ['せいかい！', 'すごい！', 'ばっちり！', 'その ちょうし！', 'かんぺき！', 'やったね！'];
+const RETRY = ['おしい！もういちど かんがえてみよう。', 'だいじょうぶ。ゆっくりで いいよ。', 'もう ちょっと！もういちど。'];
+function startLine() {
+  const left = session.queue.length - session.qi;
+  if (session.qi === 0) {
+    if (session.type === 'written') return 'ひかっている ますに 数字を ドラッグしてね。';
+    return session.drillId === 'sub' ? '数字の タイルを オレンジの わくに ドラッグしてね。' : 'こたえの タイルを 青い わくに ドラッグしてね。';
+  }
+  if (left === 1) return 'あと 1もん！';
+  if (session.qi === Math.floor(session.queue.length / 2)) return 'はんぶん きたよ！ その ちょうし！';
+  return `あと ${left}もん。`;
 }
 
-// 10のかたまり（テンフレーム）+ ばらの●。引く分は10のかたまりから消す
+function renderItem() {
+  session.itemMisses = 0;
+  session.hintUsed = false;
+  renderSessionTitle();
+  renderSessionHead();
+  renderCombo();
+  els.nextBtn.classList.add('hidden');
+  say(startLine(), 'idle');
+  if (session.type === 'written') renderWrittenItem();
+  else if (session.drillId === 'sub') renderSubItem();
+  else renderKukuItem();
+}
+
+function onMiss(el, text) {
+  session.itemMisses++;
+  session.combo = 0;
+  renderCombo();
+  if (el) shakeEl(el);
+  beep([180]); vibe([60, 50, 60]);
+  say(text || pick(RETRY), 'bad');
+}
+function onStepOk() { beep([740]); vibe(25); }
+
+// 1問おわったときの共通処理（記録・れんぞく・スター・つぎへボタン）
+function concludeItem(label, extraMessage) {
+  const clean = session.itemMisses === 0;
+  const item = session.queue[session.qi];
+  let masteredNow = false;
+  if (session.type === 'written') {
+    Core.applyWrittenResult(progress, session.levelId, { misses: session.itemMisses, day: todayKey() });
+  } else {
+    const drill = DRILLS[session.drillId];
+    const res = Core.applyFactResult(drill, progress, item.fact.id, {
+      misses: session.itemMisses, scheduled: item.kind !== 'bonus', day: todayKey(), now: nowIso()
+    });
+    masteredNow = res.masteredNow;
+    if (masteredNow) session.masteredNow.push(label);
+  }
+  saveProgress();
+  bumpStats(clean, false);
+  session.results.push({ label, clean });
+  if (clean) {
+    session.combo += 1;
+    session.bestCombo = Math.max(session.bestCombo, session.combo);
+    session.starsEarned += 1;
+  }
+  renderCombo();
+  updateStars(true);
+  els.sessFill.style.width = `${((session.qi + 1) / session.queue.length) * 100}%`;
+
+  let line;
+  let mood = 'good';
+  if (masteredNow) { line = `🏅 ${label} マスター！ べつの日に 2かい ノーミスだよ！`; mood = 'wow'; }
+  else if (!clean) line = 'できた！ つぎも がんばろう！';
+  else if (session.combo >= 3 && session.combo % 3 === 0) { line = `🔥 ${session.combo}もん れんぞく ノーミス！`; mood = 'wow'; }
+  else line = `${pick(PRAISE)} ⭐ +1`;
+  say(extraMessage ? `${line}<small>${extraMessage}</small>` : line, mood);
+
+  beep(masteredNow ? [523, 659, 784, 1047] : [523, 659, 784]); vibe([30, 40, 60]);
+  celebrate(masteredNow ? 4 : clean ? 2 : 1);
+  els.hintBtn.classList.add('hidden');
+  els.palette.innerHTML = '';
+  els.nextBtn.classList.remove('hidden');
+  els.nextBtn.textContent = session.qi + 1 < session.queue.length ? 'つぎへ →' : 'けっかを みる 🎉';
+}
+
+els.nextBtn.addEventListener('click', () => {
+  session.qi += 1;
+  if (session.qi < session.queue.length) renderItem();
+  else finishSession();
+});
+els.hintBtn.addEventListener('click', () => {
+  session.hintUsed = true;
+  if (session.type === 'drill' && session.drillId === 'sub') {
+    $('sub-visual').classList.remove('hidden');
+    if ($('sub-sakura')) $('sub-sakura').classList.remove('hidden');
+  } else if (session.type === 'drill') {
+    $('kuku-array').classList.remove('hidden');
+  }
+  say('ずを みて かんがえてみよう。', 'think');
+});
+
+/* =====================================================================
+   ひきざん（117問）: 10まで → くり下がりなし → くり下がり（さくらんぼ）
+   ===================================================================== */
 // 10までのひきざん: ●のかたまりから とる図
 function basicStageMarkup(fact) {
   let dots = '';
@@ -820,10 +518,8 @@ function basicStageMarkup(fact) {
   return `
     <div class="sub-stage basic-stage" id="sub-stage" data-phase="before">
       <div class="tf-group" id="tf-ten"><div class="${fact.m === 10 ? 'ten-frame' : 'dot-row'}">${dots}</div></div>
-    </div>
-  `;
+    </div>`;
 }
-
 // 10をこえるひきざん（くり下がりなし）: 10のかたまりはそのまま、ばらから とる図
 function noBorrowStageMarkup(fact) {
   const loose = fact.m - 10;
@@ -837,18 +533,13 @@ function noBorrowStageMarkup(fact) {
       <span class="cherry-num" id="cherry-loose">${loose}</span>
       <div class="tf-group" id="tf-ten"><div class="ten-frame">${frame}</div></div>
       <div class="tf-group" id="tf-loose"><div class="loose-dots">${looseDots}</div></div>
-    </div>
-  `;
+    </div>`;
 }
-
-// 10のかたまり（テンフレーム）と ばらの●。上にさくらんぼの枝をつけて、
-// 「10」はテンフレームの真上、「ばら」はばらの●の真上に来るように並べる
-function subStageMarkup(fact) {
+// くり下がり: さくらんぼの枝。「10」はテンフレームの真上、「ばら」はばらの●の真上
+function borrowStageMarkup(fact) {
   const loose = fact.m - 10;
   let frame = '';
-  for (let i = 0; i < 10; i++) {
-    frame += `<span class="tf-dot" style="--d:${i * 50}ms"></span>`;
-  }
+  for (let i = 0; i < 10; i++) frame += `<span class="tf-dot" style="--d:${i * 50}ms"></span>`;
   let looseDots = '';
   for (let i = 0; i < loose; i++) looseDots += '<span class="tf-dot loose"></span>';
   return `
@@ -861,8 +552,7 @@ function subStageMarkup(fact) {
       <span class="cherry-num" id="cherry-loose">${loose}</span>
       <div class="tf-group" id="tf-ten"><div class="ten-frame">${frame}</div></div>
       <div class="tf-group" id="tf-loose"><div class="loose-dots">${looseDots}</div></div>
-    </div>
-  `;
+    </div>`;
 }
 
 // 図を手順に合わせて動かす。
@@ -873,7 +563,7 @@ function setSubPhase(phase) {
   const stage = $('sub-stage');
   if (!stage) return;
   const fact = session.queue[session.qi].fact;
-  const say = $('sub-say');
+  const sayEl = $('sub-say');
   stage.dataset.phase = phase;
 
   if (fact.kind === 'basic') {
@@ -881,11 +571,9 @@ function setSubPhase(phase) {
       dot.classList.toggle('taken', phase === 'after' && i >= fact.m - fact.b);
       dot.classList.toggle('keep', phase === 'after' && i < fact.m - fact.b);
     });
-    if (say) {
-      say.innerHTML = phase === 'before'
-        ? `●が <b>${fact.m}こ</b>。そこから <b>${fact.b}こ</b> とると のこりは？`
-        : `のこりは <b>${fact.answer}こ</b>！`;
-    }
+    sayEl.innerHTML = phase === 'before'
+      ? `●が <b>${fact.m}こ</b>。そこから <b>${fact.b}こ</b> とると のこりは？`
+      : `のこりは <b>${fact.answer}こ</b>！`;
     return;
   }
 
@@ -895,15 +583,9 @@ function setSubPhase(phase) {
       dot.classList.toggle('taken', phase !== 'tens' && i >= loose - fact.b);
       dot.classList.toggle('keep', phase !== 'tens' && i < loose - fact.b);
     });
-    if (say) {
-      if (phase === 'tens') {
-        say.innerHTML = `10の かたまりは くずさないよ。<br>かたまりは <b>いくつ</b> のこる？`;
-      } else if (phase === 'ones') {
-        say.innerHTML = `ばらの <b>${loose}こ</b> から <b>${fact.b}こ</b> とると？`;
-      } else {
-        say.innerHTML = `10が 1つ と ばら <b>${loose - fact.b}</b> で <b>${fact.answer}</b>！`;
-      }
-    }
+    if (phase === 'tens') sayEl.innerHTML = '10の かたまりは くずさないよ。<br>かたまりは <b>いくつ</b> のこる？';
+    else if (phase === 'ones') sayEl.innerHTML = `ばらの <b>${loose}こ</b> から <b>${fact.b}こ</b> とると？`;
+    else sayEl.innerHTML = `10が 1つ と ばら <b>${loose - fact.b}</b> で <b>${fact.answer}</b>！`;
     return;
   }
 
@@ -913,37 +595,27 @@ function setSubPhase(phase) {
     dot.classList.toggle('taken', phase !== 'split' && i < fact.b);
     dot.classList.toggle('keep', phase !== 'split' && i >= fact.b);
   });
-  if (!say) return;
-  if (phase === 'split') {
-    say.innerHTML = `${fact.b}こ とりたいけど、ばらは <b>${loose}こ</b> しかない。<br>だから <b>10の かたまり</b> から とろう！`;
-  } else if (phase === 'taken') {
-    say.innerHTML = `10から ${fact.b}こ とって のこり <b>${left}</b>。<br>ばらの <b>${loose}</b> と あわせよう！`;
-  } else {
-    say.innerHTML = `<b>${left}</b> と <b>${loose}</b> で <b>${fact.answer}</b>！`;
-  }
+  if (phase === 'split') sayEl.innerHTML = `${fact.b}こ とりたいけど、ばらは <b>${loose}こ</b> しかない。<br>だから <b>10の かたまり</b> から とろう！`;
+  else if (phase === 'taken') sayEl.innerHTML = `10から ${fact.b}こ とって のこり <b>${left}</b>。<br>ばらの <b>${loose}</b> と あわせよう！`;
+  else sayEl.innerHTML = `<b>${left}</b> と <b>${loose}</b> で <b>${fact.answer}</b>！`;
+}
+
+function itemBadge(item, guidedText) {
+  if (item.kind === 'group') return item.pass === 'guided' ? guidedText : '⚡ そのまま こたえよう';
+  return { new: '🌱 あたらしい', bonus: '💪 おかわり', review: '🔁 ふくしゅう' }[item.kind] || '';
 }
 
 function renderSubItem() {
   const item = session.queue[session.qi];
   const fact = item.fact;
-  session.itemMisses = 0;
-  session.hintUsed = false;
   session.stepIndex = 0;
-  els.sessionProgress.textContent = `${session.qi + 1} / ${session.queue.length}`;
-  els.feedback.textContent = '';
-  els.feedback.className = 'feedback';
-  els.nextBtn.classList.add('hidden');
   els.hintBtn.classList.remove('hidden');
-
   const guided = item.pass === 'guided';
-  const badgeByKind = {
-    basic: guided ? '🔵 ●を かぞえて やってみよう' : '⚡ そのまま こたえよう',
-    noborrow: guided ? '📦 10の かたまりは そのまま' : '⚡ そのまま こたえよう',
-    borrow: guided ? '🍒 さくらんぼで やってみよう' : '⚡ そのまま こたえよう'
-  };
-  const badge = item.kind === 'sub-group'
-    ? badgeByKind[fact.kind]
-    : item.kind === 'new' ? '🌱 あたらしい' : item.kind === 'bonus' ? '💪 おかわり' : '🔁 ふくしゅう';
+  const badge = itemBadge(item, {
+    basic: '🔵 ●を かぞえて やってみよう',
+    noborrow: '📦 10の かたまりは そのまま',
+    borrow: '🍒 さくらんぼで やってみよう'
+  }[fact.kind]);
 
   // こたえの入れ物と手順は種類ごとに変わる
   let answerSlots;
@@ -970,7 +642,7 @@ function renderSubItem() {
     session.steps = guided
       ? [{ slot: 'sub-slot-a', expected: 10 - fact.b }, { slot: 'sub-slot-b', expected: fact.answer }]
       : [{ slot: 'sub-slot-main', expected: fact.answer }];
-    stageMarkup = subStageMarkup(fact);
+    stageMarkup = borrowStageMarkup(fact);
     firstPhase = 'split';
     extraBlock = `
       <div class="sakura${guided ? '' : ' hidden'}" id="sub-sakura">
@@ -1004,8 +676,7 @@ function renderSubItem() {
         ${stageMarkup}
       </div>
       ${extraBlock}
-    </div>
-  `;
+    </div>`;
   $('sub-visual-toggle').addEventListener('click', () => $('sub-visual').classList.toggle('hidden'));
   setSubPhase(firstPhase);
   renderDigitPalette(checkSubDrop);
@@ -1015,49 +686,40 @@ function renderSubItem() {
 function focusSubStep() {
   document.querySelectorAll('.kuku-slot.active').forEach((el) => el.classList.remove('active'));
   const step = session.steps[session.stepIndex];
-  if (!step) return;
-  const el = $(step.slot);
-  if (el) el.classList.add('active');
+  if (step && $(step.slot)) $(step.slot).classList.add('active');
 }
 
 function checkSubDrop(value, dropEl) {
   const step = session.steps[session.stepIndex];
-  if (!step) return false;
+  if (!step) return;
   const slot = $(step.slot);
-  if (!dropEl || dropEl !== slot) return false;
-  const item = session.queue[session.qi];
-  const fact = item.fact;
+  if (!dropEl || dropEl !== slot) return;
+  const fact = session.queue[session.qi].fact;
 
   if (Number(value) !== step.expected) {
-    session.itemMisses++;
-    shakeEl(slot);
-    beep([180]); vibe([60, 50, 60]);
-    els.feedback.textContent = 'おしい！もういちど かんがえてみよう。';
-    els.feedback.className = 'feedback bad';
+    onMiss(slot);
     const hintPhases = { basic: ['before', 'after'], noborrow: ['tens', 'ones'], borrow: ['split', 'taken'] };
     const phases = hintPhases[fact.kind];
     if (session.itemMisses === 2) {
+      // まだ答えは出さず、「どう考えるか」の図から見せる
       session.hintUsed = true;
       $('sub-visual').classList.remove('hidden');
       if ($('sub-sakura')) $('sub-sakura').classList.remove('hidden');
-      // まだ答えは出さず、「どう考えるか」の図から見せる
       setSubPhase(fact.kind === 'noborrow' && session.stepIndex > 0 ? phases[1] : phases[0]);
-      els.feedback.textContent = fact.kind === 'borrow'
-        ? 'ずを みてね。ばらだけでは とれないよ。'
-        : 'ずを みて、かぞえてみよう。';
+      say(fact.kind === 'borrow' ? 'ずを みてね。ばらだけでは とれないよ。' : 'ずを みて、かぞえてみよう。', 'think');
     } else if (session.itemMisses >= 3) {
       session.hintUsed = true;
       $('sub-visual').classList.remove('hidden');
       setSubPhase(phases[1]);
-      els.feedback.textContent = `ヒント：こたえは ${step.expected} だよ！`;
+      say(`ヒント：こたえは <b>${step.expected}</b> だよ！`, 'think');
     }
-    return false;
+    return;
   }
 
   slot.textContent = value;
   slot.classList.remove('active');
   slot.classList.add('correct');
-  beep([740]); vibe(25);
+  onStepOk();
   session.stepIndex++;
   if (session.stepIndex < session.steps.length) {
     if (fact.kind === 'noborrow') {
@@ -1068,10 +730,9 @@ function checkSubDrop(value, dropEl) {
       if (carry) { carry.textContent = value; carry.classList.add('filled'); }
       setSubPhase('taken');
     }
-    els.feedback.textContent = 'いいね！つぎだよ。';
-    els.feedback.className = 'feedback good';
+    say('いいね！ つぎの □ だよ。', 'good');
     focusSubStep();
-    return true;
+    return;
   }
   const main = $('sub-slot-main');
   if (main && !main.textContent) {
@@ -1079,217 +740,29 @@ function checkSubDrop(value, dropEl) {
     main.classList.add('correct');
   }
   setSubPhase(fact.kind === 'basic' ? 'after' : fact.kind === 'noborrow' ? 'done' : 'joined');
-  beep([523, 659, 784]); vibe([30, 40, 60]);
-  concludeSubItem();
-  return true;
+  concludeItem(`${fact.m}−${fact.b}`);
 }
 
-function concludeSubItem() {
-  const item = session.queue[session.qi];
-  const fact = item.fact;
-  const day = todayKey();
-  const isFirstEver = !progress.subFacts[fact.id];
-  if (isFirstEver) progress.subFacts[fact.id] = newFactRecord();
-  const rec = progress.subFacts[fact.id];
-  if (!rec.firstSeenAt) rec.firstSeenAt = day;
-  rec.attempts += 1;
-  rec.misses += session.itemMisses;
-  rec.lastSeenAt = nowIso();
-  const wasClean = session.itemMisses === 0;
-  if (wasClean) rec.correct += 1;
-
-  if (item.kind !== 'bonus') {
-    if (!wasClean) {
-      rec.clearDays = 0;
-      rec.stage = 0;
-      rec.masteredAt = '';
-      rec.reviewDueAt = addDays(day, 1);
-    } else if (rec.lastClearDay !== day) {
-      rec.clearDays += 1;
-      rec.lastClearDay = day;
-      const interval = SUB_SCHEDULE.reviewIntervals[Math.min(rec.stage, SUB_SCHEDULE.reviewIntervals.length - 1)];
-      rec.stage += 1;
-      rec.reviewDueAt = addDays(day, interval);
-      if (!rec.masteredAt && rec.clearDays >= SUB_SCHEDULE.masterySessions) rec.masteredAt = nowIso();
-    }
-    const dailyEntry = progress.daily[day] || { kukuNew: 0, kukuClears: 0, subNew: 0, subClears: 0, writtenSolved: 0, writtenClean: 0 };
-    if (isFirstEver) dailyEntry.subNew = (dailyEntry.subNew || 0) + 1;
-    if (wasClean) dailyEntry.subClears = (dailyEntry.subClears || 0) + 1;
-    progress.daily[day] = dailyEntry;
-  }
-  saveProgress();
-  bumpStats(wasClean, false);
-  session.results.push({ label: `${fact.m}−${fact.b}`, clean: wasClean, kind: item.kind });
-
-  els.feedback.textContent = wasClean ? 'せいかい！すごい！' : 'できた！つぎも がんばろう！';
-  els.feedback.className = 'feedback good';
-  celebrate(wasClean ? 2 : 1);
-  els.hintBtn.classList.add('hidden');
-  els.palette.innerHTML = '';
-  els.nextBtn.classList.remove('hidden');
-  els.nextBtn.textContent = session.qi + 1 < session.queue.length ? 'つぎへ →' : 'けっかを みる 🎉';
-}
-
-/* ---------- 九九トップ（段えらび + 81マスの進捗マップ） ---------- */
-function renderKukuHome() {
-  currentMode = 'kuku-home';
-  showScreen('kuku');
-  const wrap = $('kuku-home');
-  wrap.innerHTML = '';
-  const due = countDueKuku();
-  const reco = recommendedDan();
-
-  const mix = document.createElement('button');
-  mix.type = 'button';
-  mix.className = 'mode-card kuku-mix-card';
-  mix.innerHTML = `<span class="mode-card-emoji">🃏</span><div class="mode-card-body"><h3>きょうの ミックス</h3><p class="mode-card-stat">${due > 0 ? `ふくしゅう ${due}こ + あたらしい九九` : 'あたらしい九九に すすもう'}</p></div>`;
-  mix.addEventListener('click', () => startKukuSession());
-  wrap.appendChild(mix);
-
-  const note = document.createElement('p');
-  note.className = 'kuku-order-note';
-  note.textContent = `マスター ${masteredFactCount()}/81 ・ ならいやすい じゅんばんに ならんでいるよ`;
-  wrap.appendChild(note);
-
-  DAN_ORDER.forEach((dan) => {
-    const sum = danSummary(dan);
-    const row = document.createElement('button');
-    row.type = 'button';
-    row.className = 'dan-row' + (dan === reco ? ' recommended' : '');
-    const cells = factsForDan(dan).map((f) => `<span class="dan-cell ${factState(f.id)}"></span>`).join('');
-    row.innerHTML = `${dan === reco ? '<span class="dan-reco">つぎは ここ！</span>' : ''}<span class="dan-name">${dan}のだん</span><span class="dan-cells">${cells}</span><span class="dan-count">${sum.mastered}/9</span>`;
-    row.addEventListener('click', () => startDanSession(dan));
-    wrap.appendChild(row);
-  });
-
-  const legend = document.createElement('p');
-  legend.className = 'dan-legend';
-  legend.innerHTML = '<span class="dan-cell learn"></span>れんしゅう中　<span class="dan-cell clear"></span>クリア　<span class="dan-cell master"></span>マスター';
-  wrap.appendChild(legend);
-
-  const back = document.createElement('button');
-  back.type = 'button';
-  back.className = 'act ghost';
-  back.textContent = 'モードえらびへ もどる';
-  back.addEventListener('click', () => { showScreen('mode'); buildModeCards(); });
-  wrap.appendChild(back);
-}
-
-/* ---------- 九九セッション ---------- */
-// 段れんしゅう: ①じゅんばんに9問（図つき）→ ②ばらばらに9問
-function startDanSession(dan) {
-  currentMode = 'dan';
-  currentDan = dan;
-  const facts = factsForDan(dan);
-  session = {
-    queue: [
-      ...facts.map((f) => ({ fact: f, kind: 'dan', pass: 'order' })),
-      ...shuffle(facts).map((f) => ({ fact: f, kind: 'dan', pass: 'random' }))
-    ],
-    qi: 0,
-    results: [],
-    itemMisses: 0,
-    hintUsed: false
-  };
-  showScreen('session');
-  els.sessionTitle.textContent = `${dan}のだん マスター`;
-  els.backToModes.textContent = '九九トップへ';
-  els.backToModes.classList.remove('hidden');
-  renderKukuItem();
-}
-
-function composeKukuSession() {
-  const day = todayKey();
-  const sched = KUKU_SCHEDULE;
-  const due = KUKU_FACTS.filter((f) => {
-    const r = progress.facts[f.id];
-    return r && r.reviewDueAt && r.reviewDueAt <= day && r.lastClearDay !== day;
-  }).sort((x, y) => {
-    const rx = progress.facts[x.id];
-    const ry = progress.facts[y.id];
-    if (rx.reviewDueAt !== ry.reviewDueAt) return rx.reviewDueAt < ry.reviewDueAt ? -1 : 1;
-    if ((ry.misses || 0) !== (rx.misses || 0)) return (ry.misses || 0) - (rx.misses || 0);
-    return x.order - y.order;
-  });
-  const reviews = due.slice(0, sched.maxReviewsPerSession);
-  const introducedToday = KUKU_FACTS.filter((f) => (progress.facts[f.id] || {}).firstSeenAt === day).length;
-  const newCount = Math.max(0, sched.newPerDay - introducedToday);
-  const newOnes = KUKU_FACTS.filter((f) => !progress.facts[f.id]).sort((x, y) => x.order - y.order).slice(0, newCount);
-  const queue = [...reviews.map((f) => ({ fact: f, kind: 'review' })), ...newOnes.map((f) => ({ fact: f, kind: 'new' }))];
-  if (queue.length === 0 && due.length === 0) {
-    // 今日ぶんが尽きたら、まだマスターしていない九九をおかわり
-    const bonus = KUKU_FACTS.filter((f) => !(progress.facts[f.id] || {}).masteredAt)
-      .sort((x, y) => x.order - y.order).slice(0, 8);
-    return bonus.map((f) => ({ fact: f, kind: 'bonus' }));
-  }
-  return queue;
-}
-
-function factDistractors(fact) {
-  const correct = fact.product;
-  const candidates = new Set();
-  const add = (v) => { if (v > 0 && v !== correct && v <= 90) candidates.add(v); };
-  add(fact.a * (fact.b - 1));
-  add(fact.a * (fact.b + 1));
-  add((fact.a - 1) * fact.b);
-  add((fact.a + 1) * fact.b);
-  add(correct + fact.a);
-  add(correct - fact.a);
-  add(correct + fact.b);
-  add(correct - fact.b);
-  add(correct + 1);
-  add(correct - 1);
-  const pool = Array.from(candidates);
-  const picked = [];
-  while (picked.length < 3 && pool.length) {
-    const idx = Math.floor(Math.random() * pool.length);
-    picked.push(pool.splice(idx, 1)[0]);
-  }
-  while (picked.length < 3) {
-    const v = randInt(1, 81);
-    if (v !== correct && !picked.includes(v)) picked.push(v);
-  }
-  return picked;
-}
-
-function startKukuSession() {
-  currentMode = 'kuku';
-  session = { queue: composeKukuSession(), qi: 0, results: [], itemMisses: 0, hintUsed: false };
-  showScreen('session');
-  els.sessionTitle.textContent = 'きょうの ミックス';
-  els.backToModes.textContent = '九九トップへ';
-  els.backToModes.classList.remove('hidden');
-  if (session.queue.length === 0) { finishSession(); return; }
-  renderKukuItem();
-}
-
+/* =====================================================================
+   九九（81問）: 選択肢タイルを □ にドラッグ
+   ===================================================================== */
 function renderKukuItem() {
   const item = session.queue[session.qi];
   const fact = item.fact;
-  session.itemMisses = 0;
-  session.hintUsed = false;
-  els.sessionProgress.textContent = `${session.qi + 1} / ${session.queue.length}`;
-  els.feedback.textContent = '';
-  els.feedback.className = 'feedback';
-  els.nextBtn.classList.add('hidden');
   els.hintBtn.classList.remove('hidden');
-
-  const badge = item.kind === 'dan'
-    ? (item.pass === 'order' ? `📖 ${fact.a}のだんを じゅんばんに` : '🎲 ばらばらに チャレンジ')
-    : item.kind === 'new' ? '🌱 あたらしい' : item.kind === 'bonus' ? '💪 おかわり' : '🔁 ふくしゅう';
-  const choices = shuffle([fact.product, ...factDistractors(fact)]);
+  els.palette.innerHTML = '';
+  const badge = itemBadge(item, `📖 ${fact.a}のだんを じゅんばんに`).replace('⚡ そのまま こたえよう', '🎲 ばらばらに チャレンジ');
   els.workArea.innerHTML = `
     <div class="kuku-card">
       <p class="kuku-kind">${badge}</p>
       <div class="kuku-equation">
         <span>${fact.a}</span><span class="kuku-op">×</span><span>${fact.b}</span><span class="kuku-op">=</span>
-        <span class="kuku-slot" id="kuku-slot" data-expected="${fact.product}"></span>
+        <span class="kuku-slot" id="kuku-slot" data-expected="${fact.answer}"></span>
       </div>
       <button type="button" class="ghost-btn" id="kuku-array-toggle">🔲 ずで かくにん</button>
       <div class="kuku-array hidden" id="kuku-array"></div>
       <div class="kuku-choices" id="kuku-choices"></div>
-    </div>
-  `;
+    </div>`;
   const arrayEl = $('kuku-array');
   for (let r = 0; r < fact.a; r++) {
     const rowEl = document.createElement('div');
@@ -1302,11 +775,11 @@ function renderKukuItem() {
     arrayEl.appendChild(rowEl);
   }
   $('kuku-array-toggle').addEventListener('click', () => arrayEl.classList.toggle('hidden'));
-  // だん練習の1周目（じゅんばん）は図を見ながら「かたまりの数」として覚える
-  if (item.kind === 'dan' && item.pass === 'order') arrayEl.classList.remove('hidden');
+  // 段れんしゅうの1周目（じゅんばん）は図を見ながら「かたまりの数」として覚える
+  if (item.pass === 'guided') arrayEl.classList.remove('hidden');
 
   const choiceWrap = $('kuku-choices');
-  choices.forEach((value) => {
+  Core.kukuChoices(fact).forEach((value) => {
     const tile = document.createElement('button');
     tile.type = 'button';
     tile.className = 'digit-tile kuku-tile';
@@ -1318,101 +791,32 @@ function renderKukuItem() {
 
 function checkKukuDrop(value, dropEl) {
   const slot = $('kuku-slot');
-  if (!dropEl || dropEl.id !== 'kuku-slot') return false;
-  const expected = Number(slot.dataset.expected);
-  if (value === expected) {
+  if (!dropEl || dropEl !== slot || slot.classList.contains('correct')) return;
+  const fact = session.queue[session.qi].fact;
+  if (value === fact.answer) {
     slot.textContent = value;
     slot.classList.add('correct');
-    beep([523, 659, 784]); vibe([30, 40, 60]);
-    concludeKukuItem(true);
-    return true;
+    $('kuku-choices').innerHTML = '';
+    concludeItem(`${fact.a}×${fact.b}`);
+    return;
   }
-  session.itemMisses++;
-  slot.classList.remove('correct');
-  shakeEl(slot);
-  beep([180]); vibe([60, 50, 60]);
-  els.feedback.textContent = 'おしい！もういちど かんがえてみよう。';
-  els.feedback.className = 'feedback bad';
+  onMiss(slot);
   if (session.itemMisses >= 2) {
     $('kuku-array').classList.remove('hidden');
     session.hintUsed = true;
-    els.feedback.textContent = 'ずをみて、かずを かぞえてみよう！';
+    say(`ずを みて かぞえてみよう！ ${fact.b}こが ${fact.a}れつ あるよ。`, 'think');
   }
-  return false;
 }
 
-function concludeKukuItem(clean) {
-  const item = session.queue[session.qi];
-  const fact = item.fact;
-  const day = todayKey();
-  const isFirstEver = !progress.facts[fact.id];
-  if (isFirstEver) progress.facts[fact.id] = newFactRecord();
-  const rec = progress.facts[fact.id];
-  if (!rec.firstSeenAt) rec.firstSeenAt = day;
-  rec.attempts += 1;
-  rec.misses += session.itemMisses;
-  rec.lastSeenAt = nowIso();
-  const wasClean = session.itemMisses === 0;
-  if (wasClean) rec.correct += 1;
-
-  if (item.kind !== 'bonus') {
-    if (!wasClean) {
-      rec.clearDays = 0;
-      rec.stage = 0;
-      rec.masteredAt = '';
-      rec.reviewDueAt = addDays(day, 1);
-    } else if (rec.lastClearDay !== day) {
-      rec.clearDays += 1;
-      rec.lastClearDay = day;
-      const interval = KUKU_SCHEDULE.reviewIntervals[Math.min(rec.stage, KUKU_SCHEDULE.reviewIntervals.length - 1)];
-      rec.stage += 1;
-      rec.reviewDueAt = addDays(day, interval);
-      if (!rec.masteredAt && rec.clearDays >= KUKU_SCHEDULE.masterySessions) rec.masteredAt = nowIso();
-    }
-    // すでに今日クリアずみの2回目（だん練習の2周目など）は復習予定を動かさない
-    const dailyEntry = progress.daily[day] || { kukuNew: 0, kukuClears: 0, writtenSolved: 0, writtenClean: 0 };
-    if (isFirstEver) dailyEntry.kukuNew += 1;
-    if (wasClean) dailyEntry.kukuClears += 1;
-    progress.daily[day] = dailyEntry;
-  }
-  saveProgress();
-  bumpStats(wasClean, false);
-  session.results.push({ label: `${fact.a}×${fact.b}`, clean: wasClean, kind: item.kind });
-
-  const stars = wasClean ? 3 : (session.hintUsed ? 1 : 2);
-  els.feedback.textContent = wasClean ? 'せいかい！すごい！' : 'できた！つぎも がんばろう！';
-  els.feedback.className = 'feedback good';
-  celebrate(wasClean ? 2 : 1);
-  els.hintBtn.classList.add('hidden');
-  els.nextBtn.classList.remove('hidden');
-  els.nextBtn.dataset.stars = stars;
-  els.nextBtn.textContent = session.qi + 1 < session.queue.length ? 'つぎへ →' : 'けっかを みる 🎉';
-}
-
-/* ---------- ひっ算セッション ---------- */
-function startWrittenSession(levelId) {
-  currentMode = levelId;
-  const level = levelById(levelId);
-  session = { queue: [], qi: 0, results: [], itemMisses: 0, board: null, activeStepIndex: 0, filledSteps: new Set() };
-  for (let i = 0; i < level.problemsPerSession; i++) session.queue.push(generateProblem(levelId));
-  showScreen('session');
-  els.sessionTitle.textContent = level.label;
-  els.backToModes.textContent = 'モードえらび';
-  els.backToModes.classList.remove('hidden');
-  renderWrittenItem();
-}
-
+/* =====================================================================
+   ひっ算（かけ算・わり算）: 光っている ますに 1つずつ 数字を置く
+   ===================================================================== */
 function renderWrittenItem() {
   const problem = session.queue[session.qi];
-  session.itemMisses = 0;
   session.activeStepIndex = 0;
-  els.sessionProgress.textContent = `${session.qi + 1} / ${session.queue.length}`;
-  els.feedback.textContent = '';
-  els.feedback.className = 'feedback';
-  els.nextBtn.classList.add('hidden');
   els.hintBtn.classList.add('hidden');
 
-  const board = problem.kind === 'mult' ? buildMultiplyBoard(problem) : buildDivisionBoard(problem);
+  const board = problem.kind === 'mult' ? Core.buildMultiplyBoard(problem) : Core.buildDivisionBoard(problem);
   session.board = board;
   els.workArea.innerHTML = '';
   const outer = document.createElement('div');
@@ -1427,12 +831,9 @@ function renderWrittenItem() {
     : `repeat(${board.cols}, ${colWidth}px)`;
   wrap.style.gridTemplateRows = `repeat(${board.rows}, auto)`;
 
-  // かけ算：計算行は「一の位=col0」で作られているので、右づめ表示のため
-  // col を cols-col に変換する。わり算は「左からの位置」でcolを作っているので
-  // 除数の列ぶん（+1）だけずらす。
-  const toGridColumn = problem.kind === 'mult'
-    ? (col) => board.cols - col
-    : (col) => col + 2;
+  // かけ算は「一の位=col0」なので右づめにするため cols-col。
+  // わり算は「左からの位置」なので除数の列ぶん右へずらす（グリッドは1始まり）
+  const toGridColumn = problem.kind === 'mult' ? (col) => board.cols - col : (col) => col + 2;
 
   if (problem.kind === 'div') {
     // 除数は被除数と同じ行に置き、右の縦線が「)」の役目をする
@@ -1444,56 +845,37 @@ function renderWrittenItem() {
     wrap.appendChild(divisor);
   }
 
+  const cellClass = { given: 'given', blank: 'blank', 'carry-input': 'carry-slot', bringdown: 'bringdown-slot', input: 'input-slot' };
   board.cells.forEach((cell) => {
     if (cell.kind === 'op') return;
     const cellEl = document.createElement('div');
     cellEl.style.gridColumn = String(toGridColumn(cell.col));
     cellEl.style.gridRow = String(cell.row + 1);
     cellEl.dataset.cellId = cell.id;
-    if (cell.kind === 'given') {
-      cellEl.className = 'calc-cell given';
-      cellEl.textContent = cell.value;
-    } else if (cell.kind === 'blank') {
-      cellEl.className = 'calc-cell blank';
-    } else if (cell.kind === 'carry-input') {
-      cellEl.className = 'calc-cell carry-slot';
-      cellEl.dataset.stepId = cell.stepId;
-    } else if (cell.kind === 'bringdown') {
-      cellEl.className = 'calc-cell bringdown-slot';
-      cellEl.dataset.stepId = cell.stepId;
-    } else {
-      cellEl.className = 'calc-cell input-slot';
-      cellEl.dataset.stepId = cell.stepId;
-    }
+    cellEl.className = `calc-cell ${cellClass[cell.kind]}`;
+    if (cell.kind === 'given') cellEl.textContent = cell.value;
+    if (cell.stepId) cellEl.dataset.stepId = cell.stepId;
     wrap.appendChild(cellEl);
   });
 
   const opCell = board.cells.find((c) => c.kind === 'op');
   if (opCell) {
+    // ×は筆算どおり、数字の左はしに置く（かける数のとなりに浮かせない）
     const opEl = document.createElement('div');
     opEl.className = 'calc-op-label';
     opEl.style.gridRow = String(opCell.row + 1);
-    // ×は筆算どおり、数字の左はしに置く（かける数のとなりに浮かせない）
-    const givenCols = board.cells
-      .filter((c) => c.kind === 'given')
-      .map((c) => toGridColumn(c.col));
-    opEl.style.gridColumn = String(Math.min(...givenCols));
+    opEl.style.gridColumn = String(Math.min(...board.cells.filter((c) => c.kind === 'given').map((c) => toGridColumn(c.col))));
     opEl.textContent = opCell.value;
     wrap.appendChild(opEl);
   }
-  // 横線（board生成時に決めたruleRowsをそのまま描く）
-  // かけ算は数値（全幅）、わり算は {row, fromCol, toCol}（その計算に使う桁ぶんだけ）
+  // 横線: かけ算は行番号（全幅）、わり算は {row, fromCol, toCol}（その計算に使う桁ぶんだけ）
   board.ruleRows.forEach((rule) => {
-    if (typeof rule === 'number') {
-      addRuleLine(wrap, rule, 1, board.cols);
-      return;
-    }
-    addRuleLine(wrap, rule.row, toGridColumn(rule.fromCol), rule.toCol - rule.fromCol + 1);
+    if (typeof rule === 'number') addRuleLine(wrap, rule, 1, board.cols);
+    else addRuleLine(wrap, rule.row, toGridColumn(rule.fromCol), rule.toCol - rule.fromCol + 1);
   });
 
   outer.appendChild(wrap);
   els.workArea.appendChild(outer);
-  renderPalette();
   focusActiveStep();
 }
 function addRuleLine(wrap, row, gridColStart, gridColSpan) {
@@ -1504,7 +886,7 @@ function addRuleLine(wrap, row, gridColStart, gridColSpan) {
   wrap.appendChild(rule);
 }
 
-// 0〜9のタイルを並べる（ひきざん・ひっ算で共用）
+// 0〜9のタイル（5×2）。ひきざん・ひっ算で共用
 function renderDigitPalette(onDrop) {
   els.palette.innerHTML = '';
   for (let v = 0; v <= 9; v++) {
@@ -1517,28 +899,9 @@ function renderDigitPalette(onDrop) {
   }
 }
 
-function renderPalette() {
-  els.palette.innerHTML = '';
-  const step = session.board.steps[session.activeStepIndex];
-  if (!step) return;
-  if (step.isBringDown) {
-    els.palette.innerHTML = '<p class="palette-hint">上の数字を したの ますへ ドラッグ！</p>';
-    return;
-  }
-  for (let v = 0; v <= 9; v++) {
-    const tile = document.createElement('button');
-    tile.type = 'button';
-    tile.className = 'digit-tile';
-    tile.textContent = v;
-    tile.addEventListener('pointerdown', (event) => startTileDrag(event, tile, v, checkWrittenDrop));
-    els.palette.appendChild(tile);
-  }
-}
-
 function activeStepCellEl() {
   const step = session.board.steps[session.activeStepIndex];
-  if (!step) return null;
-  return els.workArea.querySelector(`[data-step-id="${step.id}"]`);
+  return step ? els.workArea.querySelector(`[data-step-id="${step.id}"]`) : null;
 }
 function focusActiveStep() {
   els.workArea.querySelectorAll('.calc-cell.active').forEach((el) => el.classList.remove('active'));
@@ -1551,83 +914,47 @@ function focusActiveStep() {
   const cellEl = activeStepCellEl();
   if (cellEl) cellEl.classList.add('active');
   if (step.isBringDown) {
-    const board = session.board;
-    const sourceCell = board.cells.find((c) => c.kind === 'given' && c.sourceIndex === step.sourceIndex);
-    if (sourceCell) {
-      const el = els.workArea.querySelector(`[data-cell-id="${sourceCell.id}"]`);
-      if (el) {
-        el.classList.add('drag-source');
-        el.onpointerdown = (event) => startTileDrag(event, el, step.expected, checkWrittenDrop, String(step.expected));
-      }
+    // 「つぎの位を おろす」は、割られる数の数字そのものを ドラッグして おろす
+    const sourceCell = session.board.cells.find((c) => c.kind === 'given' && c.sourceIndex === step.sourceIndex);
+    const el = sourceCell && els.workArea.querySelector(`[data-cell-id="${sourceCell.id}"]`);
+    if (el) {
+      el.classList.add('drag-source');
+      el.onpointerdown = (event) => startTileDrag(event, el, step.expected, checkWrittenDrop, String(step.expected));
     }
+    els.palette.innerHTML = '<p class="palette-hint">⬇️ 上の 数字を したの ますへ おろそう！</p>';
+    return;
   }
-  renderPalette();
+  renderDigitPalette(checkWrittenDrop);
 }
 
 function checkWrittenDrop(value, dropEl) {
   const step = session.board.steps[session.activeStepIndex];
-  if (!step) return false;
+  if (!step) return;
   const cellEl = activeStepCellEl();
-  if (!dropEl || dropEl !== cellEl) return false;
+  if (!dropEl || dropEl !== cellEl) return;
   if (Number(value) !== step.expected) {
-    session.itemMisses++;
-    shakeEl(cellEl);
-    beep([180]); vibe([60, 50, 60]);
-    els.feedback.textContent = 'ちがう ますに はいっちゃった。もういちど！';
-    els.feedback.className = 'feedback bad';
-    if (session.itemMisses >= 3) {
-      els.hintBtn.classList.remove('hidden');
-      els.feedback.textContent = `ヒント：こたえは ${step.expected} だよ！`;
-    }
-    return false;
+    onMiss(cellEl, session.itemMisses >= 2 ? `ヒント：ここは <b>${step.expected}</b> だよ！` : 'ちがう 数字みたい。らくがきで けいさんしてみよう。');
+    return;
   }
   cellEl.textContent = value;
   cellEl.classList.add('filled', 'correct-flash');
   setTimeout(() => cellEl.classList.remove('correct-flash'), 320);
-  beep([740]); vibe(25);
-  els.feedback.textContent = '';
+  onStepOk();
   session.activeStepIndex++;
-  if (session.activeStepIndex >= session.board.steps.length) {
-    concludeWrittenItem();
-  } else {
+  if (session.activeStepIndex < session.board.steps.length) {
     focusActiveStep();
+    return;
   }
-  return true;
-}
-
-function concludeWrittenItem() {
-  const level = levelById(currentMode);
-  const day = todayKey();
-  const wasClean = session.itemMisses === 0;
-  const rec = progress.levels[currentMode];
-  rec.solved += 1;
-  if (wasClean) rec.clean += 1;
-  rec.streak = wasClean ? rec.streak + 1 : 0;
-  rec.bestStreak = Math.max(rec.bestStreak, rec.streak);
-  rec.lastSessionDay = day;
-  const dailyEntry = progress.daily[day] || { kukuNew: 0, kukuClears: 0, writtenSolved: 0, writtenClean: 0 };
-  dailyEntry.writtenSolved += 1;
-  if (wasClean) dailyEntry.writtenClean += 1;
-  progress.daily[day] = dailyEntry;
-  saveProgress();
-  bumpStats(wasClean, false);
-
   const problem = session.queue[session.qi];
-  const label = problem.kind === 'mult'
-    ? `${problem.multiplicand}×${problem.multiplier}`
-    : `${problem.dividend}÷${problem.divisor}`;
-  session.results.push({ label, clean: wasClean, kind: level.kind });
-
-  els.feedback.textContent = wasClean ? 'ぴったり できた！' : 'さいごまで できたね！';
-  els.feedback.className = 'feedback good';
-  celebrate(wasClean ? 2 : 1);
-  els.hintBtn.classList.add('hidden');
-  els.palette.innerHTML = '';
-  els.nextBtn.classList.remove('hidden');
-  els.nextBtn.textContent = session.qi + 1 < session.queue.length ? 'つぎへ →' : 'けっかを みる 🎉';
+  const board = session.board;
+  const label = problem.kind === 'mult' ? `${problem.multiplicand}×${problem.multiplier}` : `${problem.dividend}÷${problem.divisor}`;
+  const answer = problem.kind === 'mult'
+    ? `こたえは ${board.resultLabel}`
+    : `こたえは ${board.quotient}${board.remainder ? ` あまり ${board.remainder}` : ''}`;
+  concludeItem(label, answer);
 }
 
-/* ---------- 共通：ドラッグ・タイル ---------- */
+/* ---------- ドラッグ・タイル ---------- */
 function startTileDrag(event, sourceEl, value, onDrop, ghostText) {
   if (event.button !== undefined && event.button !== 0) return;
   event.preventDefault();
@@ -1638,36 +965,29 @@ function startTileDrag(event, sourceEl, value, onDrop, ghostText) {
   ghost.style.top = `${event.clientY}px`;
   document.body.appendChild(ghost);
   let lastDropTarget = null;
-
+  const targetAt = (x, y) => {
+    const under = document.elementFromPoint(x, y);
+    return under && under.closest('.kuku-slot, .calc-cell.active');
+  };
   const move = (moveEvent) => {
     ghost.style.left = `${moveEvent.clientX}px`;
     ghost.style.top = `${moveEvent.clientY}px`;
-    const under = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
-    const target = under && (under.closest('.kuku-slot, .calc-cell.active'));
+    const target = targetAt(moveEvent.clientX, moveEvent.clientY);
     if (lastDropTarget && lastDropTarget !== target) lastDropTarget.classList.remove('drop-hover');
     if (target) target.classList.add('drop-hover');
     lastDropTarget = target;
   };
   const end = (endEvent) => {
     document.removeEventListener('pointermove', move);
-    document.removeEventListener('pointerup', end);
+    document.removeEventListener('pointercancel', end);
     ghost.remove();
     if (lastDropTarget) lastDropTarget.classList.remove('drop-hover');
-    const under = document.elementFromPoint(endEvent.clientX, endEvent.clientY);
-    const dropEl = under && (under.closest('.kuku-slot, .calc-cell.active'));
-    onDrop(value, dropEl);
+    if (endEvent.type === 'pointercancel') return;
+    onDrop(value, targetAt(endEvent.clientX, endEvent.clientY));
   };
   document.addEventListener('pointermove', move);
   document.addEventListener('pointerup', end, { once: true });
-}
-
-function shuffle(arr) {
-  const out = arr.slice();
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
+  document.addEventListener('pointercancel', end, { once: true });
 }
 function shakeEl(el) {
   el.classList.remove('shake');
@@ -1675,7 +995,7 @@ function shakeEl(el) {
   el.classList.add('shake');
 }
 
-/* ---------- 効果音・演出（kanji-app.jsと同じ考え方） ---------- */
+/* ---------- 効果音・演出 ---------- */
 let audioCtx = null;
 let soundOn = true;
 function beep(freqs) {
@@ -1683,7 +1003,8 @@ function beep(freqs) {
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     freqs.forEach((f, i) => {
-      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
       o.frequency.value = f; o.type = 'sine';
       g.gain.setValueAtTime(0.12, audioCtx.currentTime + i * 0.09);
       g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.09 + 0.15);
@@ -1706,83 +1027,96 @@ function celebrate(count) {
     setTimeout(() => s.remove(), 1500);
   }
 }
-
-/* ---------- セッション終了 ---------- */
-function finishSession() {
-  const day = todayKey();
-  const flagKey = recordKey(`math4SessionDay:${currentMode}`);
-  if (session.results.length > 0 && localStorage.getItem(flagKey) !== day) {
-    localStorage.setItem(flagKey, day);
-    bumpStats(null, true);
-    saveProgress();
-  }
-  showScreen('result');
-  const cleanCount = session.results.filter((r) => r.clean).length;
-  els.resultTitle.textContent = session.results.length === 0 ? '✨ きょうのぶんは もう おわってるよ！' : '🎉 よくがんばりました！';
-  els.btnResultModes.textContent = isSubMode() ? 'ひきざんの トップへ' : isKukuMode() ? '九九の トップへ' : 'モードえらび';
-  const masterStat = isSubMode()
-    ? `<div class="stat"><b>${masteredSubCount()}</b><span>ひきざんマスター/36</span></div>`
-    : `<div class="stat"><b>${masteredFactCount()}</b><span>九九マスター/81</span></div>`;
-  els.resultSummary.innerHTML = `
-    <div class="stat"><b>${session.results.length}</b><span>といた</span></div>
-    <div class="stat"><b>${cleanCount}</b><span>ノーミス</span></div>
-    ${masterStat}
-  `;
-  const list = $('result-list');
-  list.innerHTML = '';
-  session.results.forEach((r) => {
-    const row = document.createElement('div');
-    row.className = 'row';
-    row.innerHTML = `<span>${r.label}</span><span class="st">${r.clean ? '⭐⭐⭐' : '⭐'}</span>`;
-    list.appendChild(row);
-  });
-  updateHomeChrome();
-}
-
-function isKukuMode() {
-  return currentMode === 'kuku' || currentMode === 'dan';
-}
-function isSubMode() {
-  return currentMode === 'sub' || currentMode === 'sub-group';
-}
-function backToCurrentHome() {
-  if (isSubMode()) { renderSubHome(); return; }
-  if (isKukuMode()) { renderKukuHome(); return; }
-  showScreen('mode');
-  buildModeCards();
-}
-els.nextBtn.addEventListener('click', () => {
-  session.qi += 1;
-  if (session.qi < session.queue.length) {
-    if (isSubMode()) renderSubItem();
-    else if (isKukuMode()) renderKukuItem();
-    else renderWrittenItem();
-  } else {
-    finishSession();
-  }
-});
-els.hintBtn.addEventListener('click', () => {
-  session.hintUsed = true;
-  if (isSubMode()) {
-    $('sub-visual').classList.remove('hidden');
-    if ($('sub-sakura')) $('sub-sakura').classList.remove('hidden');
-  } else if (isKukuMode()) {
-    $('kuku-array').classList.remove('hidden');
-  }
-});
-els.backToModes.addEventListener('click', backToCurrentHome);
-$('btn-result-modes').addEventListener('click', backToCurrentHome);
-$('btn-result-again').addEventListener('click', () => {
-  if (currentMode === 'sub-group') startSubGroupSession(currentSubGroup);
-  else if (currentMode === 'sub') startSubMixSession();
-  else if (currentMode === 'dan') startDanSession(currentDan);
-  else if (currentMode === 'kuku') startKukuSession();
-  else startWrittenSession(currentMode);
-});
 $('sound-btn').addEventListener('click', (e) => {
   soundOn = !soundOn;
   e.currentTarget.textContent = soundOn ? '🔊' : '🔇';
 });
+
+/* =====================================================================
+   けっか
+   ===================================================================== */
+function finishSession() {
+  const day = todayKey();
+  const flagKey = recordKey(`math4SessionDay:${modeKey()}`);
+  if (session.results.length > 0 && localStorage.getItem(flagKey) !== day) {
+    try { localStorage.setItem(flagKey, day); } catch (e) {}
+    bumpStats(null, true);
+    saveProgress();
+  }
+  session.finished = true;
+  lastResult = { token: session.token, session };
+  navigate({ screen: 'result', parent: parentOf(current), token: session.token }, true);
+}
+
+// けっか画面の「つぎへ すすむ」: 練習の続きを1つだけ提案する
+function nextAction(s) {
+  if (s.type === 'written') {
+    const nextLevel = LEVELS.find((l) => l.requires === s.levelId);
+    if (nextLevel && Core.isLevelUnlocked(progress, nextLevel.id) && progress.levels[nextLevel.id].solved === 0) {
+      return { label: `▶ ${nextLevel.label}に すすむ`, sub: 'あたらしい レベルが ひらいたよ！', run: () => startWrittenSession(nextLevel.id, MENU, true) };
+    }
+    return { label: `▶ もう ${s.queue.length}もん`, sub: 'あたらしい もんだいが でるよ', run: () => startWrittenSession(s.levelId, MENU, true) };
+  }
+  const drill = DRILLS[s.drillId];
+  const reco = Core.recommendedGroup(drill, progress);
+  if (reco && reco !== s.groupId) {
+    return { label: `▶ つぎは「${Core.groupById(drill, reco).label}」`, sub: 'つぎの グループに すすもう', run: () => startDrillSession(drill.id, reco, true) };
+  }
+  if (s.groupId) {
+    return { label: '▶ もういちど れんしゅう', sub: 'ノーミスで クリアを めざそう', run: () => startDrillSession(drill.id, s.groupId, true) };
+  }
+  return { label: `▶ ${drill.title}の グループを えらぶ`, sub: 'すきな グループを えらぼう', run: () => history.back() };
+}
+
+function renderResult() {
+  const s = lastResult.session;
+  const total = s.results.length;
+  const clean = s.results.filter((r) => r.clean).length;
+  const ratio = total ? clean / total : 0;
+  let face = '😻';
+  let title = 'パーフェクト！';
+  let sub = 'ぜんぶ ノーミス！ すごすぎる！';
+  if (total === 0) { face = '😺'; title = 'きょうの ぶんは おわってるよ'; sub = 'グループを えらんで れんしゅうしても いいよ。'; }
+  else if (ratio < 1 && ratio >= 0.7) { face = '😸'; title = 'よくできました！'; sub = 'あと すこしで パーフェクト！'; }
+  else if (ratio < 0.7) { face = '😺'; title = 'さいごまで できたね！'; sub = 'まちがえた もんだいは あした また でるよ。'; }
+  $('result-face').textContent = face;
+  $('result-title').textContent = title;
+  $('result-sub').textContent = sub;
+  const starsShown = total === 0 ? 0 : ratio === 1 ? 3 : ratio >= 0.7 ? 2 : 1;
+  $('result-stars').textContent = '⭐'.repeat(starsShown) + '☆'.repeat(3 - starsShown);
+  $('result-stars').classList.toggle('hidden', total === 0);
+  const summaryParts = [
+    `<div class="stat"><b>${total}</b><span>といた</span></div>`,
+    `<div class="stat"><b>+${s.starsEarned}</b><span>⭐ スター</span></div>`
+  ];
+  if (s.bestCombo >= 2) summaryParts.push(`<div class="stat"><b>${s.bestCombo}</b><span>🔥 れんぞく</span></div>`);
+  if (s.type === 'drill') {
+    const sum = Core.drillSummary(DRILLS[s.drillId], progress);
+    summaryParts.push(`<div class="stat"><b>${sum.mastered}/${sum.total}</b><span>マスター</span></div>`);
+  }
+  $('result-summary').innerHTML = summaryParts.join('');
+  const mastered = $('result-mastered');
+  mastered.classList.toggle('hidden', s.masteredNow.length === 0);
+  mastered.innerHTML = s.masteredNow.length ? `🏅 あたらしく マスター！<br>${s.masteredNow.join('　')}` : '';
+  $('result-list').innerHTML = s.results.map((r) => `<span class="chip${r.clean ? '' : ' miss'}">${r.clean ? '⭐' : '🔁'} ${r.label}</span>`).join('');
+
+  const action = nextAction(s);
+  const nextBtn = $('btn-result-next');
+  nextBtn.style.setProperty('--c', `var(--${s.color})`);
+  nextBtn.innerHTML = `${action.label}<small>${action.sub}</small>`;
+  nextBtn.onclick = action.run;
+  const again = $('btn-result-again');
+  // ミックスは同じ問題を作り直せない（きょうの ぶんは もう終わっている）ので出さない
+  again.classList.toggle('hidden', s.type === 'drill' && !s.groupId);
+  again.onclick = () => {
+    if (s.type === 'written') startWrittenSession(s.levelId, MENU, true);
+    else startDrillSession(s.drillId, s.groupId, true);
+  };
+  if (total > 0) {
+    celebrate(ratio === 1 ? 5 : 3);
+    beep([523, 659, 784, 1047, 1319]);
+  }
+}
 
 /* ---------- らくがきメモ（手で描くスクラッチパッド、採点なし） ---------- */
 (function setupScratchPad() {
@@ -1790,14 +1124,14 @@ $('sound-btn').addEventListener('click', (e) => {
   const ctx = canvas.getContext('2d');
   let drawing = false;
   let last = null;
-  let SIZE_W = 0, SIZE_H = 0;
-
+  let width = 0;
+  let height = 0;
   function fit() {
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    SIZE_W = rect.width; SIZE_H = rect.height;
-    canvas.width = SIZE_W * dpr;
-    canvas.height = SIZE_H * dpr;
+    width = rect.width; height = rect.height;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.strokeStyle = '#2b3a67';
@@ -1824,47 +1158,36 @@ $('sound-btn').addEventListener('click', (e) => {
   const stop = () => { drawing = false; };
   canvas.addEventListener('pointerup', stop);
   canvas.addEventListener('pointercancel', stop);
-
   els.scratchToggle.addEventListener('click', () => {
     els.scratchPanel.classList.toggle('hidden');
     if (!els.scratchPanel.classList.contains('hidden')) fit();
   });
-  els.scratchClear.addEventListener('click', () => ctx.clearRect(0, 0, SIZE_W, SIZE_H));
+  els.scratchClear.addEventListener('click', () => ctx.clearRect(0, 0, width, height));
   window.addEventListener('resize', () => { if (!els.scratchPanel.classList.contains('hidden')) fit(); });
 })();
 
 /* ---------- 起動 ---------- */
+// 履歴は「メニュー」を土台にする。#sub / #kuku で開いたときは その一覧を上に積むので、
+// 戻るとメニュー → もう一度でホーム、と順番に戻れる
+const startHash = location.hash.replace('#', '');
 initCloud();
-buildModeCards();
-showScreen('mode');
+history.replaceState(MENU, '', urlFor(MENU));
+render(MENU);
+if (DRILLS[startHash]) navigate({ screen: 'drill', drill: startHash });
 
 if (DEBUG_DATE) {
+  // ?date=YYYY-MM-DD のときだけ。ブラウザテスト（Playwright）から中を確かめる
   window.__MATH4_TEST__ = {
+    Core,
     todayKey,
-    composeKukuSession,
-    buildMultiplyBoard,
-    buildDivisionBoard,
     getProgress: () => progress,
-    isLevelUnlocked,
     getSession: () => session,
+    getState: () => current,
     getActiveStep: () => session && session.board && session.board.steps[session.activeStepIndex],
-    renderWrittenItem,
-    DAN_ORDER,
-    danSummary,
-    recommendedDan,
-    factState,
-    startDanSession,
-    SUB_FACTS,
-    SUB_GROUPS,
-    SUB_STAGES,
-    composeSubSession,
-    subGroupSummary,
-    recommendedSubGroup,
-    subFactState,
-    startSubGroupSession,
-    startSubMixSession,
-    renderSubItem,
-    getSubStep: () => session && session.steps && session.steps[session.stepIndex]
+    getSubStep: () => session && session.steps && session.steps[session.stepIndex],
+    renderItem,
+    startDrillSession,
+    startWrittenSession
   };
 }
 })();

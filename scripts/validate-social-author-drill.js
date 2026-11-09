@@ -10,8 +10,8 @@ const ROOT = path.resolve(__dirname, "..");
 const PACK_ID = "social-author-drill";
 const TERM_PACK_ID = "term-2026-07-13";
 const CACHE_KEY = "20260723-kanji-fair-review-v1";
-const APP_CACHE_KEY = "20260820-eldest-alias-v1";
-const STYLE_CACHE_KEY = "20260820-eldest-alias-v1";
+const APP_CACHE_KEY = "20261109-math4-fun-nav-v1";
+const STYLE_CACHE_KEY = "20261109-math4-fun-nav-v1";
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
